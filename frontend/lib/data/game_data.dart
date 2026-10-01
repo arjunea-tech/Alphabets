@@ -1,0 +1,68 @@
+import '../models/game_model.dart';
+
+const List<GameQuestion> letterPuzzleQuestions = [
+  GameQuestion(
+    id: 'g_1',
+    prompt: 'இது எந்த எழுத்து?',
+    clue: 'அம்மா',
+    options: ['அ', 'ஆ', 'இ', 'ஈ'],
+    correctIndex: 0,
+    successPraise: 'சூப்பர்! "அ" அம்மா!',
+  ),
+  GameQuestion(
+    id: 'g_2',
+    prompt: 'படத்திற்குரிய முதல் எழுத்தைக் கண்டுபிடி!',
+    clue: 'ஆடு',
+    options: ['ஊ', 'ஆ', 'எ', 'ஒ'],
+    correctIndex: 1,
+    successPraise: 'அற்புதம்! "ஆ" ஆடு!',
+  ),
+  GameQuestion(
+    id: 'g_3',
+    prompt: 'பசுமையான இலைக்குரிய எழுத்து எது?',
+    clue: 'இலை',
+    options: ['உ', 'ஔ', 'இ', 'ஐ'],
+    correctIndex: 2,
+    successPraise: 'மிகச் சிறப்பு! "இ" இலை!',
+  ),
+  GameQuestion(
+    id: 'g_4',
+    prompt: 'சுட்டி எலி எந்த எழுத்தில் தொடங்கும்?',
+    clue: 'எலி',
+    options: ['எ', 'ஏ', 'ஒ', 'ஓ'],
+    correctIndex: 0,
+    successPraise: 'சபாஷ்! "எ" எலி!',
+  ),
+  GameQuestion(
+    id: 'g_5',
+    prompt: 'நீரில் மிதக்கும் படகுக்குரிய எழுத்து எது?',
+    clue: 'ஓடம்',
+    options: ['ஒ', 'ஐ', 'ஓ', 'ஔ'],
+    correctIndex: 2,
+    successPraise: 'வெரி குட்! "ஓ" ஓடம்!',
+  ),
+  GameQuestion(
+    id: 'g_6',
+    prompt: 'சுழலும் சக்கரத்தின் மெய் எழுத்து எது?',
+    clue: 'சக்கரம்',
+    options: ['ங்', 'க்', 'ட்', 'ப்'],
+    correctIndex: 1,
+    successPraise: 'சூப்பர்! "க்" சக்கரம்!',
+  ),
+  GameQuestion(
+    id: 'g_7',
+    prompt: 'வானில் பறக்கும் பட்டத்தின் மெய் எழுத்து எது?',
+    clue: 'பட்டம்',
+    options: ['ட்', 'ண்', 'த்', 'ம்'],
+    correctIndex: 0,
+    successPraise: 'அற்புதம்! "ட்" பட்டம்!',
+  ),
+  GameQuestion(
+    id: 'g_8',
+    prompt: 'கடல் சங்குக்குரிய மெய் எழுத்து எது?',
+    clue: 'சங்கு',
+    options: ['ஞ்', 'ங்', 'ந்', 'ய்'],
+    correctIndex: 1,
+    successPraise: 'அழகு! "ங்" சங்கு!',
+  ),
+];

@@ -1,0 +1,238 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/auth_user_model.dart';
+import 'api_config.dart';
+
+class AuthService extends ChangeNotifier {
+  static const String _keyToken = 'agaram_auth_token';
+  static const String _keyUser = 'agaram_auth_user';
+
+  AuthUserModel? _currentUser;
+  String? _token;
+  bool _isLoading = false;
+
+  AuthUserModel? get currentUser => _currentUser;
+  String? get token => _token;
+  bool get isAuthenticated => _token != null && _token!.isNotEmpty;
+  bool get isLoading => _isLoading;
+
+  AuthService() {
+    loadSession();
+  }
+
+  /// Load session from SharedPreferences
+  Future<bool> loadSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _token = prefs.getString(_keyToken);
+      final userJsonStr = prefs.getString(_keyUser);
+
+      if (userJsonStr != null && userJsonStr.isNotEmpty) {
+        final Map<String, dynamic> userMap = jsonDecode(userJsonStr);
+        _currentUser = AuthUserModel.fromJson(userMap, token: _token);
+      }
+
+      notifyListeners();
+      return isAuthenticated;
+    } catch (e) {
+      debugPrint('Error loading auth session: $e');
+      return false;
+    }
+  }
+
+  /// Register a new user
+  Future<AuthResult> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/users/register');
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'name': name.trim(),
+              'email': email.trim().toLowerCase(),
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 12));
+
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = responseData['data'] as Map<String, dynamic>;
+        final token = data['token']?.toString() ?? '';
+        final userMap = data['user'] as Map<String, dynamic>;
+        final user = AuthUserModel.fromJson(userMap, token: token);
+
+        await _persistSession(token, user);
+        _isLoading = false;
+        notifyListeners();
+
+        return AuthResult.success(user, 'பதிவு வெற்றிகரமாக முடிந்தது!');
+      } else if (response.statusCode == 409) {
+        _isLoading = false;
+        notifyListeners();
+        return AuthResult.failure(
+          'இந்த மின்னஞ்சல் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது.',
+        );
+      } else {
+        _isLoading = false;
+        notifyListeners();
+        final msg = responseData['message']?.toString() ?? 'பதிவு செய்வதில் சிக்கல் ஏற்பட்டது';
+        return AuthResult.failure(_translateError(msg));
+      }
+    } on SocketException {
+      _isLoading = false;
+      notifyListeners();
+      return AuthResult.failure(
+        'சேவையகத்துடன் இணைக்க முடியவில்லை. இணைய இணைப்பை சரிபார்க்கவும்.',
+      );
+    } on TimeoutException {
+      _isLoading = false;
+      notifyListeners();
+      return AuthResult.failure(
+        'இணைப்பு நேரம் முடிந்தது. மீண்டும் முயற்சிக்கவும்.',
+      );
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return AuthResult.failure('சேவையில் தற்காலிக சிக்கல் ஏற்பட்டுள்ளது.');
+    }
+  }
+
+  /// Login with email and password
+  Future<AuthResult> login({
+    required String email,
+    required String password,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/users/login');
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'email': email.trim().toLowerCase(),
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 12));
+
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        final data = responseData['data'] as Map<String, dynamic>;
+        final token = data['token']?.toString() ?? '';
+        final userMap = data['user'] as Map<String, dynamic>;
+        final user = AuthUserModel.fromJson(userMap, token: token);
+
+        await _persistSession(token, user);
+        _isLoading = false;
+        notifyListeners();
+
+        return AuthResult.success(user, 'உள்நுழைவு வெற்றிகரமாக முடிந்தது!');
+      } else if (response.statusCode == 401) {
+        _isLoading = false;
+        notifyListeners();
+        return AuthResult.failure('மின்னஞ்சல் அல்லது கடவுச்சொல் தவறாக உள்ளது.');
+      } else {
+        _isLoading = false;
+        notifyListeners();
+        final msg = responseData['message']?.toString() ?? 'உள்நுழைவு தோல்வியடைந்தது';
+        return AuthResult.failure(_translateError(msg));
+      }
+    } on SocketException {
+      _isLoading = false;
+      notifyListeners();
+      return AuthResult.failure(
+        'சேவையகத்துடன் இணைக்க முடியவில்லை. இணைய இணைப்பை சரிபார்க்கவும்.',
+      );
+    } on TimeoutException {
+      _isLoading = false;
+      notifyListeners();
+      return AuthResult.failure(
+        'இணைப்பு நேரம் முடிந்தது. மீண்டும் முயற்சிக்கவும்.',
+      );
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return AuthResult.failure('சேவையில் தற்காலிக சிக்கல் ஏற்பட்டுள்ளது.');
+    }
+  }
+
+  /// Logout and clear storage
+  Future<void> logout() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_keyToken);
+      await prefs.remove(_keyUser);
+    } catch (e) {
+      debugPrint('Error clearing auth session: $e');
+    } finally {
+      _token = null;
+      _currentUser = null;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _persistSession(String token, AuthUserModel user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyToken, token);
+    await prefs.setString(_keyUser, jsonEncode(user.toJson()));
+    _token = token;
+    _currentUser = user;
+  }
+
+  String _translateError(String raw) {
+    if (raw.contains('already registered') || raw.contains('ஏற்கனவே பதிவு')) {
+      return 'இந்த மின்னஞ்சல் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது.';
+    }
+    if (raw.contains('Invalid credentials') || raw.contains('தவறாக உள்ளது')) {
+      return 'மின்னஞ்சல் அல்லது கடவுச்சொல் தவறாக உள்ளது.';
+    }
+    if (raw.contains('Email') && raw.contains('required')) {
+      return 'மின்னஞ்சல் முகவரி தேவை.';
+    }
+    if (raw.contains('Password') && raw.contains('required')) {
+      return 'கடவுச்சொல் தேவை.';
+    }
+    if (raw.contains('at least 6 characters')) {
+      return 'கடவுச்சொல் குறைந்தது 6 எழுத்துகள் இருக்க வேண்டும்.';
+    }
+    return raw;
+  }
+}
+
+class AuthResult {
+  final bool isSuccess;
+  final AuthUserModel? user;
+  final String message;
+
+  const AuthResult._({
+    required this.isSuccess,
+    this.user,
+    required this.message,
+  });
+
+  factory AuthResult.success(AuthUserModel user, [String message = '']) {
+    return AuthResult._(isSuccess: true, user: user, message: message);
+  }
+
+  factory AuthResult.failure(String errorMessage) {
+    return AuthResult._(isSuccess: false, message: errorMessage);
+  }
+}

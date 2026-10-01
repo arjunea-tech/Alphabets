@@ -1,0 +1,55 @@
+import '../models/lesson_model.dart';
+import '../theme/app_colors.dart';
+
+const List<LessonCategoryModel> lessonCategoriesList = [
+  LessonCategoryModel(
+    id: 'lesson_uyir',
+    title: 'உயிர் எழுத்துகள்',
+    subtitle: 'அ முதல் ஔ வரை இனிமையாக கற்போம்',
+    countText: '12 உயிர் எழுத்துகள்',
+    buttonText: 'கற்கலாம்',
+    iconEmoji: '🍎',
+    gradientColors: AppColors.pinkGradient,
+    routeName: '/uyir',
+  ),
+  LessonCategoryModel(
+    id: 'lesson_mei',
+    title: 'மெய் எழுத்துகள்',
+    subtitle: 'க் முதல் ன் வரை புள்ளியிட்ட எழுத்துகள்',
+    countText: '18 மெய் எழுத்துகள்',
+    buttonText: 'கற்கலாம்',
+    iconEmoji: '🎡',
+    gradientColors: AppColors.blueGradient,
+    routeName: '/mei',
+  ),
+  LessonCategoryModel(
+    id: 'lesson_aytham',
+    title: 'ஆய்த எழுத்து',
+    subtitle: 'முப்புள்ளி கொண்ட தனித்தமிழ் எழுத்து',
+    countText: 'ஆய்தம் – 1',
+    buttonText: 'கற்கலாம்',
+    iconEmoji: '🛡️',
+    gradientColors: AppColors.purpleGradient,
+    routeName: '/aytham',
+  ),
+  LessonCategoryModel(
+    id: 'lesson_uyirmei',
+    title: 'உயிர்மெய் எழுத்துகள்',
+    subtitle: 'உயிரும் மெய்யும் கூடிப் பிறக்கும் எழுத்துகள்',
+    countText: '216 உயிர்மெய் எழுத்துகள்',
+    buttonText: 'கற்கலாம்',
+    iconEmoji: '🌱',
+    gradientColors: AppColors.greenGradient,
+    routeName: '/uyirmei',
+  ),
+  LessonCategoryModel(
+    id: 'lesson_reading',
+    title: 'வாசிப்பு',
+    subtitle: 'படம் பார்த்து சிறுகதைகள் வாசிப்போம்',
+    countText: 'சிறு கதைகள்',
+    buttonText: 'வாசிக்கலாம்',
+    iconEmoji: '📚',
+    gradientColors: AppColors.orangeGradient,
+    routeName: '/reading',
+  ),
+];
