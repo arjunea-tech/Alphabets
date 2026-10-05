@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:video_player_win/video_player_win.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'services/auth_service.dart';
@@ -10,6 +13,10 @@ import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (!kIsWeb && Platform.isWindows) {
+    WindowsVideoPlayer.registerWith();
+  }
 
   // Set kid-friendly cheerful status bar overlay
   SystemChrome.setSystemUIOverlayStyle(

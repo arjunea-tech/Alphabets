@@ -33,6 +33,13 @@ const config = {
     modelId: process.env.ELEVENLABS_MODEL_ID || 'eleven_multilingual_v2',
     outputFormat: process.env.ELEVENLABS_OUTPUT_FORMAT || 'mp3_44100_128',
   },
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || 'dy8bu8suk',
+    apiKey: process.env.CLOUDINARY_API_KEY || '273693918865453',
+    apiSecret: process.env.CLOUDINARY_API_SECRET || 'Hn_ppRMFBcjF2k5JylDeZ0x7_wA',
+    folder: process.env.CLOUDINARY_FOLDER || 'agaram_media',
+    url: process.env.CLOUDINARY_URL || 'cloudinary://273693918865453:Hn_ppRMFBcjF2k5JylDeZ0x7_wA@dy8bu8suk',
+  },
 };
 
 module.exports = config;

@@ -1287,33 +1287,38 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Current Score
-              _buildHUDCard(
-                icon: Icons.star_rounded,
-                iconColor: Colors.amber,
-                label: 'மதிப்பெண்',
-                value: '$_score',
-              ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Current Score
+                _buildHUDCard(
+                  icon: Icons.star_rounded,
+                  iconColor: Colors.amber,
+                  label: 'மதிப்பெண்',
+                  value: '$_score',
+                ),
+                const SizedBox(width: 24),
 
-              // Level Target Score
-              _buildHUDCard(
-                icon: Icons.track_changes_rounded,
-                iconColor: Colors.cyanAccent,
-                label: 'இலக்கு',
-                value: '${_currentLevel.targetScore}',
-              ),
+                // Level Target Score
+                _buildHUDCard(
+                  icon: Icons.track_changes_rounded,
+                  iconColor: Colors.cyanAccent,
+                  label: 'இலக்கு',
+                  value: '${_currentLevel.targetScore}',
+                ),
+                const SizedBox(width: 24),
 
-              // Moves or Timer
-              _buildHUDCard(
-                icon: _currentLevel.isTimed ? Icons.timer_rounded : Icons.favorite_rounded,
-                iconColor: Colors.pinkAccent,
-                label: _currentLevel.isTimed ? 'நேரம்' : 'நகர்வு',
-                value: _currentLevel.isTimed ? '${_secondsLeft}s' : '$_movesLeft',
-              ),
-            ],
+                // Moves or Timer
+                _buildHUDCard(
+                  icon: _currentLevel.isTimed ? Icons.timer_rounded : Icons.favorite_rounded,
+                  iconColor: Colors.pinkAccent,
+                  label: _currentLevel.isTimed ? 'நேரம்' : 'நகர்வு',
+                  value: _currentLevel.isTimed ? '${_secondsLeft}s' : '$_movesLeft',
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 8),

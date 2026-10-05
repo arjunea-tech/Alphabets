@@ -182,17 +182,21 @@ class _AythamScreenState extends State<AythamScreen> with SingleTickerProviderSt
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CustomAudioButton(
-                          label: 'கேட்போம்',
-                          color: AppColors.aythamColor,
-                          onTap: _playAudio,
+                        Flexible(
+                          child: CustomAudioButton(
+                            label: 'கேட்போம்',
+                            color: AppColors.aythamColor,
+                            onTap: _playAudio,
+                          ),
                         ),
                         const SizedBox(width: 12),
-                        CustomAudioButton(
-                          label: 'மீண்டும்',
-                          color: AppColors.aythamColor,
-                          isSecondary: true,
-                          onTap: _playAudio,
+                        Flexible(
+                          child: CustomAudioButton(
+                            label: 'மீண்டும்',
+                            color: AppColors.aythamColor,
+                            isSecondary: true,
+                            onTap: _playAudio,
+                          ),
                         ),
                       ],
                     ),

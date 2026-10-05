@@ -759,131 +759,142 @@ class _AgaramRunGameState extends State<AgaramRunGame>
   // IN-GAME HUD
   // --------------------------------------------------------------------------
   Widget _buildHUDHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // Exit / Back
-        BouncyButton(
-          onPressed: () => Navigator.pop(context),
-          child: Container(
-            padding: const EdgeInsets.all(8),
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.topCenter,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Exit / Back
+          BouncyButton(
+            onPressed: () => Navigator.pop(context),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.92),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 6,
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1B5E20), size: 22),
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // Target Letter Prompt Capsule: 🎯 "அ எழுத்தை கண்டுபிடி!"
+          ScaleTransition(
+            scale: _pulseAnim,
+            child: GestureDetector(
+              onTap: _playTargetLetterPronunciation,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFF9C4), Colors.white],
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: const Color(0xFFFFB300), width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.amber.withOpacity(0.3),
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('🎯 ', style: TextStyle(fontSize: 16)),
+                    Text(
+                      _currentTargetLetter.letter,
+                      style: GoogleFonts.catamaran(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFFD84315),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'எழுத்தை சேகரி!',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFBF360C),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.volume_up_rounded, color: Color(0xFFFF8F00), size: 16),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // Lives & Score Card
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.92),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 6,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFF81C784), width: 1.5),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Lives
+                Row(
+                  children: List.generate(3, (idx) {
+                    return Icon(
+                      idx < _lives ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                      color: Colors.pinkAccent,
+                      size: 16,
+                    );
+                  }),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.star_rounded, color: Color(0xFFFF9F1C), size: 16),
+                const SizedBox(width: 2),
+                // Score
+                Text(
+                  '$_score',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFFE65100),
+                  ),
                 ),
               ],
             ),
-            child: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1B5E20), size: 22),
           ),
-        ),
 
-        // Target Letter Prompt Capsule: 🎯 "அ எழுத்தை கண்டுபிடி!"
-        ScaleTransition(
-          scale: _pulseAnim,
-          child: GestureDetector(
-            onTap: _playTargetLetterPronunciation,
+          const SizedBox(width: 8),
+
+          // Pause Button
+          BouncyButton(
+            onPressed: () {
+              setState(() {
+                _gameState = 'paused';
+                _resetMovementState();
+              });
+            },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFFF9C4), Colors.white],
-                ),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFFFB300), width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.amber.withOpacity(0.3),
-                    blurRadius: 10,
-                  ),
-                ],
+                color: Colors.white.withOpacity(0.92),
+                shape: BoxShape.circle,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('🎯 ', style: TextStyle(fontSize: 16)),
-                  Text(
-                    _currentTargetLetter.letter,
-                    style: GoogleFonts.catamaran(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      color: const Color(0xFFD84315),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'எழுத்தை சேகரி!',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFBF360C),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.volume_up_rounded, color: Color(0xFFFF8F00), size: 16),
-                ],
-              ),
+              child: const Icon(Icons.pause_rounded, color: Color(0xFF1B5E20), size: 22),
             ),
           ),
-        ),
-
-        // Lives & Score Card
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.92),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF81C784), width: 1.5),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Lives
-              Row(
-                children: List.generate(3, (idx) {
-                  return Icon(
-                    idx < _lives ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                    color: Colors.pinkAccent,
-                    size: 16,
-                  );
-                }),
-              ),
-              const Icon(Icons.star_rounded, color: Color(0xFFFF9F1C), size: 16),
-              const SizedBox(width: 2),
-              // Score
-              Text(
-                '$_score',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFFE65100),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // Pause Button
-        BouncyButton(
-          onPressed: () {
-            setState(() {
-              _gameState = 'paused';
-              _resetMovementState();
-            });
-          },
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.92),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.pause_rounded, color: Color(0xFF1B5E20), size: 22),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

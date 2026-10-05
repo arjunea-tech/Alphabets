@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../data/video_data.dart';
 import '../../models/video_model.dart';
 import '../../services/data_service.dart';
 import '../../services/progress_service.dart';
@@ -11,6 +10,15 @@ import '../../widgets/kid_scaffold_background.dart';
 import '../../widgets/mascot_widget.dart';
 import 'video_player_screen.dart';
 
+const List<String> kUyirLetters = [
+  'அ', 'ஆ', 'இ', 'ஈ', 'உ', 'ஊ', 'எ', 'ஏ', 'ஐ', 'ஒ', 'ஓ', 'ஔ'
+];
+
+const List<String> kMeiLetters = [
+  'க்', 'ங்', 'ச்', 'ஞ்', 'ட்', 'ண்', 'த்', 'ந்', 'ப்', 'ம்',
+  'ய்', 'ர்', 'ல்', 'வ்', 'ழ்', 'ள்', 'ற்', 'ன்'
+];
+
 class VideosScreen extends StatefulWidget {
   final ProgressService progressService;
 
@@ -21,8 +29,9 @@ class VideosScreen extends StatefulWidget {
 }
 
 class _VideosScreenState extends State<VideosScreen> {
-  List<VideoItem> _videos = tamilVideoLessonsList;
+  List<VideoItem> _videos = [];
   bool _isLoading = true;
+  String _selectedFilter = 'all'; // 'all', 'uyir', 'mei', 'others'
 
   @override
   void initState() {
@@ -32,6 +41,7 @@ class _VideosScreenState extends State<VideosScreen> {
 
   Future<void> _loadVideos() async {
     try {
+      DataService.instance.clearVideoCache();
       final list = await DataService.instance.getVideoLessons();
       if (mounted) {
         setState(() {
@@ -48,8 +58,54 @@ class _VideosScreenState extends State<VideosScreen> {
     }
   }
 
+  bool _isUyirVideo(VideoItem v) {
+    final cat = v.category.trim();
+    if (cat == 'உயிர் எழுத்துகள்' || cat == 'உயிர் எழுத்துக்கள்' || cat.toLowerCase() == 'uyir') {
+      return true;
+    }
+    return kUyirLetters.any((l) => v.title.trim() == l || v.title.trim().startsWith('$l '));
+  }
+
+  bool _isMeiVideo(VideoItem v) {
+    final cat = v.category.trim();
+    if (cat == 'மெய் எழுத்துகள்' || cat == 'மெய் எழுத்துக்கள்' || cat.toLowerCase() == 'mei') {
+      return true;
+    }
+    return kMeiLetters.any((l) => v.title.trim() == l || v.title.trim().startsWith('$l '));
+  }
+
+  List<VideoItem> get _uyirVideos {
+    final list = _videos.where(_isUyirVideo).toList();
+    list.sort((a, b) {
+      final aLetter = kUyirLetters.indexWhere((l) => a.title.trim() == l || a.title.trim().startsWith('$l '));
+      final bLetter = kUyirLetters.indexWhere((l) => b.title.trim() == l || b.title.trim().startsWith('$l '));
+      if (aLetter != -1 && bLetter != -1) return aLetter.compareTo(bLetter);
+      return a.displayOrder.compareTo(b.displayOrder);
+    });
+    return list;
+  }
+
+  List<VideoItem> get _meiVideos {
+    final list = _videos.where(_isMeiVideo).toList();
+    list.sort((a, b) {
+      final aLetter = kMeiLetters.indexWhere((l) => a.title.trim() == l || a.title.trim().startsWith('$l '));
+      final bLetter = kMeiLetters.indexWhere((l) => b.title.trim() == l || b.title.trim().startsWith('$l '));
+      if (aLetter != -1 && bLetter != -1) return aLetter.compareTo(bLetter);
+      return a.displayOrder.compareTo(b.displayOrder);
+    });
+    return list;
+  }
+
+  List<VideoItem> get _otherVideos {
+    return _videos.where((v) => !_isUyirVideo(v) && !_isMeiVideo(v)).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final uyirList = _uyirVideos;
+    final meiList = _meiVideos;
+    final othersList = _otherVideos;
+
     return ListenableBuilder(
       listenable: widget.progressService,
       builder: (context, _) {
@@ -64,112 +120,77 @@ class _VideosScreenState extends State<VideosScreen> {
               bottom: false,
               child: Center(
                 child: Container(
-                  constraints: const BoxConstraints(maxWidth: 500),
+                  constraints: const BoxConstraints(maxWidth: 540),
                   child: RefreshIndicator(
                     onRefresh: _loadVideos,
                     color: AppColors.primary,
                     child: ListView(
-                      padding: const EdgeInsets.fromLTRB(18, 12, 18, 100),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                       children: [
-                        // Hero Card with Video Mascot (video.png - holding tablet)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFE0F2F1), Color(0xFFB2DFDB)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: const Color(0xFF80CBC4), width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.secondary.withValues(alpha: 0.2),
-                                blurRadius: 14,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Text(
-                                        'காணொளி திரையரங்கம்',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.secondaryDark,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'பார்த்து கற்றுக்கொள்வோம்!',
-                                      style: AppTextStyles.cardTitle.copyWith(
-                                        fontSize: 18,
-                                        color: const Color(0xFF004D40),
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    const Text(
-                                      'பாடல்களும் கதைகளும்',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF00695C),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const MascotWidget(
-                                pose: MascotPose.video,
-                                size: MascotSize.small,
-                                customHeight: 120,
-                                showGlow: true,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 20),
+                        // Hero Card with Mascot
+                        _buildHeroBanner(),
+                        const SizedBox(height: 16),
 
-                        // Video items
+                        // Filter Pills
+                        _buildFilterChips(uyirList.length, meiList.length, othersList.length),
+                        const SizedBox(height: 18),
+
                         if (_isLoading)
                           const Center(
                             child: Padding(
-                              padding: EdgeInsets.all(32.0),
+                              padding: EdgeInsets.all(40.0),
                               child: CircularProgressIndicator(color: AppColors.primary),
                             ),
                           )
-                        else if (_videos.isEmpty)
-                          const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(32.0),
-                              child: Text(
-                                'காணொளிகள் இல்லை',
-                                style: TextStyle(fontSize: 16, color: AppColors.textMuted),
-                              ),
+                        else ...[
+                          // Section 1: Uyir Letters
+                          if (_selectedFilter == 'all' || _selectedFilter == 'uyir') ...[
+                            _buildSectionHeader(
+                              icon: Icons.auto_awesome_rounded,
+                              title: 'உயிர் எழுத்துகள் காணொளிகள்',
+                              countText: '${uyirList.length}/12',
+                              subtitle: 'அ முதல் ஔ வரையிலான எழுத்துப் பாடங்கள்',
+                              badgeColor: AppColors.uyirColor,
                             ),
-                          )
-                        else
-                          ..._videos.map((video) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: _buildVideoCard(context, video),
-                            );
-                          }),
-                        const SizedBox(height: 20),
+                            const SizedBox(height: 10),
+                            if (uyirList.isEmpty)
+                              _buildEmptyCategoryCard('உயிர் எழுத்துகள் காணொளிகள் எதுவும் இல்லை')
+                            else
+                              ...uyirList.map((v) => _buildVideoCard(v, isUyir: true)),
+                            const SizedBox(height: 24),
+                          ],
+
+                          // Section 2: Mei Letters
+                          if (_selectedFilter == 'all' || _selectedFilter == 'mei') ...[
+                            _buildSectionHeader(
+                              icon: Icons.edit_note_rounded,
+                              title: 'மெய் எழுத்துகள் காணொளிகள்',
+                              countText: '${meiList.length}/18',
+                              subtitle: 'க் முதல் ன் வரையிலான எழுத்துப் பாடங்கள்',
+                              badgeColor: AppColors.meiColor,
+                            ),
+                            const SizedBox(height: 10),
+                            if (meiList.isEmpty)
+                              _buildMeiPlaceholderCard()
+                            else
+                              ...meiList.map((v) => _buildVideoCard(v, isMei: true)),
+                            const SizedBox(height: 24),
+                          ],
+
+                          // Section 3: Other Videos (Songs / Stories)
+                          if ((_selectedFilter == 'all' || _selectedFilter == 'others') && othersList.isNotEmpty) ...[
+                            _buildSectionHeader(
+                              icon: Icons.music_note_rounded,
+                              title: 'பாடல்கள் & கதைகள்',
+                              countText: '${othersList.length}',
+                              subtitle: 'இனிமையான தமிழ் மழலையர் காணொளிகள்',
+                              badgeColor: AppColors.storyColor,
+                            ),
+                            const SizedBox(height: 10),
+                            ...othersList.map((v) => _buildVideoCard(v)),
+                            const SizedBox(height: 20),
+                          ],
+                        ],
                       ],
                     ),
                   ),
@@ -182,110 +203,518 @@ class _VideosScreenState extends State<VideosScreen> {
     );
   }
 
-  Widget _buildVideoCard(BuildContext context, VideoItem video) {
-    return BouncyButton(
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VideoPlayerScreen(
-              video: video,
-              progressService: widget.progressService,
+  Widget _buildHeroBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFE0F2F1), Color(0xFFB2DFDB)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: const Color(0xFF80CBC4), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.secondary.withValues(alpha: 0.2),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    '🎬 காணொளி திரையரங்கம்',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.secondaryDark,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'பார்த்து கற்றுக்கொள்வோம்!',
+                  style: AppTextStyles.cardTitle.copyWith(
+                    fontSize: 18,
+                    color: const Color(0xFF004D40),
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'உயிர் மற்றும் மெய் எழுத்துகள் காணொளிகள்',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF00695C),
+                  ),
+                ),
+              ],
             ),
           ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: AppColors.secondary.withValues(alpha: 0.35), width: 2.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Thumbnail container
-            Container(
-              width: 90,
-              height: 75,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF2B2D42), Color(0xFF4A4E69)],
-                ),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  const Icon(
-                    Icons.movie_rounded,
-                    color: Colors.white70,
-                    size: 30,
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 24),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
+          const MascotWidget(
+            pose: MascotPose.video,
+            size: MascotSize.small,
+            customHeight: 110,
+            showGlow: true,
+          ),
+        ],
+      ),
+    );
+  }
 
-            // Video details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      video.category,
-                      style: const TextStyle(
-                        fontSize: 11,
+  Widget _buildFilterChips(int uyirCount, int meiCount, int othersCount) {
+    final filters = [
+      {'id': 'all', 'label': 'அனைத்தும்', 'count': _videos.length},
+      {'id': 'uyir', 'label': 'உயிர் எழுத்துகள்', 'count': uyirCount},
+      {'id': 'mei', 'label': 'மெய் எழுத்துகள்', 'count': meiCount},
+      if (othersCount > 0) {'id': 'others', 'label': 'பாடல்கள்', 'count': othersCount},
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: filters.map((f) {
+          final isSelected = _selectedFilter == f['id'];
+          final id = f['id'] as String;
+          final color = id == 'uyir'
+              ? AppColors.uyirColor
+              : id == 'mei'
+                  ? AppColors.meiColor
+                  : AppColors.primary;
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _selectedFilter = id;
+                });
+              },
+              borderRadius: BorderRadius.circular(20),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? color : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? color : Colors.grey.shade300,
+                    width: isSelected ? 2 : 1.5,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: color.withValues(alpha: 0.35),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      f['label'] as String,
+                      style: TextStyle(
+                        fontSize: 13,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.primaryDark,
+                        color: isSelected ? Colors.white : AppColors.textDark,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    video.title,
-                    style: AppTextStyles.cardTitle.copyWith(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.white.withValues(alpha: 0.25) : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${f['count']}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: isSelected ? Colors.white : AppColors.textMuted,
+                        ),
+                      ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.timer_outlined, size: 14, color: AppColors.textMuted),
-                      const SizedBox(width: 4),
-                      Text(video.duration, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.secondary, size: 18),
-          ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader({
+    required IconData icon,
+    required String title,
+    required String countText,
+    required String subtitle,
+    required Color badgeColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: badgeColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: badgeColor.withValues(alpha: 0.25), width: 1.5),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: badgeColor,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: badgeColor.withValues(alpha: 0.35),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(icon, color: Colors.white, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textDark,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: badgeColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        countText,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVideoCard(VideoItem video, {bool isUyir = false, bool isMei = false}) {
+    final themeColor = isUyir
+        ? AppColors.uyirColor
+        : isMei
+            ? AppColors.meiColor
+            : AppColors.primary;
+
+    final isLetterTitle = (isUyir && kUyirLetters.contains(video.title.trim())) ||
+        (isMei && kMeiLetters.contains(video.title.trim()));
+
+    final displayTitle = isLetterTitle ? '${video.title} - எழுத்து காணொளி' : video.title;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: BouncyButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VideoPlayerScreen(
+                video: video,
+                progressService: widget.progressService,
+              ),
+            ),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: themeColor.withValues(alpha: 0.3), width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Avatar / Letter Badge Thumbnail
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isUyir
+                        ? AppColors.pinkGradient
+                        : isMei
+                            ? AppColors.blueGradient
+                            : [const Color(0xFF2B2D42), const Color(0xFF4A4E69)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: themeColor.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (isUyir || isMei)
+                      Text(
+                        video.title.trim().split(' ').first,
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                      )
+                    else
+                      Text(
+                        video.thumbnailEmoji.isNotEmpty ? video.thumbnailEmoji : '🎬',
+                        style: const TextStyle(fontSize: 26),
+                      ),
+                    Positioned(
+                      bottom: 4,
+                      right: 4,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.play_arrow_rounded, color: themeColor, size: 14),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 14),
+
+              // Title and details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: themeColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            video.category,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: themeColor,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        Row(
+                          children: [
+                            const Icon(Icons.timer_outlined, size: 13, color: AppColors.textMuted),
+                            const SizedBox(width: 3),
+                            Text(
+                              video.duration.isNotEmpty ? video.duration : '03:00',
+                              style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      displayTitle,
+                      style: AppTextStyles.cardTitle.copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      video.description.isNotEmpty
+                          ? video.description
+                          : (isUyir ? 'உயிர் எழுத்து கற்றல் காணொளி' : isMei ? 'மெய் எழுத்து கற்றல் காணொளி' : 'தமிழ் கற்றல் காணொளி'),
+                      style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Arrow
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: themeColor.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.arrow_forward_ios_rounded, color: themeColor, size: 14),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyCategoryCard(String message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Center(
+        child: Text(
+          message,
+          style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMeiPlaceholderCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.meiColor.withValues(alpha: 0.25), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF2FF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.cloud_upload_outlined, color: AppColors.meiColor, size: 20),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'மெய் எழுத்துகள் காணொளிகள் (18)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    Text(
+                      'நிர்வாகப் பலகையிலிருந்து பதிவேற்றலாம் (Admin Panel Upload)',
+                      style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: kMeiLetters.map((l) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Text(
+                  l,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.meiColor,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }

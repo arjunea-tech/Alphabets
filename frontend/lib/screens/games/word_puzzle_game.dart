@@ -405,94 +405,99 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
   // -------------------------------------------------------------
   Widget _buildTopAppBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Back button
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-
-          // Title & Level selector
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF7B1FA2), Color(0xFF4A148C)],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.amberAccent.withOpacity(0.6), width: 1.5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.topCenter,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Back button
+            IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22),
+              onPressed: () => Navigator.of(context).pop(),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.stars_rounded, color: Colors.amberAccent, size: 18),
-                const SizedBox(width: 6),
-                Text(
-                  'நிலை $_currentLevel (${_puzzleIndex + 1}/${_levelPuzzles.length})',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 13,
+            const SizedBox(width: 8),
+
+            // Title & Level selector
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF7B1FA2), Color(0xFF4A148C)],
                   ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.amberAccent.withOpacity(0.6), width: 1.5),
                 ),
-              ],
-            ),
-          ),
-
-          // Right controls: Hint & Sound
-          Row(
-            children: [
-              // Hint Button
-              GestureDetector(
-                onTap: _useHint,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: _hintsRemaining > 0 ? Colors.amber.withOpacity(0.2) : Colors.white10,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: _hintsRemaining > 0 ? Colors.amberAccent : Colors.white24,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.stars_rounded, color: Colors.amberAccent, size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      'நிலை $_currentLevel (${_puzzleIndex + 1}/${_levelPuzzles.length})',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.lightbulb_rounded, color: Colors.amberAccent, size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$_hintsRemaining',
-                        style: const TextStyle(
-                          color: Colors.amberAccent,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                  ],
+                ),
+              ),
+
+              // Right controls: Hint & Sound
+              Row(
+                children: [
+                  // Hint Button
+                  GestureDetector(
+                    onTap: _useHint,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: _hintsRemaining > 0 ? Colors.amber.withOpacity(0.2) : Colors.white10,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: _hintsRemaining > 0 ? Colors.amberAccent : Colors.white24,
                         ),
                       ),
-                    ],
+                      child: Row(
+                        children: [
+                          const Icon(Icons.lightbulb_rounded, color: Colors.amberAccent, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$_hintsRemaining',
+                            style: const TextStyle(
+                              color: Colors.amberAccent,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 6),
+                  const SizedBox(width: 6),
 
-              // Sound Toggle
-              IconButton(
-                icon: Icon(
-                  _isSoundMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                  color: Colors.white,
-                  size: 22,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _isSoundMuted = !_isSoundMuted;
-                  });
-                },
+                  // Sound Toggle
+                  IconButton(
+                    icon: Icon(
+                      _isSoundMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isSoundMuted = !_isSoundMuted;
+                      });
+                    },
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
-    );
+        ),
+      );
   }
 
   // -------------------------------------------------------------

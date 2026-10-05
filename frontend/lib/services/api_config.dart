@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'cloudinary_media.dart';
 
 class ApiConfig {
   // Custom server IP override if testing on a physical phone on the same Wi-Fi network
@@ -33,6 +34,13 @@ class ApiConfig {
     if (clean.startsWith('http://') || clean.startsWith('https://')) {
       return clean;
     }
+
+    // Check Cloudinary mapping first
+    final cloudinaryUrl = CloudinaryMedia.getUrl(clean);
+    if (cloudinaryUrl != null && (cloudinaryUrl.startsWith('http://') || cloudinaryUrl.startsWith('https://'))) {
+      return cloudinaryUrl;
+    }
+
     if (clean.startsWith('uploads/') || clean.startsWith('/uploads/')) {
       final sub = clean.startsWith('/') ? clean.substring(1) : clean;
       return '$serverRoot/$sub';
@@ -40,3 +48,4 @@ class ApiConfig {
     return clean;
   }
 }
+

@@ -658,34 +658,37 @@ class CarRacingGameState extends State<CarRacingGame>
   Widget _buildTopBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      child: Row(
-        children: [
-          // Back Button
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFFFB74D), width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.topCenter,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Back Button
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFFFB74D), width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.arrow_back_rounded, color: Color(0xFFE65100), size: 24),
               ),
-              child: const Icon(Icons.arrow_back_rounded, color: Color(0xFFE65100), size: 24),
             ),
-          ),
 
-          const SizedBox(width: 8),
+            const SizedBox(width: 8),
 
-          // Game Title Badge
-          Expanded(
-            child: Container(
+            // Game Title Badge
+            Container(
               padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.94),
@@ -697,106 +700,103 @@ class CarRacingGameState extends State<CarRacingGame>
                 children: [
                   const Text('🏎️', style: TextStyle(fontSize: 18)),
                   const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      'உயிர் எழுத்து கார் பந்தயம்',
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.cardTitle.copyWith(
-                        fontSize: 15,
-                        color: const Color(0xFFBF360C),
-                        fontWeight: FontWeight.w900,
-                      ),
+                  Text(
+                    'உயிர் எழுத்து கார் பந்தயம்',
+                    style: AppTextStyles.cardTitle.copyWith(
+                      fontSize: 14,
+                      color: const Color(0xFFBF360C),
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
 
-          const SizedBox(width: 8),
+            const SizedBox(width: 8),
 
-          // Mute Button
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isMuted = !_isMuted;
-                _audioService.setMuted(_isMuted);
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.all(8),
+            // Mute Button
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _isMuted = !_isMuted;
+                  _audioService.setMuted(_isMuted);
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFFFD54F), width: 1.5),
+                ),
+                child: Icon(
+                  _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                  color: const Color(0xFFF57F17),
+                  size: 20,
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 8),
+
+            // Progress Indicator (e.g. 1/10)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
               decoration: BoxDecoration(
                 color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFFFD54F), width: 1.5),
-              ),
-              child: Icon(
-                _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                color: const Color(0xFFF57F17),
-                size: 20,
-              ),
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // Progress Indicator (e.g. 1/10)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF81C784), width: 1.5),
-            ),
-            child: Text(
-              '${_currentRoundIndex + 1}/${_roundQueue.length}',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF2E7D32),
-              ),
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // Score Badge
-          ScaleTransition(
-            scale: _scoreBumpAnim,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
-                ),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.amber.withValues(alpha: 0.4),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+                border: Border.all(color: const Color(0xFF81C784), width: 1.5),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.star_rounded, color: Colors.white, size: 18),
-                  const SizedBox(width: 4),
-                  Text(
-                    '$_score',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF3E2723),
-                    ),
-                  ),
-                ],
+              child: Text(
+                '${_currentRoundIndex + 1}/${_roundQueue.length}',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF2E7D32),
+                ),
               ),
             ),
-          ),
-        ],
+
+            const SizedBox(width: 8),
+
+            // Score Badge
+            ScaleTransition(
+              scale: _scoreBumpAnim,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.amber.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.star_rounded, color: Colors.white, size: 18),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$_score',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF3E2723),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

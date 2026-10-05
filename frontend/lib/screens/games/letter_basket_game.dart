@@ -581,35 +581,38 @@ class LetterBasketGameState extends State<LetterBasketGame>
   Widget _buildTopBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      child: Row(
-        children: [
-          // Back Button
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFFFB74D), width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.topCenter,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Back Button
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFFFB74D), width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.arrow_back_rounded, color: Color(0xFFE65100), size: 24),
               ),
-              child: const Icon(Icons.arrow_back_rounded, color: Color(0xFFE65100), size: 24),
             ),
-          ),
 
-          const SizedBox(width: 10),
+            const SizedBox(width: 8),
 
-          // Game Title Badge
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+            // Game Title Badge
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.92),
                 borderRadius: BorderRadius.circular(18),
@@ -620,108 +623,105 @@ class LetterBasketGameState extends State<LetterBasketGame>
                 children: [
                   const Text('🧺', style: TextStyle(fontSize: 18)),
                   const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      'எழுத்துக் கூடை',
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.cardTitle.copyWith(
-                        fontSize: 16,
-                        color: const Color(0xFFBF360C),
-                        fontWeight: FontWeight.w900,
-                      ),
+                  Text(
+                    'எழுத்துக் கூடை',
+                    style: AppTextStyles.cardTitle.copyWith(
+                      fontSize: 15,
+                      color: const Color(0xFFBF360C),
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
 
-          const SizedBox(width: 8),
+            const SizedBox(width: 8),
 
-          // Sound Toggle Button
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isMuted = !_isMuted;
-                _audioService.setMuted(_isMuted);
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.all(8),
+            // Sound Toggle Button
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _isMuted = !_isMuted;
+                  _audioService.setMuted(_isMuted);
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFFFD54F), width: 1.5),
+                ),
+                child: Icon(
+                  _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                  color: const Color(0xFFF57F17),
+                  size: 20,
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 8),
+
+            // Hearts (Non-punishing attempt indicator)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
               decoration: BoxDecoration(
                 color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFFFD54F), width: 1.5),
-              ),
-              child: Icon(
-                _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                color: const Color(0xFFF57F17),
-                size: 20,
-              ),
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // Hearts (Non-punishing attempt indicator)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFFFCDD2), width: 1.5),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(3, (index) {
-                return Icon(
-                  index < _hearts ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                  color: const Color(0xFFE91E63),
-                  size: 18,
-                );
-              }),
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // Score Badge
-          ScaleTransition(
-            scale: _scoreBumpAnim,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
-                ),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.amber.withValues(alpha: 0.4),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+                border: Border.all(color: const Color(0xFFFFCDD2), width: 1.5),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.star_rounded, color: Colors.white, size: 18),
-                  const SizedBox(width: 4),
-                  Text(
-                    '$_score',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF3E2723),
-                    ),
-                  ),
-                ],
+                children: List.generate(3, (index) {
+                  return Icon(
+                    index < _hearts ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    color: const Color(0xFFE91E63),
+                    size: 18,
+                  );
+                }),
               ),
             ),
-          ),
-        ],
+
+            const SizedBox(width: 8),
+
+            // Score Badge
+            ScaleTransition(
+              scale: _scoreBumpAnim,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.amber.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.star_rounded, color: Colors.white, size: 18),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$_score',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF3E2723),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

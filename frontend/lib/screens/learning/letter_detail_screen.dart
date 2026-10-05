@@ -409,11 +409,12 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                   const SizedBox(height: 12),
                   BouncyButton(
                     onPressed: () {
+                      final isMei = letter.type == LetterType.mei;
                       final videoItem = VideoItem(
                         id: 'letter_video_${letter.id}',
                         title: '${letter.letter} - ${letter.word} காணொளி',
                         description: '${letter.letter} எழுத்து கற்பிக்கும் சிறப்பு காணொளி பாடம்',
-                        category: 'உயிர் எழுத்துகள்',
+                        category: isMei ? 'மெய் எழுத்துகள்' : 'உயிர் எழுத்துகள்',
                         duration: '1:30',
                         thumbnailEmoji: '',
                         videoUrl: letter.videoUrl!,
@@ -442,20 +443,23 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                           ),
                         ],
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'காணொளி பாடம் (Watch Video)',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'காணொளி பாடம் (Watch Video)',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),

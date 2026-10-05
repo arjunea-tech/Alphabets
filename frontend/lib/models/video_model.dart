@@ -6,6 +6,7 @@ class VideoItem {
   final String thumbnailEmoji;
   final String videoUrl;
   final String description;
+  final int displayOrder;
 
   const VideoItem({
     required this.id,
@@ -15,6 +16,7 @@ class VideoItem {
     required this.thumbnailEmoji,
     required this.videoUrl,
     required this.description,
+    this.displayOrder = 0,
   });
 
   factory VideoItem.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class VideoItem {
       thumbnailEmoji: json['thumbnail_emoji']?.toString() ?? json['thumbnailEmoji']?.toString() ?? '🎬',
       videoUrl: json['video_url']?.toString() ?? json['videoUrl']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
+      displayOrder: int.tryParse(json['display_order']?.toString() ?? json['displayOrder']?.toString() ?? '0') ?? 0,
     );
   }
 
@@ -38,6 +41,7 @@ class VideoItem {
       'thumbnail_emoji': thumbnailEmoji,
       'video_url': videoUrl,
       'description': description,
+      'display_order': displayOrder,
     };
   }
 }

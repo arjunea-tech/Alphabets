@@ -984,7 +984,7 @@ class TamilHandwritingRecognitionService {
         expEval.precision >= 0.42 &&
         expEval.score >= 0.45;
 
-    final double finalConfidence = isMatch ? math.max(expEval?.score ?? 0.88, 0.88).clamp(0.0, 1.0) : 0.0;
+    final double finalConfidence = isMatch ? math.max(expEval.score, 0.88).clamp(0.0, 1.0) : 0.0;
 
     stopwatch.stop();
 

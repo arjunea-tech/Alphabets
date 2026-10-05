@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/api_config.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
@@ -110,6 +111,49 @@ class _MascotWidgetState extends State<MascotWidget> with SingleTickerProviderSt
     }
   }
 
+  Widget _buildMascotImage(double height) {
+    final rawPath = widget.pose.assetPath;
+    final resolvedUrl = ApiConfig.resolveMediaUrl(rawPath);
+
+    if (resolvedUrl != null && (resolvedUrl.startsWith('http://') || resolvedUrl.startsWith('https://'))) {
+      return Image.network(
+        resolvedUrl,
+        height: height,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.medium,
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset(
+            rawPath,
+            height: height,
+            fit: BoxFit.contain,
+            errorBuilder: (ctx, err, stack) => _buildFallbackIcon(height),
+          );
+        },
+      );
+    }
+
+    return Image.asset(
+      rawPath,
+      height: height,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.medium,
+      errorBuilder: (context, error, stackTrace) => _buildFallbackIcon(height),
+    );
+  }
+
+  Widget _buildFallbackIcon(double height) {
+    return Container(
+      height: height,
+      width: height * 0.75,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Icon(Icons.face_rounded, size: 40, color: AppColors.primary),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final height = _computedHeight;
@@ -156,24 +200,7 @@ class _MascotWidgetState extends State<MascotWidget> with SingleTickerProviderSt
                       ),
                     ),
                   ),
-                Image.asset(
-                  widget.pose.assetPath,
-                  height: height,
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.medium,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      height: height,
-                      width: height * 0.75,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Icon(Icons.face_rounded, size: 40, color: AppColors.primary),
-                    );
-                  },
-                ),
+                _buildMascotImage(height),
               ],
             ),
           ),
@@ -181,6 +208,7 @@ class _MascotWidgetState extends State<MascotWidget> with SingleTickerProviderSt
       ),
     );
   }
+
 
   Widget _buildSpeechBubble(String text) {
     return Container(

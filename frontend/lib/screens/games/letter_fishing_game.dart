@@ -717,17 +717,46 @@ class _LetterFishingGameState extends State<LetterFishingGame>
   // --------------------------------------------------------------------------
 
   Widget _buildGameHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // Exit / Back Button
-        BouncyButton(
-          onPressed: () => Navigator.pop(context),
-          child: Container(
-            padding: const EdgeInsets.all(10),
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.topCenter,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Exit / Back Button
+          BouncyButton(
+            onPressed: () => Navigator.pop(context),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.90),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 8,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: Color(0xFF0D47A1),
+                size: 24,
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 10),
+
+          // Round Counter Capsule
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.90),
-              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFE0F7FA), Colors.white],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFF4DD0E1), width: 2),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.15),
@@ -735,87 +764,33 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.arrow_back_rounded,
-              color: Color(0xFF0D47A1),
-              size: 24,
-            ),
-          ),
-        ),
-
-        // Round Counter Capsule
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFE0F7FA), Colors.white],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFF4DD0E1), width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 8,
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('🎣 ', style: TextStyle(fontSize: 16)),
-              Text(
-                '${_currentRoundIndex + 1} / ${_roundQueue.length}',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF006064),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('🎣 ', style: TextStyle(fontSize: 16)),
+                Text(
+                  '${_currentRoundIndex + 1} / ${_roundQueue.length}',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF006064),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-
-        // Score Badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFFF9C4), Color(0xFFFFE082)],
+              ],
             ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFFFB300), width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 8,
-              ),
-            ],
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.star_rounded, color: Color(0xFFFF9F1C), size: 18),
-              const SizedBox(width: 2),
-              Text(
-                '$_score',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFFE65100),
-                ),
-              ),
-            ],
-          ),
-        ),
 
-        // Speaker Button
-        BouncyButton(
-          onPressed: _playTargetSound,
-          child: Container(
-            padding: const EdgeInsets.all(10),
+          const SizedBox(width: 10),
+
+          // Score Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.90),
-              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFF9C4), Color(0xFFFFE082)],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFFFB300), width: 2),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.15),
@@ -823,14 +798,49 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.volume_up_rounded,
-              color: Color(0xFFFF8F00),
-              size: 24,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.star_rounded, color: Color(0xFFFF9F1C), size: 18),
+                const SizedBox(width: 2),
+                Text(
+                  '$_score',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFFE65100),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-      ],
+
+          const SizedBox(width: 10),
+
+          // Speaker Button
+          BouncyButton(
+            onPressed: _playTargetSound,
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.90),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 8,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.volume_up_rounded,
+                color: Color(0xFFFF8F00),
+                size: 24,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -839,73 +849,76 @@ class _LetterFishingGameState extends State<LetterFishingGame>
 
     return BouncyButton(
       onPressed: _playTargetSound,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFFF9C4), Colors.white, Color(0xFFFFF59D)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: const Color(0xFFFFB300), width: 3.0),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFFFB300).withValues(alpha: 0.40),
-              blurRadius: 18,
-              spreadRadius: 2,
-              offset: const Offset(0, 4),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFFF9C4), Colors.white, Color(0xFFFFF59D)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              '🎯 ',
-              style: TextStyle(fontSize: 24),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFE082),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFFF8F00), width: 2),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: const Color(0xFFFFB300), width: 3.0),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFFB300).withValues(alpha: 0.40),
+                blurRadius: 18,
+                spreadRadius: 2,
+                offset: const Offset(0, 4),
               ),
-              child: Text(
-                target.letter,
-                style: AppTextStyles.tamilLetterMedium.copyWith(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w900,
-                  color: const Color(0xFFD84315),
-                  height: 1.0,
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '🎯 ',
+                style: TextStyle(fontSize: 24),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFE082),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFF8F00), width: 2),
+                ),
+                child: Text(
+                  target.letter,
+                  style: AppTextStyles.tamilLetterMedium.copyWith(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFFD84315),
+                    height: 1.0,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
-            const Text(
-              'எழுத்தைத் தொடு!',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFFBF360C),
-                letterSpacing: 0.5,
+              const SizedBox(width: 10),
+              const Text(
+                'எழுத்தைத் தொடு!',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFFBF360C),
+                  letterSpacing: 0.5,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                color: Color(0xFFFF8F00),
-                shape: BoxShape.circle,
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF8F00),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.volume_up_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
               ),
-              child: const Icon(
-                Icons.volume_up_rounded,
-                color: Colors.white,
-                size: 16,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -917,10 +930,10 @@ class _LetterFishingGameState extends State<LetterFishingGame>
       child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             child: Container(
               constraints: const BoxConstraints(maxWidth: 420),
-              padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 32),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFFE1F5FE), Colors.white, Color(0xFFB3E5FC)],
@@ -944,46 +957,52 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                   const MascotWidget(
                     pose: MascotPose.game,
                     size: MascotSize.medium,
-                    customHeight: 110,
+                    customHeight: 100,
                     showGlow: true,
                   ),
                   const SizedBox(height: 12),
 
                   // Title
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('🎣 ', style: TextStyle(fontSize: 28)),
-                      Text(
-                        'எழுத்து மீன்பிடி',
-                        style: AppTextStyles.screenTitle.copyWith(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: const Color(0xFF01579B),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('🎣 ', style: TextStyle(fontSize: 26)),
+                        Text(
+                          'எழுத்து மீன்பிடி',
+                          style: AppTextStyles.screenTitle.copyWith(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF01579B),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 8),
 
                   // Subtitle
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE0F7FA),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: const Color(0xFF80DEEA), width: 1.5),
-                    ),
-                    child: const Text(
-                      'மீனைத் தொட்டு தூண்டிலால் பிடிப்போம்!',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF00695C),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0F7FA),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: const Color(0xFF80DEEA), width: 1.5),
+                      ),
+                      child: const Text(
+                        'மீனைத் தொட்டு தூண்டிலால் பிடிப்போம்!',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF00695C),
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
 
                   // Level Badge
                   Container(
@@ -1022,12 +1041,16 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              widget.mode.title,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFFE65100),
+                            Expanded(
+                              child: Text(
+                                widget.mode.title,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFFE65100),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],

@@ -451,6 +451,15 @@ export const LettersPage: React.FC = () => {
             />
           </div>
 
+          {/* Optional Video File Upload for Letter */}
+          <FileUpload
+            type="video"
+            label="🎥 எழுத்து கற்பிக்கும் காணொளி (Teaching Video - Optional)"
+            currentValue={currentLetter?.video_url}
+            onUploaded={(path) => setCurrentLetter((prev) => (prev ? { ...prev, video_url: path } : prev))}
+            onClear={() => setCurrentLetter((prev) => (prev ? { ...prev, video_url: null } : prev))}
+          />
+
           <div className="modal-footer" style={{ margin: '20px -24px -24px', padding: '16px 24px' }}>
             <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-secondary">
               {t('common.cancel')}

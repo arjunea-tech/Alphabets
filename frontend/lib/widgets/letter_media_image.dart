@@ -38,7 +38,19 @@ class LetterMediaImage extends StatelessWidget {
         width: width,
         height: height,
         fit: fit,
-        errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
+        errorBuilder: (context, error, stackTrace) {
+          // If network fails and we have a local asset path, try loading asset
+          if (rawPath.startsWith('assets/')) {
+            return Image.asset(
+              rawPath,
+              width: width,
+              height: height,
+              fit: fit,
+              errorBuilder: (ctx, err, stack) => _buildPlaceholder(),
+            );
+          }
+          return _buildPlaceholder();
+        },
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
           return Center(
@@ -86,3 +98,4 @@ class LetterMediaImage extends StatelessWidget {
     );
   }
 }
+

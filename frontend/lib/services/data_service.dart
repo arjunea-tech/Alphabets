@@ -259,6 +259,10 @@ class ApiDataRepository implements IDataRepository {
 
   List<VideoItem>? _cachedVideos;
 
+  void clearVideoCache() {
+    _cachedVideos = null;
+  }
+
   @override
   Future<List<VideoItem>> getVideoLessons() async {
     if (_cachedVideos != null && _cachedVideos!.isNotEmpty) {
@@ -272,16 +276,14 @@ class ApiDataRepository implements IDataRepository {
         if (data['success'] == true && data['data'] is List) {
           final List list = data['data'];
           final videos = list.map((item) => VideoItem.fromJson(item as Map<String, dynamic>)).toList();
-          if (videos.isNotEmpty) {
-            _cachedVideos = videos;
-            return videos;
-          }
+          _cachedVideos = videos;
+          return videos;
         }
       }
     } catch (_) {
       // Fall back to local data repository
     }
-    return _fallback.getVideoLessons();
+    return _cachedVideos ?? _fallback.getVideoLessons();
   }
 
   @override
@@ -332,6 +334,9 @@ class ApiDataRepository implements IDataRepository {
 
   void invalidateCache() {
     _cachedUyirmeiMap = null;
+    _cachedUyir = null;
+    _cachedMei = null;
+    _cachedVideos = null;
   }
 }
 
@@ -357,4 +362,16 @@ class DataService {
   Future<List<VideoItem>> getVideoLessons() => _repo.getVideoLessons();
   Future<List<QuizCategory>> getQuizCategories() => _repo.getQuizCategories();
   Future<List<QuizQuestion>> getQuizQuestions(String categoryId) => _repo.getQuizQuestions(categoryId);
+
+  void clearVideoCache() {
+    if (_repo is ApiDataRepository) {
+      (_repo as ApiDataRepository).clearVideoCache();
+    }
+  }
+
+  void invalidateCache() {
+    if (_repo is ApiDataRepository) {
+      (_repo as ApiDataRepository).invalidateCache();
+    }
+  }
 }
