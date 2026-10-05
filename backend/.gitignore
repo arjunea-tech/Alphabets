@@ -8,6 +8,8 @@ yarn-error.log*
 .env
 .env.local
 .env.production
+.env.*
+!.env.example
 
 # Uploads directory (retain directory structure with .gitkeep)
 uploads/images/*
