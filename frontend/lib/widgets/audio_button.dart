@@ -54,12 +54,16 @@ class _AudioButtonState extends State<AudioButton>
     setState(() => _isPlaying = true);
     _animController.forward().then((_) => _animController.reverse());
 
-    await AudioService.instance.playLetterSound(
-      context,
-      letter: widget.letter,
-      word: widget.word,
-      audioPath: widget.audioPath,
-    );
+    if (widget.audioPath != null && widget.audioPath!.isNotEmpty) {
+      await AudioService.instance.playLetterSound(
+        context,
+        letter: widget.letter,
+        word: widget.word,
+        audioPath: widget.audioPath,
+      );
+    } else {
+      await AudioService.instance.playTamilAudio(widget.word ?? widget.letter);
+    }
 
     if (mounted) {
       setState(() => _isPlaying = false);

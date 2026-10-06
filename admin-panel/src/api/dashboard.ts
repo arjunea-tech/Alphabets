@@ -10,11 +10,26 @@ export const dashboardApi = {
     return res.data;
   },
 
-  getUsers: async (params?: { limit?: number; offset?: number }) => {
+  getUsers: async (params?: { limit?: number; offset?: number; search?: string }) => {
     const res = await apiClient.get<ApiResponse<{ total: number; users: ChildUser[] }>>(
       '/admin/dashboard/users',
       { params }
     );
+    return res.data;
+  },
+
+  createUser: async (data: { child_name: string; email?: string; password?: string; age?: number; avatar_asset?: string; total_stars?: number }) => {
+    const res = await apiClient.post<ApiResponse<ChildUser>>('/admin/dashboard/users', data);
+    return res.data;
+  },
+
+  updateUser: async (id: string, data: Partial<ChildUser> & { password?: string }) => {
+    const res = await apiClient.put<ApiResponse<ChildUser>>(`/admin/dashboard/users/${id}`, data);
+    return res.data;
+  },
+
+  deleteUser: async (id: string) => {
+    const res = await apiClient.delete<ApiResponse<void>>(`/admin/dashboard/users/${id}`);
     return res.data;
   },
 

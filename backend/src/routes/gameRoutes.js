@@ -21,7 +21,12 @@ router.post(
   verifyToken,
   requireRole('super_admin', 'content_admin'),
   [
-    body('gameType').trim().notEmpty().withMessage('gameType is required'),
+    body().custom((val, { req }) => {
+      if (!req.body.gameType && !req.body.game_type) {
+        throw new Error('game_type is required');
+      }
+      return true;
+    }),
     body('title').trim().notEmpty().withMessage('Title is required'),
     body('prompt').trim().notEmpty().withMessage('Prompt is required'),
     body('options').isArray({ min: 2 }).withMessage('options must be an array of choices'),

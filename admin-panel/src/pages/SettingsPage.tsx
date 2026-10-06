@@ -79,13 +79,15 @@ export const SettingsPage: React.FC = () => {
               justifyContent: 'center',
             }}
           >
-            {admin?.fullName?.charAt(0) || 'A'}
+            {(admin?.fullName || admin?.full_name || admin?.username || 'A').trim().charAt(0).toUpperCase()}
           </div>
           <div>
-            <h3 style={{ fontSize: '18px', fontWeight: 700 }}>{admin?.fullName}</h3>
+            <h3 style={{ fontSize: '18px', fontWeight: 700 }}>
+              {admin?.fullName || admin?.full_name || admin?.username || 'Admin'}
+            </h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '14px' }}>
               <ShieldCheck size={16} color="var(--primary)" />
-              <span>{admin?.role === 'super_admin' ? t('header.superAdmin') : 'Content Admin'}</span>
+              <span>{admin?.role === 'super_admin' ? t('role_super_admin') : t('role_content_admin')}</span>
             </div>
           </div>
         </div>
@@ -93,11 +95,11 @@ export const SettingsPage: React.FC = () => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
           <div>
             <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('settings.username')}</div>
-            <div style={{ fontWeight: 600, fontSize: '15px', marginTop: '2px' }}>{admin?.username}</div>
+            <div style={{ fontWeight: 600, fontSize: '15px', marginTop: '2px' }}>{admin?.username || '-'}</div>
           </div>
           <div>
             <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('settings.email')}</div>
-            <div style={{ fontWeight: 600, fontSize: '15px', marginTop: '2px' }}>{admin?.email}</div>
+            <div style={{ fontWeight: 600, fontSize: '15px', marginTop: '2px' }}>{admin?.email || '-'}</div>
           </div>
         </div>
       </div>

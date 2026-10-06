@@ -424,8 +424,15 @@ class _LetterFishingGameState extends State<LetterFishingGame>
       // WRONG FISH CAUGHT (Friendly Feedback & Release) 😊
       // -------------------------------------------------------------
       _spawnWrongRipples(surfaceX, surfaceY);
+      _audioService.playLetterSound(
+        context,
+        letter: fish.letter,
+        word: fish.word,
+        audioPath: fish.audioPath,
+        showIndicator: false,
+      );
       _audioService.playRetryFeedback(context);
-      _showToast('இது இல்லை! மீண்டும் முயற்சி செய் 😊', const Color(0xFFFF8A65));
+      _showToast('இது "${fish.letter}" - இலக்கு: "${_currentTarget.letter}" 😊', const Color(0xFFFF8A65));
 
       // Release fish back to natural swimming at middle water
       fish.isCaught = false;

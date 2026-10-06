@@ -39,21 +39,20 @@ class GameModel {
     };
   }
 
-  static async create({
-    id,
-    gameType,
-    title,
-    prompt,
-    clue = '',
-    clueImage = null,
-    correctIndex = 0,
-    options = [],
-    successPraise = 'சூப்பர்! ⭐',
-    starsReward = 3,
-    displayOrder = 0,
-    isActive = true,
-  }) {
-    const gameId = id || `game_${gameType}_${Date.now()}`;
+  static async create(data) {
+    const gameType = data.gameType || data.game_type || 'puzzle';
+    const title = data.title || '';
+    const prompt = data.prompt || '';
+    const clue = data.clue || '';
+    const clueImage = data.clueImage !== undefined ? data.clueImage : (data.clue_image || null);
+    const correctIndex = data.correctIndex !== undefined ? data.correctIndex : (data.correct_index || 0);
+    const options = data.options || [];
+    const successPraise = data.successPraise || data.success_praise || 'சூப்பர்! ⭐';
+    const starsReward = data.starsReward !== undefined ? data.starsReward : (data.stars_reward || 3);
+    const displayOrder = data.displayOrder !== undefined ? data.displayOrder : (data.display_order || 0);
+    const isActive = data.isActive !== undefined ? data.isActive : (data.is_active !== undefined ? data.is_active : true);
+
+    const gameId = data.id || `game_${gameType}_${Date.now()}`;
     await pool.query(
       `INSERT INTO games 
         (id, game_type, title, prompt, clue, clue_image, correct_index, options_json, success_praise, stars_reward, display_order, is_active)
@@ -82,21 +81,30 @@ class GameModel {
 
     const fieldMap = {
       gameType: 'game_type',
+      game_type: 'game_type',
       title: 'title',
       prompt: 'prompt',
       clue: 'clue',
       clueImage: 'clue_image',
+      clue_image: 'clue_image',
       correctIndex: 'correct_index',
+      correct_index: 'correct_index',
       successPraise: 'success_praise',
+      success_praise: 'success_praise',
       starsReward: 'stars_reward',
+      stars_reward: 'stars_reward',
       displayOrder: 'display_order',
+      display_order: 'display_order',
       isActive: 'is_active',
+      is_active: 'is_active',
     };
 
+    const handledCols = new Set();
     for (const [key, dbCol] of Object.entries(fieldMap)) {
-      if (data[key] !== undefined) {
+      if (data[key] !== undefined && !handledCols.has(dbCol)) {
         fields.push(`${dbCol} = ?`);
         values.push(data[key]);
+        handledCols.add(dbCol);
       }
     }
 

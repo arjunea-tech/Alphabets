@@ -19,7 +19,7 @@ class AdminAuthController {
         return errorResponse(res, 'Username and password are required', null, 400);
       }
 
-      const admin = await AdminModel.findByUsername(username);
+      const admin = await AdminModel.findByUsernameOrEmail(username);
       if (!admin || !admin.is_active) {
         return errorResponse(res, 'Invalid credentials or inactive account', null, 401);
       }
@@ -40,14 +40,19 @@ class AdminAuthController {
         { expiresIn: config.jwt.expiresIn }
       );
 
+      const fullName = admin.full_name || admin.fullName || admin.username || 'Admin';
+
       return successResponse(res, 'Admin logged in successfully', {
         token,
         admin: {
           id: admin.id,
           username: admin.username,
           email: admin.email,
-          fullName: admin.full_name,
+          fullName: fullName,
+          full_name: fullName,
           role: admin.role,
+          is_active: admin.is_active,
+          created_at: admin.created_at,
         },
       });
     } catch (error) {
@@ -64,7 +69,18 @@ class AdminAuthController {
       if (!admin) {
         return errorResponse(res, 'Admin not found', null, 404);
       }
-      return successResponse(res, 'Admin profile fetched successfully', admin);
+      const fullName = admin.full_name || admin.fullName || admin.username || 'Admin';
+      return successResponse(res, 'Admin profile fetched successfully', {
+        id: admin.id,
+        username: admin.username,
+        email: admin.email,
+        fullName: fullName,
+        full_name: fullName,
+        role: admin.role,
+        is_active: admin.is_active,
+        created_at: admin.created_at,
+        updated_at: admin.updated_at,
+      });
     } catch (error) {
       next(error);
     }
@@ -126,7 +142,17 @@ class AdminAuthController {
       });
 
       const newAdmin = await AdminModel.findById(adminId);
-      return successResponse(res, 'Admin created successfully', newAdmin, 201);
+      const fullNameResult = newAdmin.full_name || newAdmin.fullName || newAdmin.username || fullName;
+      return successResponse(res, 'Admin created successfully', {
+        id: newAdmin.id,
+        username: newAdmin.username,
+        email: newAdmin.email,
+        fullName: fullNameResult,
+        full_name: fullNameResult,
+        role: newAdmin.role,
+        is_active: newAdmin.is_active,
+        created_at: newAdmin.created_at,
+      }, 201);
     } catch (error) {
       next(error);
     }

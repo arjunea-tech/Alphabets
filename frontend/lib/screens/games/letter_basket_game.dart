@@ -334,7 +334,12 @@ class LetterBasketGameState extends State<LetterBasketGame>
 
     // 3. Cheerful Audio Feedback
     _audioService.playSuccessFeedback(context);
-    _audioService.speakText(letter.letter);
+    _audioService.playLetterSound(
+      context,
+      letter: letter.letter,
+      word: letter.word,
+      showIndicator: false,
+    );
 
     // 4. Positive Tamil Praise
     const praises = ['சூப்பர்! 🎉', 'அற்புதம்! 🌟', 'சபாஷ்! ✨', 'மிக நன்று! 👏'];
@@ -350,6 +355,12 @@ class LetterBasketGameState extends State<LetterBasketGame>
   void _handleWrongCatch(FallingLetter letter, double hitX, double hitY) {
     // Basket gentle shake animation
     _basketShakeController.forward(from: 0.0);
+    _audioService.playLetterSound(
+      context,
+      letter: letter.letter,
+      word: letter.word,
+      showIndicator: false,
+    );
     _audioService.playRetryFeedback(context);
 
     // Gentle encouraging message without ending or freezing the game

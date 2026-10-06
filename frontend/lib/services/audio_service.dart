@@ -24,8 +24,8 @@ class AudioService {
   }
 
   /// Main Centralized Audio API
-  Future<void> playTamilAudio(String text) async {
-    await TamilAudioService.instance.playTamilAudio(text);
+  Future<void> playTamilAudio(String? text, {String? fallbackTamilText}) async {
+    await TamilAudioService.instance.playTamilAudio(text, fallbackTamilText: fallbackTamilText);
   }
 
   /// Plays pronunciation for a Tamil letter or word.

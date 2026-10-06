@@ -1,6 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'tamil_tts_service.dart';
 
 /// Centralized Tamil Audio Service for the AGARAM Educational Platform.
@@ -161,6 +164,62 @@ class TamilAudioService {
       map[entry.key] = 'assets/audio/tamil/$category/${entry.value}.mp3';
     }
 
+    // Additional pre-generated vocabulary words mapped to their hex asset files
+    const hexWordSlugs = <String, String>{
+      'காடு': 'word_e0ae95e0aebee0ae9fe0af81',
+      'முயல்': 'word_e0aeaee0af81e0aeafe0aeb2e0af8d',
+      'ஆமை': 'word_e0ae86e0aeaee0af88',
+      'காக்கை': 'word_e0ae95e0aebee0ae95e0af8de0ae95e0af88',
+      'கிளி': 'word_e0ae95e0aebfe0aeb3e0aebf',
+      'கீரை': 'word_e0ae95e0af80e0aeb0e0af88',
+      'குடை': 'word_e0ae95e0af81e0ae9fe0af88',
+      'கூடு': 'word_e0ae95e0af82e0ae9fe0af81',
+      'கெண்டை': 'word_e0ae95e0af86e0aea3e0af8de0ae9fe0af88',
+      'கேடயம்': 'word_e0ae95e0af87e0ae9fe0aeafe0aeaee0af8d',
+      'கை': 'word_e0ae95e0af88',
+      'கொக்கு': 'word_e0ae95e0af8ae0ae95e0af8de0ae95e0af81',
+      'கோழி': 'word_e0ae95e0af8be0aeb4e0aebf',
+      'கௌதாரி': 'word_e0ae95e0af8ce0aea4e0aebee0aeb0e0aebf',
+      'சட்டை': 'word_e0ae9ae0ae9fe0af8de0ae9fe0af88',
+      'சாவி': 'word_e0ae9ae0aebee0aeb5e0aebf',
+      'சிங்கம்': 'word_e0ae9ae0aebfe0ae99e0af8de0ae95e0aeaee0af8d',
+      'சீப்பு': 'word_e0ae9ae0af80e0aeaae0af8de0aeaae0af81',
+      'தவளை': 'word_e0aea4e0aeb5e0aeb3e0af88',
+      'தாமரை': 'word_e0aea4e0aebee0aeaee0aeb0e0af88',
+      'திமிங்கலம்': 'word_e0aea4e0aebfe0aeaee0aebfe0ae99e0af8de0ae95e0aeb2e0aeaee0af8d',
+      'தீபம்': 'word_e0aea4e0af80e0aeaae0aeaee0af8d',
+      'பால்': 'word_e0aeaae0aebee0aeb2e0af8d',
+      'பிள்ளை': 'word_e0aeaae0aebfe0aeb3e0af8de0aeb3e0af88',
+      'பீர்க்கு': 'word_e0aeaae0af80e0aeb0e0af8de0ae95e0af8de0ae95e0af81',
+      'மயில்': 'word_e0aeaee0aeafe0aebfe0aeb2e0af8d',
+      'மாம்பழம்': 'word_e0aeaee0aebee0aeaee0af8de0aeaae0aeb4e0aeaee0af8d',
+      'மிளகாய்': 'word_e0aeaee0aebfe0aeb3e0ae95e0aebee0aeafe0af8d',
+      'மீன்': 'word_e0aeaee0af80e0aea9e0af8d',
+    };
+    for (final entry in hexWordSlugs.entries) {
+      map[entry.key] = 'assets/audio/tamil/words/${entry.value}.mp3';
+    }
+
+    // Story Narrations and Sentences
+    const storyMappings = <String, String>{
+      'முயலும் ஆமையும்': 'assets/audio/tamil/stories/story_title.mp3',
+      'ஒரு காட்டில் முயலும் ஆமையும் வாழ்ந்தன.': 'assets/audio/tamil/stories/story_page_1.mp3',
+      'முயல் வேகமாக ஓடும்.\nஆமை மெதுவாக நடக்கும்.': 'assets/audio/tamil/stories/story_page_2.mp3',
+      'முயல் வேகமாக ஓடும். ஆமை மெதுவாக நடக்கும்.': 'assets/audio/tamil/stories/story_page_2.mp3',
+      'இருவரும் ஓட்டப்பந்தயம் வைத்தனர்.\nமுயல் வேகமாக ஓடியது.': 'assets/audio/tamil/stories/story_page_3.mp3',
+      'இருவரும் ஓட்டப்பந்தயம் வைத்தனர். முயல் வேகமாக ஓடியது.': 'assets/audio/tamil/stories/story_page_3.mp3',
+      'முயல் மரத்தடியில் தூங்கிவிட்டது.\nஆமை தொடர்ந்து நடந்தது.': 'assets/audio/tamil/stories/story_page_4.mp3',
+      'முயல் மரத்தடியில் தூங்கிவிட்டது. ஆமை தொடர்ந்து நடந்தது.': 'assets/audio/tamil/stories/story_page_4.mp3',
+      'ஆமை முதலில் சென்றது.\nபோட்டியில் வெற்றி பெற்றது!': 'assets/audio/tamil/stories/story_page_5.mp3',
+      'ஆமை முதலில் சென்றது. போட்டியில் வெற்றி பெற்றது!': 'assets/audio/tamil/stories/story_page_5.mp3',
+      'முயல் தன் தவறை உணர்ந்தது.\nவிடாமுயற்சி வெற்றி தரும்!': 'assets/audio/tamil/stories/story_page_6.mp3',
+      'முயல் தன் தவறை உணர்ந்தது. விடாமுயற்சி வெற்றி தரும்!': 'assets/audio/tamil/stories/story_page_6.mp3',
+      'பொறுமையும் தொடர் முயற்சியும் எப்போதும் வெற்றி தரும்!': 'assets/audio/tamil/stories/story_moral.mp3',
+    };
+    for (final entry in storyMappings.entries) {
+      map[entry.key] = entry.value;
+    }
+
     return map;
   }
 
@@ -230,31 +289,22 @@ class TamilAudioService {
     return reverse;
   }
 
-  Set<String>? _availableAssets;
-
-  Future<void> _ensureAssetManifestLoaded() async {
-    if (_availableAssets != null) return;
-    try {
-      final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
-      _availableAssets = manifest.listAssets().toSet();
-      debugPrint('[TamilAudioService] In-memory AssetManifest loaded with ${_availableAssets!.length} assets.');
-    } catch (e) {
-      debugPrint('[TamilAudioService] Notice: AssetManifest not available ($e). Initializing empty asset set.');
-      _availableAssets = <String>{};
-    }
-  }
-
-  /// Checks whether an asset is physically available in the app bundle without making HTTP requests.
+  /// Checks whether an asset is physically available in the app bundle.
   Future<bool> isAssetAvailable(String path) async {
-    await _ensureAssetManifestLoaded();
-    if (_availableAssets == null || _availableAssets!.isEmpty) {
-      return true;
-    }
     final clean = path.trim();
     final withPrefix = clean.startsWith('assets/') ? clean : 'assets/$clean';
-    final withoutPrefix = clean.startsWith('assets/') ? clean.substring(7) : clean;
-    return _availableAssets!.contains(withPrefix) ||
-           _availableAssets!.contains(withoutPrefix);
+    try {
+      final byteData = await rootBundle.load(withPrefix);
+      return byteData.lengthInBytes > 0;
+    } catch (_) {
+      try {
+        final withoutPrefix = clean.startsWith('assets/') ? clean.substring(7) : clean;
+        final byteData = await rootBundle.load(withoutPrefix);
+        return byteData.lengthInBytes > 0;
+      } catch (_) {
+        return false;
+      }
+    }
   }
 
   /// Safely resolves any string or asset path to pure spoken Tamil text.
@@ -298,6 +348,9 @@ class TamilAudioService {
 
   Future<bool> _playAsset(String path) async {
     try {
+      if (!await isAssetAvailable(path)) {
+        return false;
+      }
       final cleanPath = path.startsWith('assets/') ? path.substring(7) : path;
       await player.stop();
       await player.play(AssetSource(cleanPath));
@@ -308,15 +361,39 @@ class TamilAudioService {
     }
   }
 
+  /// Clean and extract pure spoken Tamil text from a string, removing English glosses like (Forest)
+  static String extractSpokenTamilText(String input) {
+    var cleaned = input.trim();
+    // Remove bracketed content like (Forest), (Rabbit), etc.
+    cleaned = cleaned.replaceAll(RegExp(r'\([^)]*\)'), '');
+    cleaned = cleaned.replaceAll(RegExp(r'\[[^\]]*\]'), '');
+    // If mixed with English text, extract pure Tamil characters
+    final tamilOnly = cleaned.replaceAll(RegExp(r'[a-zA-Z0-9_\-\:\|\/\\]+'), ' ').trim();
+    if (tamilOnly.isNotEmpty) {
+      return tamilOnly.replaceAll(RegExp(r'\s+'), ' ').trim();
+    }
+    return cleaned;
+  }
+
   /// Maps any Tamil text or key to its relative audio asset path
   static String? getAudioPath(String text) {
     final trimmed = text.trim();
     if (_audioMapping.containsKey(trimmed)) {
       return _audioMapping[trimmed];
     }
+    final clean = extractSpokenTamilText(trimmed);
+    if (clean.isNotEmpty && _audioMapping.containsKey(clean)) {
+      return _audioMapping[clean];
+    }
     // Check if input is already a valid asset path
     if (trimmed.startsWith('assets/')) {
       return trimmed;
+    }
+    // Check hex-encoded word asset format
+    if (clean.isNotEmpty) {
+      final hex = utf8.encode(clean).map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+      final hexPath = 'assets/audio/tamil/words/word_$hex.mp3';
+      return hexPath;
     }
     return null;
   }
@@ -373,10 +450,45 @@ class TamilAudioService {
     }
   }
 
+  Future<bool> _fetchAndPlayOnlineAudio(String text) async {
+    try {
+      final trimmed = text.trim();
+      final tempFile = File('${Directory.systemTemp.path}/ta_${trimmed.hashCode}.mp3');
+
+      if (await tempFile.exists() && (await tempFile.length()) > 0) {
+        await player.stop();
+        await player.play(DeviceFileSource(tempFile.path));
+        debugPrint('[TamilAudioService] Playing cached audio file: "${tempFile.path}"');
+        return true;
+      }
+
+      final url = 'https://translate.google.com/translate_tts?ie=UTF-8&q=${Uri.encodeComponent(trimmed)}&tl=ta&client=tw-ob';
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'audio/mpeg, audio/*; q=0.9, */*; q=0.8',
+        },
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+        await tempFile.writeAsBytes(response.bodyBytes);
+        await player.stop();
+        await player.play(DeviceFileSource(tempFile.path));
+        debugPrint('[TamilAudioService] Saved and playing Tamil speech from: "${tempFile.path}" (${response.bodyBytes.length} bytes)');
+        return true;
+      }
+    } catch (e) {
+      debugPrint('[TamilAudioService] Online speech stream exception: $e');
+    }
+    return false;
+  }
+
   /// Main Centralized Method: Resolves and plays audio for any Tamil text.
   /// 1. Plays pre-recorded Tamil audio assets
   /// 2. Plays remote URLs (if applicable)
-  /// Strictly eliminates TTS fallback for letter pronunciations.
+  /// 3. Streams dynamic Tamil speech audio
+  /// 4. Fallback to device TTS
   Future<void> playTamilAudio(String? text, {String? fallbackTamilText}) async {
     if (_isMuted || text == null || text.trim().isEmpty) return;
 
@@ -393,18 +505,22 @@ class TamilAudioService {
       }
     }
 
-    // 2. Identify candidate asset path
-    final isPath = trimmed.startsWith('assets/') || trimmed.endsWith('.mp3');
-    final assetPath = isPath ? trimmed : getAudioPath(trimmed);
+    // 2. Extract clean spoken Tamil text
+    final spokenText = extractSpokenTamilText(trimmed);
+    final targetText = spokenText.isNotEmpty ? spokenText : trimmed;
 
-    // 3. Play bundled asset if present
+    // 3. Direct or candidate asset path lookup
+    final isPath = trimmed.startsWith('assets/') || trimmed.endsWith('.mp3');
+    final assetPath = isPath ? trimmed : getAudioPath(targetText);
+
+    // 4. Play bundled asset if present
     if (assetPath != null && await isAssetAvailable(assetPath)) {
       final played = await _playAsset(assetPath);
       if (played) return;
     }
 
-    // 4. Try candidate letter audio paths (e.g., 'அ')
-    final candidates = _getLetterCandidatePaths(trimmed);
+    // 5. Try candidate letter audio paths (e.g., 'அ')
+    final candidates = _getLetterCandidatePaths(targetText);
     for (final candidate in candidates) {
       if (await isAssetAvailable(candidate)) {
         final played = await _playAsset(candidate);
@@ -412,13 +528,54 @@ class TamilAudioService {
       }
     }
 
-    // 5. If no asset file is found, speak with Tamil TTS
-    await TamilTtsService.instance.speakText(trimmed);
+    // 6. Try fallback text if provided
+    if (fallbackTamilText != null && fallbackTamilText.trim().isNotEmpty) {
+      final fbClean = extractSpokenTamilText(fallbackTamilText);
+      final fbPath = getAudioPath(fbClean);
+      if (fbPath != null && await isAssetAvailable(fbPath)) {
+        final played = await _playAsset(fbPath);
+        if (played) return;
+      }
+    }
+
+    // 7. Play crystal-clear Tamil speech via high quality online stream
+    final playedOnline = await _fetchAndPlayOnlineAudio(targetText);
+    if (playedOnline) return;
+
+    // 8. Fallback to device TTS engine (for mobile devices)
+    await TamilTtsService.instance.speakText(targetText);
+
+    // 9. Windows native OneCore voice fallback
+    if (Platform.isWindows) {
+      await _speakWindowsNativeTamil(targetText);
+    }
+  }
+
+  Future<void> _speakWindowsNativeTamil(String text) async {
+    try {
+      final safeText = text.replaceAll('"', '""').replaceAll("'", "''");
+      final script = '''
+Add-Type -AssemblyName System.Speech;
+[Windows.Media.SpeechSynthesis.SpeechSynthesizer, Windows.Media, ContentType=WindowsRuntime] | Out-Null;
+\$synth = New-Object Windows.Media.SpeechSynthesis.SpeechSynthesizer;
+\$taVoice = [Windows.Media.SpeechSynthesis.SpeechSynthesizer]::AllVoices | Where-Object { \$_.Language -like "ta*" };
+if (\$taVoice) {
+    \$synth.Voice = \$taVoice;
+    \$stream = \$synth.SynthesizeTextToStreamAsync("$safeText").GetAwaiter().GetResult();
+    \$fileStream = [System.IO.File]::Create("\$([System.IO.Path]::GetTempPath())tamil_winrt.wav");
+    \$stream.AsStreamForRead().CopyTo(\$fileStream);
+    \$fileStream.Close();
+    (New-Object System.Media.SoundPlayer("\$([System.IO.Path]::GetTempPath())tamil_winrt.wav")).PlaySync();
+}
+''';
+      await Process.run('powershell', ['-WindowStyle', 'Hidden', '-Command', script]);
+    } catch (e) {
+      debugPrint('[TamilAudioService] Windows native speech error: $e');
+    }
   }
 
   /// Convenience method matching existing AudioService signature
   /// Plays the authentic native Tamil pronunciation audio for the given letter.
-  /// Strictly avoids TTS fallback so only real Tamil pronunciations are heard.
   Future<void> playLetterSound(
     BuildContext context, {
     required String letter,
@@ -458,7 +615,8 @@ class TamilAudioService {
       }
     }
 
-    debugPrint('[TamilAudioService] No audio asset found for "$letter". TTS fallback disabled.');
+    // 4. Seamless fallback for letters & words
+    await playTamilAudio(word ?? letter);
   }
 
   static List<String> _getLetterCandidatePaths(String text) {

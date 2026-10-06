@@ -54,10 +54,11 @@ void main() {
     expect(find.text('உள்நுழையவும்'), findsWidgets);
     expect(find.text('மின்னஞ்சல்'), findsOneWidget);
     expect(find.text('கடவுச்சொல்'), findsOneWidget);
-    expect(find.text('பதிவு செய்யவும்'), findsOneWidget);
+    expect(find.textContaining('பதிவு செய்யவும்'), findsOneWidget);
 
-    // Tap register link
-    await tester.tap(find.text('பதிவு செய்யவும்'));
+    // Scroll and tap register link
+    await tester.ensureVisible(find.textContaining('பதிவு செய்யவும்'));
+    await tester.tap(find.textContaining('பதிவு செய்யவும்'));
     await tester.pumpAndSettle();
 
     expect(find.text('புதிய கணக்கு தொடங்குங்கள்'), findsOneWidget);

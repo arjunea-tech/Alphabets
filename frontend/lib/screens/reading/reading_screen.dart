@@ -91,7 +91,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
 
   void _showInteractiveWordDialog(StoryInteractiveWord word) {
     // Speak the Tamil word immediately with voice
-    TamilTtsService.speak(word.displayLabel);
+    _audioService.playTamilAudio(word.displayLabel, fallbackTamilText: word.word);
 
     showDialog(
       context: context,
@@ -112,22 +112,32 @@ class _ReadingScreenState extends State<ReadingScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Header Row with Close button
+                // Header Row with Word Badge and Close button
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        word.displayLabel,
-                        style: AppTextStyles.cardTitle.copyWith(
-                          fontSize: 18,
-                          color: AppColors.primaryDark,
-                          fontWeight: FontWeight.w800,
+                    GestureDetector(
+                      onTap: () => _audioService.playTamilAudio(word.displayLabel, fallbackTamilText: word.word),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              word.displayLabel,
+                              style: AppTextStyles.cardTitle.copyWith(
+                                fontSize: 18,
+                                color: AppColors.primaryDark,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(Icons.volume_up_rounded, size: 18, color: AppColors.primaryDark),
+                          ],
                         ),
                       ),
                     ),
@@ -140,56 +150,62 @@ class _ReadingScreenState extends State<ReadingScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Word Illustration Image
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(22),
-                  child: Container(
-                    height: 200,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceLight,
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: AppColors.storyColor.withValues(alpha: 0.2), width: 2),
+                // Word Illustration Image (Tappable for audio!)
+                GestureDetector(
+                  onTap: () => _audioService.playTamilAudio(word.displayLabel, fallbackTamilText: word.word),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(22),
+                    child: Container(
+                      height: 200,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceLight,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: AppColors.storyColor.withValues(alpha: 0.2), width: 2),
+                      ),
+                      child: word.imagePath != null && word.imagePath!.isNotEmpty
+                          ? (word.imagePath!.startsWith('http://') || word.imagePath!.startsWith('https://')
+                              ? Image.network(
+                                  word.imagePath!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Center(
+                                    child: Icon(Icons.image_rounded, size: 48, color: AppColors.storyColor),
+                                  ),
+                                )
+                              : Image.asset(
+                                  word.imagePath!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Center(
+                                    child: Icon(Icons.image_rounded, size: 48, color: AppColors.storyColor),
+                                  ),
+                                ))
+                          : const Center(
+                              child: Icon(Icons.image_rounded, size: 48, color: AppColors.storyColor),
+                            ),
                     ),
-                    child: word.imagePath != null && word.imagePath!.isNotEmpty
-                        ? (word.imagePath!.startsWith('http://') || word.imagePath!.startsWith('https://')
-                            ? Image.network(
-                                word.imagePath!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => const Center(
-                                  child: Icon(Icons.image_rounded, size: 48, color: AppColors.storyColor),
-                                ),
-                              )
-                            : Image.asset(
-                                word.imagePath!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => const Center(
-                                  child: Icon(Icons.image_rounded, size: 48, color: AppColors.storyColor),
-                                ),
-                              ))
-                        : const Center(
-                            child: Icon(Icons.image_rounded, size: 48, color: AppColors.storyColor),
-                          ),
                   ),
                 ),
                 const SizedBox(height: 14),
 
-                // Meaning & explanation in Tamil
+                // Meaning & explanation in Tamil (Tappable for audio!)
                 if (word.meaning != null && word.meaning!.isNotEmpty) ...[
-                  Text(
-                    word.meaning!,
-                    style: AppTextStyles.bodyTextBold.copyWith(
-                      fontSize: 15,
-                      color: AppColors.textDark,
+                  GestureDetector(
+                    onTap: () => _audioService.playTamilAudio(word.meaning ?? word.displayLabel),
+                    child: Text(
+                      word.meaning!,
+                      style: AppTextStyles.bodyTextBold.copyWith(
+                        fontSize: 15,
+                        color: AppColors.textDark,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
                 ],
 
                 // Sound pronunciation button
                 BouncyButton(
-                  onPressed: () => TamilTtsService.speak(word.displayLabel),
+                  onPressed: () => _audioService.playTamilAudio(word.displayLabel, fallbackTamilText: word.word),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(

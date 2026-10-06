@@ -240,64 +240,87 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> with SingleTickerProvid
                         } else if (isSelected) {
                           bgColor = const Color(0xFFFFE5E5);
                           borderColor = AppColors.playfulPink;
-                          textColor = const Color(0xFF9D0208);
                         }
                       }
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: BouncyButton(
-                          onPressed: _hasAnswered ? null : () => _onAnswerTap(idx),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                            decoration: BoxDecoration(
-                              color: bgColor,
-                              borderRadius: BorderRadius.circular(22),
-                              border: Border.all(color: borderColor, width: 2.2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: borderColor.withValues(alpha: 0.15),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 34,
-                                  height: 34,
-                                  decoration: BoxDecoration(
-                                    color: borderColor.withValues(alpha: 0.2),
-                                    shape: BoxShape.circle,
+                        child: Material(
+                          color: bgColor,
+                          borderRadius: BorderRadius.circular(22),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(22),
+                            onTap: _hasAnswered ? null : () => _onAnswerTap(idx),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(22),
+                                border: Border.all(color: borderColor, width: 2.2),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: borderColor.withValues(alpha: 0.12),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
                                   ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '${idx + 1}',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor,
-                                      fontSize: 15,
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 34,
+                                    height: 34,
+                                    decoration: BoxDecoration(
+                                      color: borderColor.withValues(alpha: 0.2),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '${idx + 1}',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: textColor,
+                                        fontSize: 15,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Text(
-                                    option,
-                                    style: AppTextStyles.cardTitle.copyWith(
-                                      fontSize: 17,
-                                      color: textColor,
-                                      fontWeight: FontWeight.w800,
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Text(
+                                      option,
+                                      style: AppTextStyles.cardTitle.copyWith(
+                                        fontSize: 18,
+                                        color: textColor,
+                                        fontWeight: FontWeight.w800,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                if (_hasAnswered && isThisCorrect)
-                                  const Icon(Icons.check_circle_rounded, color: AppColors.mintGreen, size: 26),
-                                if (_hasAnswered && isSelected && !isThisCorrect)
-                                  const Icon(Icons.cancel_rounded, color: AppColors.playfulPink, size: 26),
-                              ],
+                                  const SizedBox(width: 8),
+                                  // Kid-friendly audio speaker button to hear option pronunciation
+                                  AudioButton(
+                                    letter: option,
+                                    word: option,
+                                    size: 38,
+                                    color: _hasAnswered
+                                        ? (isThisCorrect
+                                            ? AppColors.mintGreen
+                                            : (isSelected
+                                                ? AppColors.playfulPink
+                                                : const Color(0xFFFF9800).withValues(alpha: 0.15)))
+                                        : const Color(0xFFFF9800).withValues(alpha: 0.15),
+                                    iconColor: _hasAnswered
+                                        ? (isThisCorrect || isSelected ? Colors.white : const Color(0xFFE65100))
+                                        : const Color(0xFFE65100),
+                                  ),
+                                  if (_hasAnswered && isThisCorrect) ...[
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.check_circle_rounded, color: AppColors.mintGreen, size: 28),
+                                  ] else if (_hasAnswered && isSelected && !isThisCorrect) ...[
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.cancel_rounded, color: AppColors.playfulPink, size: 28),
+                                  ],
+                                ],
+                              ),
                             ),
                           ),
                         ),

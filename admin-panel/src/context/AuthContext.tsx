@@ -17,8 +17,33 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const normalizeAdmin = (data: any): AdminUser | null => {
+  if (!data) return null;
+  const fullName = data.fullName || data.full_name || data.username || 'Admin';
+  return {
+    ...data,
+    id: data.id,
+    username: data.username || data.email || 'admin',
+    email: data.email || '',
+    fullName: fullName,
+    full_name: fullName,
+    role: data.role || 'content_admin',
+    is_active: data.is_active !== undefined ? data.is_active : true,
+  };
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [admin, setAdmin] = useState<AdminUser | null>(null);
+  const [admin, setAdmin] = useState<AdminUser | null>(() => {
+    const savedUser = localStorage.getItem('agaram_admin_user');
+    if (savedUser) {
+      try {
+        return normalizeAdmin(JSON.parse(savedUser));
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
   const [token, setToken] = useState<string | null>(localStorage.getItem('agaram_admin_token'));
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -32,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setToken(savedToken);
         if (savedUser) {
           try {
-            setAdmin(JSON.parse(savedUser));
+            setAdmin(normalizeAdmin(JSON.parse(savedUser)));
           } catch {
             // ignore
           }
@@ -41,8 +66,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const res = await authApi.getProfile();
           if (res.success && res.data) {
-            setAdmin(res.data);
-            localStorage.setItem('agaram_admin_user', JSON.stringify(res.data));
+            const normalized = normalizeAdmin(res.data);
+            setAdmin(normalized);
+            localStorage.setItem('agaram_admin_user', JSON.stringify(normalized));
           }
         } catch {
           // Token expired or invalid
@@ -58,10 +84,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (credentials: { username: string; password: string }) => {
     const res = await authApi.login(credentials);
     if (res.success && res.data) {
+      const normalized = normalizeAdmin(res.data.admin);
       setToken(res.data.token);
-      setAdmin(res.data.admin);
+      setAdmin(normalized);
       localStorage.setItem('agaram_admin_token', res.data.token);
-      localStorage.setItem('agaram_admin_user', JSON.stringify(res.data.admin));
+      localStorage.setItem('agaram_admin_user', JSON.stringify(normalized));
     } else {
       throw new Error(res.message || 'Login failed');
     }
@@ -78,8 +105,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await authApi.getProfile();
       if (res.success && res.data) {
-        setAdmin(res.data);
-        localStorage.setItem('agaram_admin_user', JSON.stringify(res.data));
+        const normalized = normalizeAdmin(res.data);
+        setAdmin(normalized);
+        localStorage.setItem('agaram_admin_user', JSON.stringify(normalized));
       }
     } catch {
       // ignore

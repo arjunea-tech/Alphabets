@@ -174,6 +174,10 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
     });
 
     setState(() {});
+
+    if (!_isSoundMuted) {
+      AudioService.instance.playTamilAudio(_currentPuzzle.word);
+    }
   }
 
   // Handle tile tap
@@ -199,13 +203,14 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
         _onWordCompleted();
       }
     } else {
-      // WRONG SELECTION - GENTLE SHAKE FEEDBACK
+      // WRONG SELECTION - GENTLE SHAKE FEEDBACK + LETTER AUDIO
       setState(() {
         _shakingTileId = tile.id;
       });
       _shakeController.forward(from: 0.0);
 
       if (!_isSoundMuted) {
+        AudioService.instance.playTamilAudio(tile.component);
         AudioService.instance.playRetryFeedback(context);
       }
     }

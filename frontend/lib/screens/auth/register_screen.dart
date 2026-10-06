@@ -468,12 +468,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       children: [
         Icon(icon, size: 16, color: AppColors.primary),
         const SizedBox(width: 6),
-        Text(
-          label,
-          style: GoogleFonts.catamaran(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textDark,
+        Expanded(
+          child: Text(
+            label,
+            style: GoogleFonts.catamaran(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textDark,
+            ),
           ),
         ),
       ],

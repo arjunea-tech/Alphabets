@@ -100,10 +100,18 @@ export const Sidebar: React.FC = () => {
 
       {/* Footer Info */}
       <div className="sidebar-footer">
-        <span className="sidebar-footer-version">AGARAM v1.0.0</span>
-        <span className="sidebar-footer-role">
-          {admin?.role === 'super_admin' ? t('role_super_admin') : t('role_content_admin')}
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '3px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '13px', color: 'var(--text-main)' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', flexShrink: 0 }}></span>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={admin?.fullName || admin?.username || 'Admin'}>
+              {admin?.fullName || admin?.full_name || admin?.username || 'Admin'}
+            </span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>
+            <span>{admin?.role === 'super_admin' ? t('role_super_admin') : t('role_content_admin')}</span>
+            <span className="sidebar-footer-version">v1.0.0</span>
+          </div>
+        </div>
       </div>
     </aside>
   );

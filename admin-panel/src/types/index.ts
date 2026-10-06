@@ -10,12 +10,15 @@ export interface ApiResponse<T = any> {
 }
 
 export interface AdminUser {
-  id: number;
+  id: number | string;
   username: string;
   email: string;
-  fullName: string;
+  fullName?: string;
+  full_name?: string;
   role: 'super_admin' | 'content_admin';
   is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface DashboardStats {
@@ -202,6 +205,10 @@ export interface ChildUser {
   avatar_asset: string;
   total_stars: number;
   is_active: boolean | number;
+  total_quizzes_taken?: number;
+  total_completed_items?: number;
+  current_streak?: number;
+  highest_streak?: number;
   created_at: string;
   updated_at: string;
 }

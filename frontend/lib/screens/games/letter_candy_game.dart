@@ -324,6 +324,9 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
     final tapped = _board[r][c];
     if (tapped == null) return;
 
+    // Play letter sound immediately when tapped
+    _playLetterAudio(tapped);
+
     if (_selectedTile == null) {
       setState(() {
         _selectedTile = tapped;
@@ -355,6 +358,10 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
   // Handle swipe gestures
   void _onPanStart(DragStartDetails details, int r, int c) {
     if (_isProcessing || _gameState != 'playing') return;
+    final tile = _board[r][c];
+    if (tile != null) {
+      _playLetterAudio(tile);
+    }
     _dragRow = r;
     _dragCol = c;
     _dragDelta = Offset.zero;

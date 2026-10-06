@@ -483,11 +483,23 @@ class _AgaramRunGameState extends State<AgaramRunGame>
             // Record letter learning progress
             widget.progressService?.markLetterCompleted(item.letterModel!.id);
 
-            // Advance target letter
+            // Advance target letter and pronounce next letter
             _currentTargetLetterIdx++;
+            Future.delayed(const Duration(milliseconds: 650), () {
+              if (mounted && _gameState == 'playing') {
+                _playTargetLetterPronunciation();
+              }
+            });
           } else {
-            // Wrong Letter Touched (Friendly gentle feedback)
+            // Wrong Letter Touched (Friendly gentle feedback + letter audio)
             _showToast('இது "$letter" - இலக்கு: "$target" 😊', const Color(0xFFFF8A65));
+            _audioService.playLetterSound(
+              context,
+              letter: item.letter,
+              word: item.word,
+              audioPath: item.audioPath,
+              showIndicator: false,
+            );
             _audioService.playRetryFeedback(context);
             _emitSparkles(item.x, item.y, const Color(0xFFFF8A65));
           }

@@ -4,6 +4,7 @@ import { dashboardApi } from '../api/dashboard';
 import { DashboardStats } from '../types';
 import { StatCard } from '../components/common/StatCard';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import {
   Users,
   GraduationCap,
@@ -23,6 +24,7 @@ export const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { t, language } = useLanguage();
+  const { admin } = useAuth();
 
   useEffect(() => {
     fetchStats();
@@ -64,6 +66,8 @@ export const DashboardPage: React.FC = () => {
 
   const s = stats?.summary;
   const locale = language === 'ta' ? 'ta-IN' : 'en-US';
+  const adminDisplayName = admin?.fullName || admin?.full_name || admin?.username || (language === 'ta' ? 'நிர்வாகி' : 'Administrator');
+  const welcomeGreeting = language === 'ta' ? `வணக்கம், ${adminDisplayName}! 👋` : `Welcome, ${adminDisplayName}! 👋`;
 
   return (
     <div>
@@ -85,7 +89,7 @@ export const DashboardPage: React.FC = () => {
       >
         <div>
           <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>
-            {t('dash_welcome_title')}
+            {welcomeGreeting}
           </h2>
           <p style={{ color: '#CBD5E1', fontSize: '14px' }}>
             {t('dash_welcome_desc')}

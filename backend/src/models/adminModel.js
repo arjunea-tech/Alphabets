@@ -20,6 +20,14 @@ class AdminModel {
     return rows[0] || null;
   }
 
+  static async findByUsernameOrEmail(identifier) {
+    const [rows] = await pool.query(
+      'SELECT * FROM admins WHERE username = ? OR email = ? LIMIT 1',
+      [identifier, identifier]
+    );
+    return rows[0] || null;
+  }
+
   static async findById(id) {
     const [rows] = await pool.query(
       'SELECT id, username, email, role, full_name, is_active, created_at, updated_at FROM admins WHERE id = ? LIMIT 1',

@@ -354,9 +354,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         ),
-                        child: RichText(
-                          textAlign: TextAlign.center,
-                          text: TextSpan(
+                        child: Text.rich(
+                          TextSpan(
                             text: 'கணக்கு இல்லையா? ',
                             style: GoogleFonts.catamaran(
                               fontSize: 15,
@@ -375,6 +374,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ],
                           ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),

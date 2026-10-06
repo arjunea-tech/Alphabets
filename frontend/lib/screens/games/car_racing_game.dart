@@ -369,7 +369,11 @@ class CarRacingGameState extends State<CarRacingGame>
     _spawnConfetti(hitX, hitY);
 
     _audioService.playSuccessFeedback(context);
-    _audioService.speakText(item.text);
+    _audioService.playLetterSound(
+      context,
+      letter: item.text,
+      showIndicator: false,
+    );
 
     const praises = ['சூப்பர்!', 'அருமை!', 'சபாஷ்!', 'அற்புதம்!'];
     _showFeedback(praises[_rng.nextInt(praises.length)], AppColors.mintGreen);
@@ -383,6 +387,11 @@ class CarRacingGameState extends State<CarRacingGame>
 
   void _handleWrongCatch(RacingRoadItem item) {
     _carShakeController.forward(from: 0.0);
+    _audioService.playLetterSound(
+      context,
+      letter: item.text,
+      showIndicator: false,
+    );
     _audioService.playRetryFeedback(context);
     _showFeedback('மீண்டும் முயற்சி செய்!', AppColors.playfulPink);
   }

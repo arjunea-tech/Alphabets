@@ -12,6 +12,9 @@ export const Header: React.FC<HeaderProps> = ({ title }) => {
   const { language, setLanguage, t } = useLanguage();
 
   const displayTitle = title || t('app_subtitle');
+  const displayName = admin?.fullName || admin?.full_name || admin?.username || t('header_admin');
+  const usernameTag = admin?.username ? `@${admin.username}` : '';
+  const avatarLetter = (displayName || admin?.username || 'A').trim().charAt(0).toUpperCase();
 
   return (
     <header className="top-header">
@@ -37,17 +40,20 @@ export const Header: React.FC<HeaderProps> = ({ title }) => {
         </div>
 
         {/* Admin Info Chip */}
-        <div className="admin-chip">
+        <div className="admin-chip" title={`${displayName} ${usernameTag}`}>
           <div className="admin-avatar-bubble">
-            {admin?.fullName?.charAt(0) || 'A'}
+            {avatarLetter}
           </div>
           <div className="admin-info-text">
             <div className="admin-name">
-              {admin?.fullName || t('header_admin')}
+              {displayName}
             </div>
             <div className="admin-role-badge">
               <ShieldCheck size={12} color="var(--primary)" />
-              <span>{admin?.role === 'super_admin' ? t('role_super_admin') : t('role_content_admin')}</span>
+              <span>
+                {usernameTag ? `${usernameTag} • ` : ''}
+                {admin?.role === 'super_admin' ? t('role_super_admin') : t('role_content_admin')}
+              </span>
             </div>
           </div>
         </div>

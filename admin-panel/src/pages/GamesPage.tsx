@@ -2,8 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { gamesApi } from '../api/games';
 import { GameItem } from '../types';
 import { Modal } from '../components/common/Modal';
+import { FileUpload } from '../components/common/FileUpload';
 import { useLanguage } from '../context/LanguageContext';
-import { Plus, Edit2, Trash2, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle2, XCircle, Loader2, Gamepad2, Image as ImageIcon } from 'lucide-react';
+
+const GAME_TYPE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  runner: { label: 'அகரம் ஓட்டம் (2D Runner)', color: '#16A34A', bg: '#DCFCE7' },
+  candy: { label: 'எழுத்து மிட்டாய் (Match-3)', color: '#DB2777', bg: '#FCE7F3' },
+  fishing: { label: 'எழுத்து மீன்பிடி (Fishing)', color: '#0284C7', bg: '#E0F2FE' },
+  basket: { label: 'எழுத்துக் கூடை (Basket)', color: '#D97706', bg: '#FEF3C7' },
+  racing: { label: 'கார் பந்தயம் (Car Racing)', color: '#2563EB', bg: '#DBEAFE' },
+  puzzle: { label: 'சொல் புதிர் (Word Puzzle)', color: '#7C3AED', bg: '#EDE9FE' },
+  balloon: { label: 'பலூன் வெடிப்பு (Balloon Pop)', color: '#DC2626', bg: '#FEE2E2' },
+  matching: { label: 'பொருத்துதல் (Matching)', color: '#4B5563', bg: '#F3F4F6' },
+};
 
 export const GamesPage: React.FC = () => {
   const { t } = useLanguage();
@@ -13,6 +25,7 @@ export const GamesPage: React.FC = () => {
   const [currentGame, setCurrentGame] = useState<Partial<GameItem> | null>(null);
   const [optionsStr, setOptionsStr] = useState('அ, ஆ, இ, ஈ');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState<string>('all');
 
   useEffect(() => {
     fetchGames();
@@ -34,10 +47,11 @@ export const GamesPage: React.FC = () => {
 
   const handleOpenAdd = () => {
     setCurrentGame({
-      game_type: 'puzzle',
+      game_type: 'runner',
       title: '',
       prompt: '',
       clue: '',
+      clue_image: '',
       correct_index: 0,
       options: ['அ', 'ஆ', 'இ', 'ஈ'],
       success_praise: 'சூப்பர்! ⭐',
@@ -103,6 +117,17 @@ export const GamesPage: React.FC = () => {
     }
   };
 
+  const filteredGames = selectedFilter === 'all'
+    ? games
+    : games.filter((g) => g.game_type === selectedFilter);
+
+  const getMediaUrl = (path?: string | null) => {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const clean = path.startsWith('/') ? path.slice(1) : path;
+    return `http://localhost:5000/${clean}`;
+  };
+
   return (
     <div>
       <div className="page-header">
@@ -116,11 +141,39 @@ export const GamesPage: React.FC = () => {
         </button>
       </div>
 
+      {/* Filter Tabs */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+        <button
+          onClick={() => setSelectedFilter('all')}
+          className={`btn btn-sm ${selectedFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          அனைத்தும் ({games.length})
+        </button>
+        {Object.entries(GAME_TYPE_LABELS).map(([key, info]) => {
+          const count = games.filter((g) => g.game_type === key).length;
+          if (count === 0 && selectedFilter !== key) return null;
+          return (
+            <button
+              key={key}
+              onClick={() => setSelectedFilter(key)}
+              className={`btn btn-sm ${selectedFilter === key ? 'btn-primary' : 'btn-secondary'}`}
+              style={{
+                borderColor: selectedFilter === key ? undefined : info.color,
+                color: selectedFilter === key ? undefined : info.color,
+              }}
+            >
+              {info.label.split(' ')[0]} ({count})
+            </button>
+          );
+        })}
+      </div>
+
       <div className="table-wrapper">
         <table>
           <thead>
             <tr>
-              <th style={{ width: '60px' }}>{t('games.order')}</th>
+              <th style={{ width: '50px' }}>{t('games.order')}</th>
+              <th style={{ width: '60px' }}>படம் (Image)</th>
               <th>{t('games.gameType')}</th>
               <th>{t('games.title')}</th>
               <th>{t('games.prompt')}</th>
@@ -134,84 +187,146 @@ export const GamesPage: React.FC = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} style={{ textAlign: 'center', padding: '32px' }}>
+                <td colSpan={10} style={{ textAlign: 'center', padding: '32px' }}>
                   <Loader2 className="spin" size={24} style={{ margin: '0 auto', color: 'var(--primary)' }} />
                 </td>
               </tr>
-            ) : games.length === 0 ? (
+            ) : filteredGames.length === 0 ? (
               <tr>
-                <td colSpan={9} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                <td colSpan={10} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
                   {t('common.noData')}
                 </td>
               </tr>
             ) : (
-              games.map((g) => (
-                <tr key={g.id}>
-                  <td style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{g.display_order}</td>
-                  <td>
-                    <span className="badge badge-secondary">{g.game_type.toUpperCase()}</span>
-                  </td>
-                  <td style={{ fontWeight: 700 }}>{g.title}</td>
-                  <td style={{ fontSize: '14px' }}>{g.prompt}</td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                      {Array.isArray(g.options) &&
-                        g.options.map((opt, i) => (
-                          <span
-                            key={i}
-                            style={{
-                              padding: '2px 8px',
-                              background: i === g.correct_index ? '#DCFCE7' : 'var(--bg-muted)',
-                              border: `1px solid ${i === g.correct_index ? '#86EFAC' : 'var(--border-color)'}`,
-                              borderRadius: '4px',
-                              fontSize: '12px',
-                              fontWeight: i === g.correct_index ? 700 : 400,
-                            }}
-                          >
-                            {opt}
-                          </span>
-                        ))}
-                    </div>
-                  </td>
-                  <td style={{ fontWeight: 700, color: 'var(--success)' }}>
-                    {Array.isArray(g.options) ? g.options[g.correct_index] : ''}
-                  </td>
-                  <td style={{ color: '#EAB308', fontWeight: 700 }}>⭐ +{g.stars_reward}</td>
-                  <td>
-                    {g.is_active ? (
-                      <span className="badge badge-success">
-                        <span className="badge-dot" />
-                        {t('common.active')}
+              filteredGames.map((g) => {
+                const typeInfo = GAME_TYPE_LABELS[g.game_type] || {
+                  label: g.game_type,
+                  color: 'var(--text-dark)',
+                  bg: 'var(--bg-muted)',
+                };
+
+                return (
+                  <tr key={g.id}>
+                    <td style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{g.display_order}</td>
+                    <td>
+                      {g.clue_image ? (
+                        <img
+                          src={getMediaUrl(g.clue_image)}
+                          alt=""
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '8px',
+                            objectFit: 'cover',
+                            border: '1px solid var(--border-color)',
+                            background: 'white',
+                          }}
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '8px',
+                            background: typeInfo.bg,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: typeInfo.color,
+                          }}
+                        >
+                          <Gamepad2 size={20} />
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      <span
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          color: typeInfo.color,
+                          background: typeInfo.bg,
+                          border: `1px solid ${typeInfo.color}33`,
+                          display: 'inline-block',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {typeInfo.label}
                       </span>
-                    ) : (
-                      <span className="badge badge-danger">
-                        <span className="badge-dot" />
-                        {t('common.inactive')}
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div className="action-btn-group">
-                      <button onClick={() => handleOpenEdit(g)} className="btn btn-secondary btn-icon" title={t('common.edit')}>
-                        <Edit2 size={14} />
-                      </button>
-                      <button onClick={() => handleDelete(g.id)} className="btn btn-danger btn-icon" title={t('common.delete')}>
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 700, color: 'var(--text-dark)' }}>{g.title}</div>
+                      {g.clue && (
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{g.clue}</div>
+                      )}
+                    </td>
+                    <td style={{ fontSize: '14px', maxWidth: '220px' }}>{g.prompt}</td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                        {Array.isArray(g.options) &&
+                          g.options.map((opt, i) => (
+                            <span
+                              key={i}
+                              style={{
+                                padding: '2px 8px',
+                                background: i === g.correct_index ? '#DCFCE7' : 'var(--bg-muted)',
+                                border: `1px solid ${i === g.correct_index ? '#86EFAC' : 'var(--border-color)'}`,
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                fontWeight: i === g.correct_index ? 700 : 400,
+                              }}
+                            >
+                              {opt}
+                            </span>
+                          ))}
+                      </div>
+                    </td>
+                    <td style={{ fontWeight: 700, color: 'var(--success)' }}>
+                      {Array.isArray(g.options) ? g.options[g.correct_index] : ''}
+                    </td>
+                    <td style={{ color: '#EAB308', fontWeight: 700 }}>⭐ +{g.stars_reward}</td>
+                    <td>
+                      {g.is_active ? (
+                        <span className="badge badge-success">
+                          <span className="badge-dot" />
+                          {t('common.active')}
+                        </span>
+                      ) : (
+                        <span className="badge badge-danger">
+                          <span className="badge-dot" />
+                          {t('common.inactive')}
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div className="action-btn-group">
+                        <button onClick={() => handleOpenEdit(g)} className="btn btn-secondary btn-icon" title={t('common.edit')}>
+                          <Edit2 size={14} />
+                        </button>
+                        <button onClick={() => handleDelete(g.id)} className="btn btn-danger btn-icon" title={t('common.delete')}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
 
-      {/* Game Modal */}
+      {/* Game Add / Edit Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={currentGame?.id ? t('games.editGame') : t('games.addGame')}
+        maxWidth="680px"
       >
         <form onSubmit={handleSave}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -219,12 +334,17 @@ export const GamesPage: React.FC = () => {
               <label className="form-label">{t('games.gameType')}</label>
               <select
                 className="form-control"
-                value={currentGame?.game_type || 'puzzle'}
+                value={currentGame?.game_type || 'runner'}
                 onChange={(e) => setCurrentGame({ ...currentGame, game_type: e.target.value })}
               >
-                <option value="puzzle">எழுத்துப் புதிர் (Puzzle)</option>
-                <option value="balloon">பலூன் வெடிப்பு (Balloon Pop)</option>
-                <option value="matching">பொருத்துதல் (Matching)</option>
+                <option value="runner">🏃 அகரம் ஓட்டம் (2D Runner Game)</option>
+                <option value="candy">🍬 எழுத்து மிட்டாய் (Match-3 Candy)</option>
+                <option value="fishing">🎣 எழுத்து மீன்பிடி (Letter Fishing)</option>
+                <option value="basket">🧺 எழுத்துக் கூடை (Letter Basket)</option>
+                <option value="racing">🚗 சொல் கார் பந்தயம் (Car Racing)</option>
+                <option value="puzzle">🧩 சொல் புதிர் (Word Puzzle)</option>
+                <option value="balloon">🎈 பலூன் வெடிப்பு (Balloon Pop)</option>
+                <option value="matching">🔄 பொருத்துதல் (Matching)</option>
               </select>
             </div>
             <div className="form-group">
@@ -232,7 +352,7 @@ export const GamesPage: React.FC = () => {
               <input
                 type="text"
                 className="form-control"
-                placeholder="e.g. எழுத்துப் புதிர் 1"
+                placeholder="e.g. அகரம் ஓட்டம்"
                 value={currentGame?.title || ''}
                 onChange={(e) => setCurrentGame({ ...currentGame, title: e.target.value })}
                 required
@@ -245,10 +365,42 @@ export const GamesPage: React.FC = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. அம்மா சொல்லின் முதல் எழுத்தைத் தொடுக!"
+              placeholder="e.g. ஓடி விளையாடி தமிழ் எழுத்துகளை சேகரிக்கவும்!"
               value={currentGame?.prompt || ''}
               onChange={(e) => setCurrentGame({ ...currentGame, prompt: e.target.value })}
               required
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="form-group">
+              <label className="form-label">விளையாட்டு குறிப்பு / விளக்கம் (Clue / Subtitle)</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. 2D ஓட்டப் பந்தய விளையாட்டு"
+                value={currentGame?.clue || ''}
+                onChange={(e) => setCurrentGame({ ...currentGame, clue: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">{t('games.order')}</label>
+              <input
+                type="number"
+                className="form-control"
+                value={currentGame?.display_order || 1}
+                onChange={(e) => setCurrentGame({ ...currentGame, display_order: parseInt(e.target.value, 10) })}
+              />
+            </div>
+          </div>
+
+          {/* Game Thumbnail / Clue Image Upload */}
+          <div className="form-group">
+            <FileUpload
+              type="image"
+              label="விளையாட்டு படம் / முன்னோட்டம் (Game Clue Image / Thumbnail)"
+              currentValue={currentGame?.clue_image}
+              onUploaded={(path) => setCurrentGame({ ...currentGame, clue_image: path })}
             />
           </div>
 
@@ -292,15 +444,28 @@ export const GamesPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">{t('games.successPraise')}</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="அற்புதம்! ⭐"
-              value={currentGame?.success_praise || 'சூப்பர்! ⭐'}
-              onChange={(e) => setCurrentGame({ ...currentGame, success_praise: e.target.value })}
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+            <div className="form-group">
+              <label className="form-label">{t('games.successPraise')}</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="அற்புதம்! ⭐"
+                value={currentGame?.success_praise || 'சூப்பர்! ⭐'}
+                onChange={(e) => setCurrentGame({ ...currentGame, success_praise: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">{t('games.status')}</label>
+              <select
+                className="form-control"
+                value={currentGame?.is_active ? 'true' : 'false'}
+                onChange={(e) => setCurrentGame({ ...currentGame, is_active: e.target.value === 'true' })}
+              >
+                <option value="true">{t('common.active')}</option>
+                <option value="false">{t('common.inactive')}</option>
+              </select>
+            </div>
           </div>
 
           <div className="modal-footer" style={{ margin: '20px -24px -24px', padding: '16px 24px' }}>

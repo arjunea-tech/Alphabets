@@ -16,6 +16,11 @@ router.get('/stats', DashboardController.getStats);
 // List all child user profiles
 router.get('/users', DashboardController.listUsers);
 
+// Create, update, delete student users
+router.post('/users', DashboardController.createUser);
+router.put('/users/:id', DashboardController.updateUser);
+router.delete('/users/:id', DashboardController.deleteUser);
+
 // List all quiz submissions
 router.get('/quiz-results', DashboardController.listQuizResults);
 
