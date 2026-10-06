@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/quiz_data.dart';
 import '../../models/quiz_model.dart';
+import '../../services/audio_service.dart';
 import '../../services/progress_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -152,6 +153,7 @@ class QuizScreen extends StatelessWidget {
   Widget _buildCategoryCard(BuildContext context, QuizCategory category) {
     return BouncyButton(
       onPressed: () {
+        AudioService.instance.playTamilAudio(category.title);
         final questions = tamilQuizQuestionsMap[category.id] ?? [];
         if (questions.isNotEmpty) {
           Navigator.push(
@@ -201,12 +203,34 @@ class QuizScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    category.title,
-                    style: AppTextStyles.cardTitle.copyWith(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          category.title,
+                          style: AppTextStyles.cardTitle.copyWith(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => AudioService.instance.playTamilAudio(category.title),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryLight.withValues(alpha: 0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.volume_up_rounded,
+                            size: 18,
+                            color: AppColors.primaryDark,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text(

@@ -84,6 +84,7 @@ flutter:
     - assets/audio/tamil/sentences/
     - assets/audio/tamil/stories/
     - assets/audio/tamil/lessons/
+    - assets/audio/tamil/quizzes/
     - assets/ml/
 
   # An image asset can refer to one or more resolution-specific "variants", see

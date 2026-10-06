@@ -220,6 +220,125 @@ class TamilAudioService {
       map[entry.key] = entry.value;
     }
 
+    // Quiz Questions, Options, and Category Titles
+    const quizMappings = <String, String>{
+      // Category Titles
+      'உயிர் எழுத்துகள்': 'assets/audio/tamil/quizzes/cat_uyir.mp3',
+      'மெய் எழுத்துகள்': 'assets/audio/tamil/quizzes/cat_mei.mp3',
+      'ஆய்த எழுத்து': 'assets/audio/tamil/quizzes/cat_aytham.mp3',
+      'உயிர்மெய் எழுத்துகள்': 'assets/audio/tamil/quizzes/cat_uyirmei.mp3',
+      'வாசிப்பு வினாடி வினா': 'assets/audio/tamil/quizzes/cat_reading.mp3',
+
+      // Uyir Questions
+      'தமிழ் உயிர் எழுத்துகள் மொத்தம் எத்தனை?': 'assets/audio/tamil/quizzes/quiz_uyir_1.mp3',
+      '"அ" எழுத்தில் தொடங்கும் சொல் எது?': 'assets/audio/tamil/quizzes/quiz_uyir_2.mp3',
+      'அ எழுத்தில் தொடங்கும் சொல் எது?': 'assets/audio/tamil/quizzes/quiz_uyir_2.mp3',
+      'இவற்றுள் நெடில் எழுத்து எது?': 'assets/audio/tamil/quizzes/quiz_uyir_3.mp3',
+      'கடைசி உயிர் எழுத்து எது?': 'assets/audio/tamil/quizzes/quiz_uyir_4.mp3',
+
+      // Mei Questions
+      'தமிழ் மெய் எழுத்துகள் மொத்தம் எத்தனை?': 'assets/audio/tamil/quizzes/quiz_mei_1.mp3',
+      'மெய் எழுத்துகளை எவ்வாறு அடையாளம் காணலாம்?': 'assets/audio/tamil/quizzes/quiz_mei_2.mp3',
+      '"கண்" என்ற சொல்லில் உள்ள மெய் எழுத்து எது?': 'assets/audio/tamil/quizzes/quiz_mei_3.mp3',
+      'கண் என்ற சொல்லில் உள்ள மெய் எழுத்து எது?': 'assets/audio/tamil/quizzes/quiz_mei_3.mp3',
+      'தமிழ் மொழிக்கே உரிய சிறப்பு மெய் எழுத்து எது?': 'assets/audio/tamil/quizzes/quiz_mei_4.mp3',
+
+      // Aytham Questions
+      'ஆய்த எழுத்து எது?': 'assets/audio/tamil/quizzes/quiz_aytham_1.mp3',
+      'ஆய்த எழுத்தில் எத்தனை புள்ளிகள் உள்ளன?': 'assets/audio/tamil/quizzes/quiz_aytham_2.mp3',
+      'ஆய்த எழுத்து இடம்பெறும் சொல் எது?': 'assets/audio/tamil/quizzes/quiz_aytham_3.mp3',
+
+      // Uyirmei Questions (distinct letter enunciation)
+      'க் + அ = என்ன எழுத்து?': 'assets/audio/tamil/quizzes/quiz_uyirmei_1.mp3',
+      'க் கூட்டல் அ என்ன எழுத்து?': 'assets/audio/tamil/quizzes/quiz_uyirmei_1.mp3',
+      'க், கூட்டல், அ, என்ன எழுத்து?': 'assets/audio/tamil/quizzes/quiz_uyirmei_1.mp3',
+      'மொத்த உயிர்மெய் எழுத்துகள் எத்தனை?': 'assets/audio/tamil/quizzes/quiz_uyirmei_2.mp3',
+      'க் + ஆ = என்ன எழுத்து?': 'assets/audio/tamil/quizzes/quiz_uyirmei_3.mp3',
+      'க் கூட்டல் ஆ என்ன எழுத்து?': 'assets/audio/tamil/quizzes/quiz_uyirmei_3.mp3',
+      'க், கூட்டல், ஆ, என்ன எழுத்து?': 'assets/audio/tamil/quizzes/quiz_uyirmei_3.mp3',
+      'ம + அ = என்ன எழுத்து?': 'assets/audio/tamil/quizzes/quiz_uyirmei_4.mp3',
+      'ம் + அ = என்ன எழுத்து?': 'assets/audio/tamil/quizzes/quiz_uyirmei_4.mp3',
+      'ம் கூட்டல் அ என்ன எழுத்து?': 'assets/audio/tamil/quizzes/quiz_uyirmei_4.mp3',
+      'ம், கூட்டல், அ, என்ன எழுத்து?': 'assets/audio/tamil/quizzes/quiz_uyirmei_4.mp3',
+
+      // Reading Questions
+      '"முயலும் ஆமையும்" கதையில் பந்தயத்தில் வென்றது யார்?': 'assets/audio/tamil/quizzes/quiz_reading_1.mp3',
+      'முயலும் ஆமையும் கதையில் பந்தயத்தில் வென்றது யார்?': 'assets/audio/tamil/quizzes/quiz_reading_1.mp3',
+      'முயல் ஏன் பந்தயத்தில் தோற்றது?': 'assets/audio/tamil/quizzes/quiz_reading_2.mp3',
+      'இக்கதை நமக்குக் கற்றுத்தரும் நீதி என்ன?': 'assets/audio/tamil/quizzes/quiz_reading_3.mp3',
+
+      // Quiz Answer Choice Option Audios (Mei Q2)
+      'மேலே புள்ளி இருக்கும்': 'assets/audio/tamil/quizzes/opt_mei_2_1.mp3',
+      'கீழே கோடு இருக்கும்': 'assets/audio/tamil/quizzes/opt_mei_2_2.mp3',
+      'சுழி இருக்கும்': 'assets/audio/tamil/quizzes/opt_mei_2_3.mp3',
+      'வட்டமாக இருக்கும்': 'assets/audio/tamil/quizzes/opt_mei_2_4.mp3',
+
+      // Quiz Answer Choice Option Audios (Reading Q2)
+      'பயந்துவிட்டது': 'assets/audio/tamil/quizzes/opt_reading_2_1.mp3',
+      'தூங்கிவிட்டது': 'assets/audio/tamil/quizzes/opt_reading_2_2.mp3',
+      'வழி தவறியது': 'assets/audio/tamil/quizzes/opt_reading_2_3.mp3',
+      'கால் வலித்தது': 'assets/audio/tamil/quizzes/opt_reading_2_4.mp3',
+
+      // Quiz Answer Choice Option Audios (Reading Q3)
+      'வேகமே சிறந்தது': 'assets/audio/tamil/quizzes/opt_reading_3_1.mp3',
+      'விடாமுயற்சி வெற்றி தரும்': 'assets/audio/tamil/quizzes/opt_reading_3_2.mp3',
+      'தூங்குவது நல்லது': 'assets/audio/tamil/quizzes/opt_reading_3_3.mp3',
+      'பந்தயம் கூடாது': 'assets/audio/tamil/quizzes/opt_reading_3_4.mp3',
+
+      // Quiz Answer Choice Option Audios (Words)
+      'நரி': 'assets/audio/tamil/quizzes/opt_nari.mp3',
+      'மான்': 'assets/audio/tamil/quizzes/opt_maan.mp3',
+      'முயல்': 'assets/audio/tamil/quizzes/opt_muyal.mp3',
+      'ஆமை': 'assets/audio/tamil/quizzes/opt_aamai.mp3',
+
+      // Quiz Answer Choice Option Audios (Numbers)
+      '1': 'assets/audio/tamil/quizzes/opt_num_1.mp3',
+      'ஒன்று': 'assets/audio/tamil/quizzes/opt_num_1.mp3',
+      '2': 'assets/audio/tamil/quizzes/opt_num_2.mp3',
+      'இரண்டு': 'assets/audio/tamil/quizzes/opt_num_2.mp3',
+      '3': 'assets/audio/tamil/quizzes/opt_num_3.mp3',
+      'மூன்று': 'assets/audio/tamil/quizzes/opt_num_3.mp3',
+      '4': 'assets/audio/tamil/quizzes/opt_num_4.mp3',
+      'நான்கு': 'assets/audio/tamil/quizzes/opt_num_4.mp3',
+      '10': 'assets/audio/tamil/quizzes/opt_num_10.mp3',
+      'பத்து': 'assets/audio/tamil/quizzes/opt_num_10.mp3',
+      '12': 'assets/audio/tamil/quizzes/opt_num_12.mp3',
+      'பன்னிரண்டு': 'assets/audio/tamil/quizzes/opt_num_12.mp3',
+      '18': 'assets/audio/tamil/quizzes/opt_num_18.mp3',
+      'பதினெட்டு': 'assets/audio/tamil/quizzes/opt_num_18.mp3',
+      '24': 'assets/audio/tamil/quizzes/opt_num_24.mp3',
+      'இருபத்து நான்கு': 'assets/audio/tamil/quizzes/opt_num_24.mp3',
+      '30': 'assets/audio/tamil/quizzes/opt_num_30.mp3',
+      'முப்பது': 'assets/audio/tamil/quizzes/opt_num_30.mp3',
+      '100': 'assets/audio/tamil/quizzes/opt_num_100.mp3',
+      'நூறு': 'assets/audio/tamil/quizzes/opt_num_100.mp3',
+      '216': 'assets/audio/tamil/quizzes/opt_num_216.mp3',
+      'இருநூற்றுப் பதினாறு': 'assets/audio/tamil/quizzes/opt_num_216.mp3',
+
+      // Question ID shortcuts
+      'qu_1': 'assets/audio/tamil/quizzes/quiz_uyir_1.mp3',
+      'qu_2': 'assets/audio/tamil/quizzes/quiz_uyir_2.mp3',
+      'qu_3': 'assets/audio/tamil/quizzes/quiz_uyir_3.mp3',
+      'qu_4': 'assets/audio/tamil/quizzes/quiz_uyir_4.mp3',
+      'qm_1': 'assets/audio/tamil/quizzes/quiz_mei_1.mp3',
+      'qm_2': 'assets/audio/tamil/quizzes/quiz_mei_2.mp3',
+      'qm_3': 'assets/audio/tamil/quizzes/quiz_mei_3.mp3',
+      'qm_4': 'assets/audio/tamil/quizzes/quiz_mei_4.mp3',
+      'qa_1': 'assets/audio/tamil/quizzes/quiz_aytham_1.mp3',
+      'qa_2': 'assets/audio/tamil/quizzes/quiz_aytham_2.mp3',
+      'qa_3': 'assets/audio/tamil/quizzes/quiz_aytham_3.mp3',
+      'qum_1': 'assets/audio/tamil/quizzes/quiz_uyirmei_1.mp3',
+      'qum_2': 'assets/audio/tamil/quizzes/quiz_uyirmei_2.mp3',
+      'qum_3': 'assets/audio/tamil/quizzes/quiz_uyirmei_3.mp3',
+      'qum_4': 'assets/audio/tamil/quizzes/quiz_uyirmei_4.mp3',
+      'qr_1': 'assets/audio/tamil/quizzes/quiz_reading_1.mp3',
+      'qr_2': 'assets/audio/tamil/quizzes/quiz_reading_2.mp3',
+      'qr_3': 'assets/audio/tamil/quizzes/quiz_reading_3.mp3',
+    };
+    for (final entry in quizMappings.entries) {
+      map[entry.key] = entry.value;
+    }
+
     return map;
   }
 
@@ -453,6 +572,8 @@ class TamilAudioService {
   Future<bool> _fetchAndPlayOnlineAudio(String text) async {
     try {
       final trimmed = text.trim();
+      if (trimmed.isEmpty) return false;
+
       final tempFile = File('${Directory.systemTemp.path}/ta_${trimmed.hashCode}.mp3');
 
       if (await tempFile.exists() && (await tempFile.length()) > 0) {
@@ -462,21 +583,54 @@ class TamilAudioService {
         return true;
       }
 
-      final url = 'https://translate.google.com/translate_tts?ie=UTF-8&q=${Uri.encodeComponent(trimmed)}&tl=ta&client=tw-ob';
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'audio/mpeg, audio/*; q=0.9, */*; q=0.8',
-        },
-      ).timeout(const Duration(seconds: 5));
+      // 1. Try local backend audio synthesis endpoint (ElevenLabs/Node backend)
+      try {
+        final backendUri = Uri.parse('http://localhost:5000/api/v1/audio/synthesize');
+        final backendRes = await http.post(
+          backendUri,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'text': trimmed, 'category': 'sentences'}),
+        ).timeout(const Duration(seconds: 2));
 
-      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
-        await tempFile.writeAsBytes(response.bodyBytes);
-        await player.stop();
-        await player.play(DeviceFileSource(tempFile.path));
-        debugPrint('[TamilAudioService] Saved and playing Tamil speech from: "${tempFile.path}" (${response.bodyBytes.length} bytes)');
-        return true;
+        if (backendRes.statusCode == 200) {
+          final data = jsonDecode(backendRes.body);
+          if (data != null && data['data'] != null && data['data']['audioPath'] != null) {
+            final assetPath = data['data']['audioPath'].toString();
+            if (await isAssetAvailable(assetPath)) {
+              if (await _playAsset(assetPath)) return true;
+            }
+          }
+        }
+      } catch (_) {}
+
+      // 2. Try high quality Google TTS endpoints
+      final urls = [
+        'https://translate.google.com/translate_tts?ie=UTF-8&q=${Uri.encodeComponent(trimmed)}&tl=ta&client=tw-ob',
+        'https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${Uri.encodeComponent(trimmed)}&tl=ta&client=gtx',
+        'https://translate.google.com/translate_tts?ie=UTF-8&q=${Uri.encodeComponent(trimmed)}&tl=ta&client=dict-chrome-ex',
+      ];
+
+      for (final url in urls) {
+        try {
+          final response = await http.get(
+            Uri.parse(url),
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+              'Accept': 'audio/mpeg, audio/*; q=0.9, */*; q=0.8',
+              'Referer': 'https://translate.google.com/',
+            },
+          ).timeout(const Duration(seconds: 4));
+
+          if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+            await tempFile.writeAsBytes(response.bodyBytes);
+            await player.stop();
+            await player.play(DeviceFileSource(tempFile.path));
+            debugPrint('[TamilAudioService] Saved and playing Tamil speech from: "${tempFile.path}" (${response.bodyBytes.length} bytes)');
+            return true;
+          }
+        } catch (e) {
+          debugPrint('[TamilAudioService] URL attempt failed ($url): $e');
+        }
       }
     } catch (e) {
       debugPrint('[TamilAudioService] Online speech stream exception: $e');

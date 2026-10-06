@@ -45,6 +45,15 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> with SingleTickerProvid
       vsync: this,
       duration: const Duration(milliseconds: 350),
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _speakCurrentQuestion();
+    });
+  }
+
+  void _speakCurrentQuestion() {
+    if (!mounted) return;
+    _audioService.stopAll();
+    _audioService.playTamilAudio(_currentQuestion.question);
   }
 
   @override
@@ -58,6 +67,8 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> with SingleTickerProvid
     if (_hasAnswered) return;
 
     final isCorrect = index == _currentQuestion.correctIndex;
+    final selectedOption = _currentQuestion.options[index];
+
     setState(() {
       _selectedAnswerIndex = index;
       _hasAnswered = true;
@@ -68,6 +79,9 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> with SingleTickerProvid
         _audioService.playRetryFeedback(context);
       }
     });
+
+    // Speak selected answer
+    _audioService.playTamilAudio(selectedOption);
 
     _feedbackAnim.forward(from: 0.0);
   }
@@ -80,6 +94,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> with SingleTickerProvid
         _selectedAnswerIndex = null;
         _hasAnswered = false;
       });
+      _speakCurrentQuestion();
     } else {
       final starsEarned = (_score >= widget.questions.length ? 4 : (_score > 0 ? 2 : 1));
       widget.progressService.recordQuizScore(_score, starsEarned);
@@ -193,29 +208,37 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> with SingleTickerProvid
                             animate: true,
                           ),
                           const SizedBox(height: 14),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  q.question,
-                                  style: AppTextStyles.cardTitle.copyWith(
-                                    fontSize: 19,
-                                    color: AppColors.textDark,
-                                    fontWeight: FontWeight.w800,
-                                    height: 1.35,
+                          InkWell(
+                            onTap: _speakCurrentQuestion,
+                            borderRadius: BorderRadius.circular(16),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      q.question,
+                                      style: AppTextStyles.cardTitle.copyWith(
+                                        fontSize: 19,
+                                        color: AppColors.textDark,
+                                        fontWeight: FontWeight.w800,
+                                        height: 1.35,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
                                   ),
-                                  textAlign: TextAlign.center,
-                                ),
+                                  const SizedBox(width: 8),
+                                  AudioButton(
+                                    letter: q.question,
+                                    word: q.question,
+                                    size: 42,
+                                    color: AppColors.primary.withValues(alpha: 0.15),
+                                    iconColor: AppColors.primary,
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 8),
-                              AudioButton(
-                                letter: q.question,
-                                size: 38,
-                                color: AppColors.primary.withValues(alpha: 0.15),
-                                iconColor: AppColors.primary,
-                              ),
-                            ],
+                            ),
                           ),
                         ],
                       ),
@@ -250,7 +273,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> with SingleTickerProvid
                           borderRadius: BorderRadius.circular(22),
                           child: InkWell(
                             borderRadius: BorderRadius.circular(22),
-                            onTap: _hasAnswered ? null : () => _onAnswerTap(idx),
+                            onTap: _hasAnswered ? () => _audioService.playTamilAudio(option) : () => _onAnswerTap(idx),
                             child: Container(
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

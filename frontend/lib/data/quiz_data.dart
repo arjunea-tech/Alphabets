@@ -175,7 +175,7 @@ final Map<String, List<QuizQuestion>> tamilQuizQuestionsMap = {
     const QuizQuestion(
       id: 'qum_4',
       categoryId: 'quiz_uyirmei',
-      question: 'ம + அ = என்ன எழுத்து?',
+      question: 'ம் + அ = என்ன எழுத்து?',
       visualHint: '🌳',
       options: ['மி', 'மா', 'ம', 'மு'],
       correctIndex: 2,

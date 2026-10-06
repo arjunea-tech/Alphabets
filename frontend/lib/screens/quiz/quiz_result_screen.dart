@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../services/audio_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/bouncy_button.dart';
 import '../../widgets/kid_scaffold_background.dart';
 import '../../widgets/mascot_widget.dart';
 
-class QuizResultScreen extends StatelessWidget {
+class QuizResultScreen extends StatefulWidget {
   final int score;
   final int totalQuestions;
   final int starsEarned;
@@ -22,7 +23,30 @@ class QuizResultScreen extends StatelessWidget {
   });
 
   @override
+  State<QuizResultScreen> createState() => _QuizResultScreenState();
+}
+
+class _QuizResultScreenState extends State<QuizResultScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final percentage = (widget.score / widget.totalQuestions);
+      if (percentage >= 0.5) {
+        AudioService.instance.playSuccessFeedback(context);
+        AudioService.instance.playTamilAudio('வாழ்த்துகள்! சூப்பர் வெற்றி!');
+      } else {
+        AudioService.instance.playRetryFeedback(context);
+        AudioService.instance.playTamilAudio('நன்றாக முயற்சி செய்தாய்!');
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final score = widget.score;
+    final totalQuestions = widget.totalQuestions;
+    final starsEarned = widget.starsEarned;
     final percentage = (score / totalQuestions);
     final isAwesome = percentage >= 0.75;
 
@@ -116,7 +140,7 @@ class QuizResultScreen extends StatelessWidget {
 
                     // Retry Button
                     BouncyButton(
-                      onPressed: onRetry,
+                      onPressed: widget.onRetry,
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 15),
@@ -145,7 +169,7 @@ class QuizResultScreen extends StatelessWidget {
 
                     // Home Button
                     BouncyButton(
-                      onPressed: onHome,
+                      onPressed: widget.onHome,
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 15),
