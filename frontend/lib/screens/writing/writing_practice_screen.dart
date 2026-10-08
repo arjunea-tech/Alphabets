@@ -975,8 +975,8 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     Color titleColor;
 
     if (_activeMode == WritingCanvasMode.learn) {
-      bannerTitle = 'கற்றுக்கொள் முறை: விரலால் கோட்டின் மீது எழுதிப் பழகுங்கள்!';
-      bannerSub = 'கோட்டின் மீது விரலை நகர்த்தும்போது எழுத்து அழகாக நிரம்பும்.';
+      bannerTitle = 'கற்றுக்கொள்: ①, ②, ③ வரிசைப்படி அம்புக்குறி வழியே எழுதுங்கள்!';
+      bannerSub = 'எழுதும் முறையைக் காண "எழுதும் முறை ▶" பட்டனை அழுத்தவும்.';
       bannerBg = const Color(0xFFE0F2FE);
       bannerBorder = const Color(0xFF7DD3FC);
       titleColor = const Color(0xFF0369A1);

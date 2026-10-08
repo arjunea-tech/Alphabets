@@ -91,6 +91,18 @@ class TamilHandwritingRecognitionService {
     _status = MLModelStatus.loaded;
   }
 
+  /// Returns the primary reference skeleton for the letter (used for route rendering & demo animation)
+  static LetterSkeleton? getPrimarySkeleton(String letter) {
+    final list = _skeletons[letter];
+    if (list != null && list.isNotEmpty) return list.first;
+    return null;
+  }
+
+  /// Returns all reference skeletons for the letter
+  static List<LetterSkeleton>? getAllSkeletons(String letter) {
+    return _skeletons[letter];
+  }
+
   // Pre-compiled 31 Letter Skeletons & Geometric Constraints (supports multi-variant styles)
   static final Map<String, List<LetterSkeleton>> _skeletons = {
     'அ': const [

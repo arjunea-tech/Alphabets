@@ -1,11 +1,14 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../data/tamil_stroke_data.dart';
 import '../models/handwriting_ml_model.dart';
+import '../models/letter_stroke_model.dart';
 import '../models/writing_practice_model.dart';
+import '../services/audio_service.dart';
 import '../services/tamil_handwriting_recognition_service.dart';
 
 enum WritingCanvasMode {
-  learn, // ✏️ கற்றுக்கொள்: Tracing over faint Unicode letter guide + ML recognition
+  learn, // ✏️ கற்றுக்கொள்: Step-by-step guided tracing + audio announcement + one-time demo + ML recognition
   practice, // 🎯 பயிற்சி: Independent writing + real ML recognition
 }
 
@@ -33,22 +36,76 @@ class WritingCanvas extends StatefulWidget {
   WritingCanvasState createState() => WritingCanvasState();
 }
 
-class WritingCanvasState extends State<WritingCanvas> {
+class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMixin {
   Size _canvasSize = Size.zero;
 
   // Captured handwriting strokes
   final List<List<Offset>> _strokes = [];
   List<Offset> _currentStroke = [];
 
+  // Active step index for progressive step-by-step guidance
+  int _activeStepIndex = 0;
+  int get activeStepIndex {
+    try {
+      final dynamic idx = _activeStepIndex;
+      if (idx is int) return idx;
+    } catch (_) {}
+    return 0;
+  }
+
   // ML Recognition status
   bool _isRecognizing = false;
   bool get isRecognizing => _isRecognizing;
 
+  // Route & Demo Animation
+  AnimationController? _pulseController;
+  AnimationController? _demoController;
+  bool _isDemoActive = false;
+  bool get isDemoActive => _isDemoActive;
+
+  void _initControllers() {
+    _pulseController ??= AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+
+    if (_demoController == null) {
+      _demoController = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 2200),
+      );
+
+      _demoController!.addListener(() {
+        if (mounted && _isDemoActive) setState(() {});
+      });
+
+      _demoController!.addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          // One-time demo completed! Stop cleanly and let the child draw!
+          if (mounted) {
+            setState(() {
+              _isDemoActive = false;
+            });
+          }
+        }
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _activeStepIndex = 0;
+    _initControllers();
     TamilHandwritingRecognitionService.instance.initialize().then((_) {
       if (mounted) setState(() {});
+    });
+
+    // Auto-introduce Step 1 on start
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.mode == WritingCanvasMode.learn) {
+        playCurrentStepDemo();
+      }
     });
   }
 
@@ -56,7 +113,63 @@ class WritingCanvasState extends State<WritingCanvas> {
   void didUpdateWidget(covariant WritingCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.letter != widget.letter || oldWidget.mode != widget.mode) {
+      _activeStepIndex = 0;
       clearCanvas();
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseController?.dispose();
+    _demoController?.dispose();
+    super.dispose();
+  }
+
+  /// Sets the active step, speaks it, and plays the demo one time
+  void setStep(int stepIndex, {bool playDemo = true}) {
+    final letterData = TamilStrokeDataRepository.getLetter(widget.letter);
+    if (stepIndex < 0 || stepIndex >= letterData.strokes.length) return;
+    setState(() {
+      _activeStepIndex = stepIndex;
+    });
+    if (playDemo) {
+      playCurrentStepDemo();
+    }
+  }
+
+  /// Speaks the step instruction and plays the path demo ONE TIME along the active stroke
+  void playCurrentStepDemo() {
+    _initControllers();
+    final letterData = TamilStrokeDataRepository.getLetter(widget.letter);
+    if (letterData.strokes.isEmpty) return;
+
+    final curStep = activeStepIndex;
+    final strokeIndex = curStep.clamp(0, letterData.strokes.length - 1);
+    final stroke = letterData.strokes[strokeIndex];
+
+    // 1. Speak step instruction (Audio Announcement)
+    try {
+      final cleanTitle = stroke.title.replaceAll(RegExp(r'[^\u0B80-\u0BFF0-9a-zA-Z\s:]'), '').trim();
+      final cleanInstruction = stroke.instruction.replaceAll(RegExp(r'[^\u0B80-\u0BFF0-9a-zA-Z\s]'), '').trim();
+      AudioService.instance.playTamilAudio('$cleanTitle. $cleanInstruction');
+    } catch (_) {}
+
+    // 2. Play animated demo ONE TIME along the stroke path
+    if (mounted) {
+      setState(() {
+        _isDemoActive = true;
+      });
+    }
+    _demoController?.duration = const Duration(milliseconds: 2200);
+    _demoController?.forward(from: 0.0);
+  }
+
+  void _stopDemo() {
+    if (_isDemoActive) {
+      setState(() {
+        _isDemoActive = false;
+        _demoController?.stop();
+      });
     }
   }
 
@@ -64,9 +177,17 @@ class WritingCanvasState extends State<WritingCanvas> {
     setState(() {
       _strokes.clear();
       _currentStroke.clear();
+      _activeStepIndex = 0;
+      _isDemoActive = false;
+      _demoController?.stop();
     });
     widget.onStrokeUpdated?.call(0);
     widget.onStrokesChanged?.call([]);
+    if (widget.mode == WritingCanvasMode.learn) {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) playCurrentStepDemo();
+      });
+    }
   }
 
   int get totalPointsDrawn {
@@ -118,8 +239,11 @@ class WritingCanvasState extends State<WritingCanvas> {
     return result;
   }
 
-  // Smooth, lag-free Pointer Events (Listener eliminates gesture arena delays and starting dots)
+  // Smooth, lag-free Pointer Events
   void _onPointerDown(Offset localPos) {
+    if (_isDemoActive) {
+      _stopDemo();
+    }
     setState(() {
       _currentStroke = [localPos];
     });
@@ -136,7 +260,6 @@ class WritingCanvasState extends State<WritingCanvas> {
     final last = _currentStroke.last;
     final dx = localPos.dx - last.dx;
     final dy = localPos.dy - last.dy;
-    // Filter out duplicate sub-pixel jitter
     if ((dx * dx + dy * dy) >= 1.0) {
       setState(() {
         _currentStroke.add(localPos);
@@ -147,8 +270,9 @@ class WritingCanvasState extends State<WritingCanvas> {
   void _onPointerUp(Offset localPos) {
     if (_currentStroke.isEmpty) return;
 
+    final letterData = TamilStrokeDataRepository.getLetter(widget.letter);
+
     setState(() {
-      // If single tap dot (e.g. for pulli or ayutham), add a micro-offset point for solid dot rendering
       if (_currentStroke.length == 1) {
         _currentStroke.add(localPos.translate(0.5, 0.5));
       } else {
@@ -160,6 +284,43 @@ class WritingCanvasState extends State<WritingCanvas> {
 
     widget.onStrokeUpdated?.call(_strokes.length);
     widget.onStrokesChanged?.call(getNormalizedStrokes());
+
+    // In Learn mode: Progressive step-by-step advancement
+    if (widget.mode == WritingCanvasMode.learn && letterData.strokes.isNotEmpty) {
+      final curStep = activeStepIndex;
+      final lastStroke = _strokes.isNotEmpty ? _strokes.last : <Offset>[];
+      double drawnDistance = 0.0;
+      for (int i = 0; i < lastStroke.length - 1; i++) {
+        drawnDistance += (lastStroke[i + 1] - lastStroke[i]).distance;
+      }
+
+      // Advance only if the child made an intentional drawing gesture
+      if (lastStroke.length >= 3 && drawnDistance >= 12.0) {
+        if (curStep < letterData.strokes.length - 1) {
+          // Step finished! Give cheerful audio feedback and advance to next step
+          try {
+            AudioService.instance.playTamilAudio('அருமை!');
+          } catch (_) {}
+
+          Future.delayed(const Duration(milliseconds: 650), () {
+            if (mounted) {
+              setStep(curStep + 1, playDemo: true);
+            }
+          });
+        } else {
+          // Final step finished! All steps completed!
+          try {
+            AudioService.instance.playTamilAudio('அருமை! நீங்கள் ${widget.letter} எழுத்தை அழகாக எழுதி முடித்துவிட்டீர்கள்!');
+          } catch (_) {}
+
+          Future.delayed(const Duration(milliseconds: 600), () {
+            if (mounted) {
+              widget.onLetterCompleted?.call();
+            }
+          });
+        }
+      }
+    }
   }
 
   void _onPointerCancel() {
@@ -175,7 +336,11 @@ class WritingCanvasState extends State<WritingCanvas> {
 
   @override
   Widget build(BuildContext context) {
+    _initControllers();
+    final curStep = activeStepIndex;
+    _activeStepIndex = curStep;
     final isLearn = widget.mode == WritingCanvasMode.learn;
+    final letterData = TamilStrokeDataRepository.getLetter(widget.letter);
 
     return Container(
       decoration: BoxDecoration(
@@ -204,29 +369,30 @@ class WritingCanvasState extends State<WritingCanvas> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             _canvasSize = Size(constraints.maxWidth, constraints.maxHeight);
-            final double letterFontSize = math.min(_canvasSize.width, _canvasSize.height) * 0.65;
 
             return Stack(
               alignment: Alignment.center,
               children: [
-                // 1. Correct Tamil Unicode Font Rendering Guide (Shown only in Learn Mode)
-                if (isLearn)
+                // 1. Progressive Guided Path (Renders ACTIVE STEP ONLY; past steps faint, future steps hidden!)
+                if (isLearn && _pulseController != null && _demoController != null)
                   Positioned.fill(
-                    child: Center(
-                      child: Text(
-                        widget.letter,
-                        style: TextStyle(
-                          fontFamily: 'Catamaran',
-                          fontSize: letterFontSize,
-                          fontWeight: FontWeight.w900,
-                          color: const Color(0xFF3A86FF).withValues(alpha: 0.16),
-                          height: 1.0,
-                        ),
-                      ),
+                    child: AnimatedBuilder(
+                      animation: Listenable.merge([_pulseController!, _demoController!]),
+                      builder: (context, _) {
+                        return CustomPaint(
+                          painter: _LetterPathGuidePainter(
+                            letterData: letterData,
+                            activeStepIndex: curStep,
+                            pulseValue: _pulseController!.value,
+                            demoProgress: _demoController!.value,
+                            isDemoActive: _isDemoActive,
+                          ),
+                        );
+                      },
                     ),
                   ),
 
-                // 2. User Drawn Handwriting Strokes with smooth bezier curves
+                // 2. User Drawn Handwriting Strokes
                 Positioned.fill(
                   child: CustomPaint(
                     painter: _HandwritingStrokesPainter(
@@ -238,7 +404,7 @@ class WritingCanvasState extends State<WritingCanvas> {
                   ),
                 ),
 
-                // 3. Ultra-responsive Pointer Listener for instantaneous, smooth drawing
+                // 3. Pointer Listener for smooth drawing
                 Positioned.fill(
                   child: Listener(
                     behavior: HitTestBehavior.opaque,
@@ -248,6 +414,136 @@ class WritingCanvasState extends State<WritingCanvas> {
                     onPointerCancel: (_) => _onPointerCancel(),
                   ),
                 ),
+
+                // 4. Top Action & Step Pills Bar (Learn Mode)
+                if (isLearn && letterData.strokes.isNotEmpty)
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    right: 10,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Interactive Step Pills: [ ① படி 1 ] [ ② படி 2 ] [ ③ படி 3 ]
+                        Flexible(
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: List.generate(letterData.strokes.length, (sIdx) {
+                                final s = letterData.strokes[sIdx];
+                                final isCur = sIdx == curStep;
+                                final isDone = sIdx < curStep;
+                                return GestureDetector(
+                                  onTap: () => setStep(sIdx, playDemo: true),
+                                  child: Container(
+                                    margin: const EdgeInsets.only(right: 6),
+                                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      color: isCur
+                                          ? const Color(0xFFFF9F1C)
+                                          : (isDone ? const Color(0xFF10B981) : Colors.white.withValues(alpha: 0.9)),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: isCur
+                                            ? const Color(0xFFFF5400)
+                                            : (isDone ? const Color(0xFF059669) : const Color(0xFFCBD5E1)),
+                                        width: 1.5,
+                                      ),
+                                      boxShadow: [
+                                        if (isCur)
+                                          BoxShadow(
+                                            color: const Color(0xFFFF9F1C).withValues(alpha: 0.35),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (isDone)
+                                          const Icon(Icons.check_circle_rounded, size: 14, color: Colors.white)
+                                        else
+                                          Text(
+                                            '${s.strokeNumber}',
+                                            style: TextStyle(
+                                              fontFamily: 'Catamaran',
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w900,
+                                              color: isCur ? Colors.white : const Color(0xFF475569),
+                                            ),
+                                          ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'படி ${s.strokeNumber}',
+                                          style: TextStyle(
+                                            fontFamily: 'Catamaran',
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: (isCur || isDone) ? Colors.white : const Color(0xFF475569),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ),
+                          ),
+                        ),
+
+                        // Demo Play Button: [ ▶ வழிகாட்டல் ]
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: playCurrentStepDemo,
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                              decoration: BoxDecoration(
+                                gradient: _isDemoActive
+                                    ? const LinearGradient(colors: [Color(0xFFFF9F1C), Color(0xFFFF5400)])
+                                    : null,
+                                color: _isDemoActive ? null : Colors.white.withValues(alpha: 0.95),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: _isDemoActive ? const Color(0xFFFF5400) : const Color(0xFF3A86FF),
+                                  width: 1.6,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF3A86FF).withValues(alpha: 0.2),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _isDemoActive ? Icons.pause_circle_filled_rounded : Icons.play_arrow_rounded,
+                                    size: 18,
+                                    color: _isDemoActive ? Colors.white : const Color(0xFF3A86FF),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _isDemoActive ? 'காட்டுகிறது...' : 'வழிகாட்டல் ▶',
+                                    style: TextStyle(
+                                      fontFamily: 'Catamaran',
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w900,
+                                      color: _isDemoActive ? Colors.white : const Color(0xFF3A86FF),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             );
           },
@@ -255,6 +551,401 @@ class WritingCanvasState extends State<WritingCanvas> {
       ),
     );
   }
+}
+
+/// CustomPainter for rendering step-by-step progressive Tamil letter guidance
+class _LetterPathGuidePainter extends CustomPainter {
+  final TamilWritingLetter letterData;
+  final int activeStepIndex;
+  final double pulseValue;
+  final double demoProgress;
+  final bool isDemoActive;
+
+  _LetterPathGuidePainter({
+    required this.letterData,
+    required this.activeStepIndex,
+    required this.pulseValue,
+    required this.demoProgress,
+    required this.isDemoActive,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (letterData.strokes.isEmpty || size.width <= 0 || size.height <= 0) {
+      return;
+    }
+
+    // 1. Maintain 1:1 Aspect Ratio and Center on the Canvas
+    final double boxSide = math.min(size.width, size.height);
+    final double drawSize = boxSide * 0.84;
+    final double offsetX = (size.width - drawSize) / 2;
+    final double offsetY = (size.height - drawSize) / 2;
+
+    Offset toCanvas(Offset p) {
+      return Offset(
+        offsetX + p.dx * drawSize,
+        offsetY + p.dy * drawSize,
+      );
+    }
+
+    // Track width configurations (scaled proportionally with clear loop opening)
+    final double trackBorderWidth = drawSize * 0.086; // ~27px
+    final double trackFillWidth = drawSize * 0.066;   // ~21px
+
+    final int safeStep = letterData.strokes.isNotEmpty
+        ? activeStepIndex.clamp(0, letterData.strokes.length - 1)
+        : 0;
+
+    final dashedPaint = Paint()
+      ..color = const Color(0xFF3A86FF).withValues(alpha: 0.65)
+      ..strokeWidth = 3.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final arrowPaint = Paint()
+      ..color = const Color(0xFF1D4ED8).withValues(alpha: 0.90)
+      ..style = PaintingStyle.fill;
+
+    // --- PHASE 1: Draw the wide hollow tracing tracks (ONLY past and active steps; NEVER future!) ---
+    for (int sIdx = 0; sIdx < letterData.strokes.length; sIdx++) {
+      final stroke = letterData.strokes[sIdx];
+      final isCurrent = sIdx == safeStep;
+
+      // CRITICAL: DO NOT draw future strokes to eliminate confusing overlapping lines!
+      if (sIdx > safeStep) continue;
+
+      final canvasPts = stroke.pathPoints.map(toCanvas).toList();
+      if (canvasPts.isEmpty) continue;
+
+      if (stroke.isDot) {
+        final c = toCanvas(stroke.startPoint);
+        final r = trackBorderWidth * 0.52;
+        final borderCol = isCurrent ? const Color(0xFFC7D9FE) : const Color(0xFFE2E8F0);
+        final fillCol = isCurrent ? const Color(0xFFF1F6FF) : const Color(0xFFF8FAFC);
+        canvas.drawCircle(c, r + 2.5, Paint()..color = borderCol..style = PaintingStyle.fill);
+        canvas.drawCircle(c, r, Paint()..color = fillCol..style = PaintingStyle.fill);
+      } else {
+        final path = _buildPath(canvasPts);
+        final borderPaint = Paint()
+          ..color = isCurrent ? const Color(0xFFC7D9FE) : const Color(0xFFE2E8F0).withValues(alpha: 0.6)
+          ..strokeWidth = isCurrent ? trackBorderWidth : trackBorderWidth * 0.75
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
+
+        final fillPaint = Paint()
+          ..color = isCurrent ? const Color(0xFFF1F6FF) : const Color(0xFFF8FAFC).withValues(alpha: 0.6)
+          ..strokeWidth = isCurrent ? trackFillWidth : trackFillWidth * 0.75
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
+
+        canvas.drawPath(path, borderPaint);
+        canvas.drawPath(path, fillPaint);
+      }
+    }
+
+    // --- PHASE 2: Draw the dashed center guide & directional arrows for the ACTIVE STEP ONLY ---
+    if (safeStep >= 0 && safeStep < letterData.strokes.length) {
+      final stroke = letterData.strokes[safeStep];
+      if (stroke.isDot) {
+        final c = toCanvas(stroke.startPoint);
+        canvas.drawCircle(
+          c,
+          7.0,
+          Paint()
+            ..color = const Color(0xFF3A86FF).withValues(alpha: 0.50)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.0,
+        );
+      } else {
+        final canvasPts = stroke.pathPoints.map(toCanvas).toList();
+        if (canvasPts.length >= 2) {
+          for (int i = 0; i < canvasPts.length - 1; i++) {
+            final p0 = canvasPts[i];
+            final p1 = canvasPts[i + 1];
+            _drawDashedLine(canvas, p0, p1, dashedPaint, dashWidth: 7.0, dashSpace: 5.0);
+          }
+
+          final arrowIndices = <int>{
+            (canvasPts.length * 0.25).round().clamp(0, canvasPts.length - 2),
+            (canvasPts.length * 0.55).round().clamp(0, canvasPts.length - 2),
+            (canvasPts.length * 0.85).round().clamp(0, canvasPts.length - 2),
+          }.toList();
+
+          for (final idx in arrowIndices) {
+            final p0 = canvasPts[idx];
+            final p1 = canvasPts[idx + 1];
+            _drawArrowhead(canvas, p0, p1, arrowPaint);
+          }
+        }
+      }
+    }
+
+    // --- PHASE 3: Draw Start Badge ONLY at current active step start point ---
+    if (safeStep >= 0 && safeStep < letterData.strokes.length) {
+      final stroke = letterData.strokes[safeStep];
+      final startPos = toCanvas(stroke.startPoint);
+      _drawStepBadge(
+        canvas,
+        startPos,
+        stroke.strokeNumber,
+        pulseValue,
+        isCurrent: true,
+      );
+    }
+
+    // --- PHASE 4: Animated Demo Motion (for ACTIVE STEP ONLY) ---
+    if (isDemoActive && safeStep >= 0 && safeStep < letterData.strokes.length) {
+      final stroke = letterData.strokes[safeStep];
+      _drawSingleStrokeDemoMotion(canvas, stroke, toCanvas, trackFillWidth, demoProgress);
+    }
+  }
+
+  Path _buildPath(List<Offset> pts) {
+    final path = Path();
+    if (pts.isEmpty) return path;
+    if (pts.length == 1) {
+      path.moveTo(pts.first.dx, pts.first.dy);
+      path.lineTo(pts.first.dx + 0.1, pts.first.dy + 0.1);
+      return path;
+    }
+    if (pts.length == 2) {
+      path.moveTo(pts[0].dx, pts[0].dy);
+      path.lineTo(pts[1].dx, pts[1].dy);
+      return path;
+    }
+
+    path.moveTo(pts[0].dx, pts[0].dy);
+    for (int i = 0; i < pts.length - 1; i++) {
+      final p0 = pts[i];
+      final p1 = pts[i + 1];
+      final mid = Offset((p0.dx + p1.dx) / 2, (p0.dy + p1.dy) / 2);
+      if (i == 0) {
+        path.lineTo(mid.dx, mid.dy);
+      } else {
+        path.quadraticBezierTo(p0.dx, p0.dy, mid.dx, mid.dy);
+      }
+    }
+    path.lineTo(pts.last.dx, pts.last.dy);
+    return path;
+  }
+
+  void _drawDashedLine(Canvas canvas, Offset p1, Offset p2, Paint paint, {double dashWidth = 7.0, double dashSpace = 5.0}) {
+    final dx = p2.dx - p1.dx;
+    final dy = p2.dy - p1.dy;
+    final distance = math.sqrt(dx * dx + dy * dy);
+    if (distance <= 0) return;
+
+    final unitX = dx / distance;
+    final unitY = dy / distance;
+
+    double currentDist = 0.0;
+    while (currentDist < distance) {
+      final nextDist = math.min(currentDist + dashWidth, distance);
+      canvas.drawLine(
+        Offset(p1.dx + unitX * currentDist, p1.dy + unitY * currentDist),
+        Offset(p1.dx + unitX * nextDist, p1.dy + unitY * nextDist),
+        paint,
+      );
+      currentDist += dashWidth + dashSpace;
+    }
+  }
+
+  void _drawArrowhead(Canvas canvas, Offset from, Offset to, Paint paint) {
+    final dx = to.dx - from.dx;
+    final dy = to.dy - from.dy;
+    final len = math.sqrt(dx * dx + dy * dy);
+    if (len < 10) return;
+
+    final mid = Offset((from.dx + to.dx) / 2, (from.dy + to.dy) / 2);
+    final angle = math.atan2(dy, dx);
+    const arrowSize = 6.5;
+
+    final path = Path();
+    path.moveTo(
+      mid.dx + arrowSize * math.cos(angle),
+      mid.dy + arrowSize * math.sin(angle),
+    );
+    path.lineTo(
+      mid.dx - arrowSize * math.cos(angle - math.pi / 5.5),
+      mid.dy - arrowSize * math.sin(angle - math.pi / 5.5),
+    );
+    path.lineTo(
+      mid.dx - arrowSize * math.cos(angle + math.pi / 5.5),
+      mid.dy - arrowSize * math.sin(angle + math.pi / 5.5),
+    );
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  void _drawStepBadge(Canvas canvas, Offset center, int stepNumber, double pulse, {required bool isCurrent}) {
+    final double baseRadius = 14.5;
+    final double radius = isCurrent ? baseRadius + (pulse * 2.2) : baseRadius;
+
+    // Pulsing halo for current active step
+    if (isCurrent) {
+      final haloPaint = Paint()
+        ..color = const Color(0xFFFF9F1C).withValues(alpha: 0.35 * (1.0 - pulse))
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(center, radius + 8.0 * pulse, haloPaint);
+    }
+
+    // Drop shadow
+    canvas.drawCircle(
+      center.translate(0, 2),
+      radius,
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.22)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+    );
+
+    // Badge circle
+    final badgePaint = Paint()
+      ..color = isCurrent ? const Color(0xFFFF9F1C) : const Color(0xFF3A86FF)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, radius, badgePaint);
+
+    // White border
+    final borderPaint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 2.2
+      ..style = PaintingStyle.stroke;
+    canvas.drawCircle(center, radius, borderPaint);
+
+    // Number text
+    final textSpan = TextSpan(
+      text: '$stepNumber',
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 13,
+        fontWeight: FontWeight.w900,
+        fontFamily: 'Catamaran',
+        height: 1.0,
+      ),
+    );
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    textPainter.paint(
+      canvas,
+      Offset(center.dx - textPainter.width / 2, center.dy - textPainter.height / 2),
+    );
+  }
+
+  void _drawSingleStrokeDemoMotion(
+    Canvas canvas,
+    LetterStrokeData stroke,
+    Offset Function(Offset) toCanvas,
+    double trackFillWidth,
+    double progress,
+  ) {
+    final canvasPts = stroke.pathPoints.map(toCanvas).toList();
+    if (canvasPts.isEmpty) return;
+
+    if (stroke.isDot) {
+      final c = toCanvas(stroke.startPoint);
+      final r = trackFillWidth * (0.3 + 0.3 * progress);
+      canvas.drawCircle(c, r, Paint()..color = const Color(0xFFFFB703)..style = PaintingStyle.fill);
+      return;
+    }
+
+    if (canvasPts.length < 2) return;
+
+    double totalLen = 0.0;
+    final List<double> segmentLens = [];
+    for (int i = 0; i < canvasPts.length - 1; i++) {
+      final len = (canvasPts[i + 1] - canvasPts[i]).distance;
+      segmentLens.add(len);
+      totalLen += len;
+    }
+
+    if (totalLen <= 0) return;
+
+    final targetDist = progress * totalLen;
+    double accumulated = 0.0;
+    Offset currentPos = canvasPts.first;
+
+    final trailPaint = Paint()
+      ..color = const Color(0xFFFFB703)
+      ..strokeWidth = trackFillWidth * 0.72
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+
+    final trailPath = Path()..moveTo(canvasPts.first.dx, canvasPts.first.dy);
+
+    for (int i = 0; i < canvasPts.length - 1; i++) {
+      final p0 = canvasPts[i];
+      final p1 = canvasPts[i + 1];
+      final len = segmentLens[i];
+
+      if (accumulated + len <= targetDist) {
+        trailPath.lineTo(p1.dx, p1.dy);
+        accumulated += len;
+        currentPos = p1;
+      } else {
+        final remain = targetDist - accumulated;
+        final ratio = (remain / (len > 0 ? len : 1.0)).clamp(0.0, 1.0);
+        currentPos = Offset(
+          p0.dx + (p1.dx - p0.dx) * ratio,
+          p0.dy + (p1.dy - p0.dy) * ratio,
+        );
+        trailPath.lineTo(currentPos.dx, currentPos.dy);
+        break;
+      }
+    }
+    canvas.drawPath(trailPath, trailPaint);
+
+    // Glowing Magic Pointer
+    final pointerHalo = Paint()
+      ..color = const Color(0xFFFF5400).withValues(alpha: 0.35)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(currentPos, 16.0, pointerHalo);
+
+    final pointerCore = Paint()
+      ..color = const Color(0xFFFFBE0B)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(currentPos, 9.0, pointerCore);
+
+    final pointerBorder = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke;
+    canvas.drawCircle(currentPos, 9.0, pointerBorder);
+
+    // Hand icon
+    final iconPainter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(Icons.touch_app_rounded.codePoint),
+        style: TextStyle(
+          fontSize: 28,
+          fontFamily: Icons.touch_app_rounded.fontFamily,
+          package: Icons.touch_app_rounded.fontPackage,
+          color: const Color(0xFFFF5400),
+          shadows: [
+            Shadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 4,
+              offset: const Offset(1, 2),
+            ),
+          ],
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    iconPainter.paint(
+      canvas,
+      Offset(currentPos.dx + 4, currentPos.dy - 28),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _LetterPathGuidePainter oldDelegate) => true;
 }
 
 /// Smooth Painter for freehand user strokes using quadratic Bezier spline curves
@@ -379,7 +1070,7 @@ class SavedHandwritingPreview extends StatelessWidget {
                           fontFamily: 'Catamaran',
                           fontSize: 120,
                           fontWeight: FontWeight.w900,
-                          color: const Color(0xFFCBD5E1).withValues(alpha: 0.4),
+                          color: const Color(0xFF3A86FF).withValues(alpha: 0.12),
                           height: 1.0,
                         ),
                       ),
@@ -389,7 +1080,7 @@ class SavedHandwritingPreview extends StatelessWidget {
               ),
             Positioned.fill(
               child: CustomPaint(
-                painter: _SavedStrokesPainter(
+                painter: _SavedPreviewPainter(
                   strokes: strokes,
                   strokeColor: strokeColor,
                   strokeWidth: strokeWidth,
@@ -403,12 +1094,12 @@ class SavedHandwritingPreview extends StatelessWidget {
   }
 }
 
-class _SavedStrokesPainter extends CustomPainter {
+class _SavedPreviewPainter extends CustomPainter {
   final List<List<WritingPoint>> strokes;
   final Color strokeColor;
   final double strokeWidth;
 
-  _SavedStrokesPainter({
+  _SavedPreviewPainter({
     required this.strokes,
     required this.strokeColor,
     required this.strokeWidth,
@@ -429,9 +1120,8 @@ class _SavedStrokesPainter extends CustomPainter {
     for (final stroke in strokes) {
       if (stroke.isEmpty) continue;
       if (stroke.length == 1) {
-        final pt = stroke.first;
         canvas.drawCircle(
-          Offset(pt.x * size.width, pt.y * size.height),
+          Offset(stroke.first.x * size.width, stroke.first.y * size.height),
           strokeWidth / 2,
           Paint()
             ..color = strokeColor
@@ -440,8 +1130,8 @@ class _SavedStrokesPainter extends CustomPainter {
         continue;
       }
 
-      final path = Path();
-      path.moveTo(stroke.first.x * size.width, stroke.first.y * size.height);
+      final path = Path()
+        ..moveTo(stroke.first.x * size.width, stroke.first.y * size.height);
       for (int i = 1; i < stroke.length; i++) {
         path.lineTo(stroke[i].x * size.width, stroke[i].y * size.height);
       }
@@ -450,5 +1140,5 @@ class _SavedStrokesPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _SavedStrokesPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _SavedPreviewPainter oldDelegate) => true;
 }
