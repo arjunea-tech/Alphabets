@@ -247,60 +247,65 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                     ),
                     child: Column(
                       children: [
-                        // Illustration Image or Emoji Icon
-                        Container(
-                          width: 150,
-                          height: 150,
-                          margin: const EdgeInsets.symmetric(vertical: 6),
-                          decoration: BoxDecoration(
-                            color: letter.imagePath != null ? Colors.white : color.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: color.withValues(alpha: 0.35),
-                              width: 3,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: color.withValues(alpha: 0.15),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+                        // Illustration Image or Emoji Icon (Tappable to hear letter sound)
+                        BouncyButton(
+                          onPressed: _playAudio,
+                          child: Container(
+                            width: 150,
+                            height: 150,
+                            margin: const EdgeInsets.symmetric(vertical: 6),
+                            decoration: BoxDecoration(
+                              color: letter.imagePath != null ? Colors.white : color.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: color.withValues(alpha: 0.35),
+                                width: 3,
                               ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(21),
-                            child: LetterMediaImage(
-                              imagePath: letter.imagePath,
-                              iconEmoji: letter.iconEmoji,
-                              fit: BoxFit.contain,
-                              emojiSize: 60,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: color.withValues(alpha: 0.15),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(21),
+                              child: LetterMediaImage(
+                                imagePath: letter.imagePath,
+                                iconEmoji: letter.iconEmoji,
+                                fit: BoxFit.contain,
+                                emojiSize: 60,
+                              ),
                             ),
                           ),
                         ),
                         const SizedBox(height: 16),
 
-                        // Large Tamil Letter
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            letter.letter,
-                            style: AppTextStyles.tamilLetterLarge.copyWith(
-                              fontSize: 84,
-                              color: color,
-                              fontWeight: FontWeight.w900,
-                              height: 1.0,
+                        // Large Tamil Letter (Tappable to hear letter sound)
+                        BouncyButton(
+                          onPressed: _playAudio,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              letter.letter,
+                              style: AppTextStyles.tamilLetterLarge.copyWith(
+                                fontSize: 84,
+                                color: color,
+                                fontWeight: FontWeight.w900,
+                                height: 1.0,
+                              ),
                             ),
                           ),
                         ),
 
-                        // Example Word with target letter highlighted (e.g. ச[க்]கரம்)
+                        // Example Word with target letter highlighted (e.g. ச[க்]கரம்) - Tappable to hear WORD sound
                         if (letter.word.isNotEmpty) ...[
                           const SizedBox(height: 14),
                           BouncyButton(
                             onPressed: () => _audioService.playLetterSound(
                               context,
                               letter: letter.word,
-                              word: letter.letter,
                               showIndicator: true,
                             ),
                             child: Container(

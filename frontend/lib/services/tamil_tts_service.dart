@@ -257,6 +257,7 @@ class TamilTtsService {
       }
 
       _isSpeaking = true;
+      await _tts?.setVolume(1.0);
       final dynamic result = await _tts?.speak(cleanText);
       debugPrint('[TTS] TTS speak() native call returned: $result');
     } catch (e) {

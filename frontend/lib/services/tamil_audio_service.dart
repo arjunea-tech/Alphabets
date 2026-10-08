@@ -21,8 +21,37 @@ class TamilAudioService {
   bool get isMuted => _isMuted;
 
   AudioPlayer get player {
-    _player ??= AudioPlayer();
+    if (_player == null) {
+      _player = AudioPlayer();
+      _configureAudioContext(_player!);
+    }
     return _player!;
+  }
+
+  void _configureAudioContext(AudioPlayer p) {
+    try {
+      p.setVolume(1.0);
+      p.setAudioContext(
+        AudioContext(
+          android: const AudioContextAndroid(
+            isSpeakerphoneOn: true,
+            stayAwake: true,
+            contentType: AndroidContentType.music,
+            usageType: AndroidUsageType.media,
+            audioFocus: AndroidAudioFocus.gainTransientExclusive,
+          ),
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playback,
+            options: const {
+              AVAudioSessionOptions.defaultToSpeaker,
+              AVAudioSessionOptions.mixWithOthers,
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('[TamilAudioService] AudioContext configuration: $e');
+    }
   }
 
   void setMuted(bool muted) {
@@ -135,7 +164,7 @@ class TamilAudioService {
       }
     }
 
-    // Essential Vocabulary Words
+    // Essential Vocabulary Words (Including all 18 Mei sample words)
     const wordSlugs = <String, String>{
       'அம்மா': 'word_amma',
       'ஆடு': 'word_aadu',
@@ -155,6 +184,24 @@ class TamilAudioService {
       'பட்டம்': 'word_pattam',
       'கண்': 'word_kann',
       'பந்து': 'word_panthu',
+      // 18 Mei Sample Words (Including Admin Panel customized items)
+      'சக்கரம்': 'word_sakkaram',
+      'சங்கு': 'word_sangu',
+      'எலுமிச்சை': 'word_elumichai',
+      'தச்சர்': 'word_thacchar',
+      'நத்தை': 'word_nathai',
+      'கப்பல்': 'word_kappal',
+      'பாய்': 'word_paai',
+      'தேர்': 'word_thear',
+      'ஏர்': 'word_ear',
+      'சேவல்': 'word_seval',
+      'செவ்வானம்': 'word_sevvaanam',
+      'செவ்வந்தி': 'word_sevvanthi',
+      'யாழ்': 'word_yaazh',
+      'வாள்': 'word_vaal',
+      'வெற்றிலை': 'word_vetrilai',
+      'புற்று': 'word_putru',
+      'மீன்': 'word_meen',
       'வணக்கம்': 'word_vanakkam',
       'வணக்கம். இது அகரம் தமிழ் குரல் சோதனை.': 'sentence_greeting_test',
       'அ ஆ இ ஈ உ ஊ': 'sentence_alphabet_test',
@@ -472,7 +519,8 @@ class TamilAudioService {
       }
       final cleanPath = path.startsWith('assets/') ? path.substring(7) : path;
       await player.stop();
-      await player.play(AssetSource(cleanPath));
+      await player.setVolume(1.0);
+      await player.play(AssetSource(cleanPath), volume: 1.0);
       return true;
     } catch (e) {
       debugPrint('[TamilAudioService] Asset playback failed for $path: $e');
@@ -578,7 +626,8 @@ class TamilAudioService {
 
       if (await tempFile.exists() && (await tempFile.length()) > 0) {
         await player.stop();
-        await player.play(DeviceFileSource(tempFile.path));
+        await player.setVolume(1.0);
+        await player.play(DeviceFileSource(tempFile.path), volume: 1.0);
         debugPrint('[TamilAudioService] Playing cached audio file: "${tempFile.path}"');
         return true;
       }
@@ -624,7 +673,8 @@ class TamilAudioService {
           if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
             await tempFile.writeAsBytes(response.bodyBytes);
             await player.stop();
-            await player.play(DeviceFileSource(tempFile.path));
+            await player.setVolume(1.0);
+            await player.play(DeviceFileSource(tempFile.path), volume: 1.0);
             debugPrint('[TamilAudioService] Saved and playing Tamil speech from: "${tempFile.path}" (${response.bodyBytes.length} bytes)');
             return true;
           }
@@ -652,7 +702,8 @@ class TamilAudioService {
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
       try {
         await player.stop();
-        await player.play(UrlSource(trimmed));
+        await player.setVolume(1.0);
+        await player.play(UrlSource(trimmed), volume: 1.0);
         return;
       } catch (e) {
         debugPrint('[TamilAudioService] UrlSource playback failed for $trimmed: $e');
@@ -770,7 +821,7 @@ if (\$taVoice) {
     }
 
     // 4. Seamless fallback for letters & words
-    await playTamilAudio(word ?? letter);
+    await playTamilAudio(letter);
   }
 
   static List<String> _getLetterCandidatePaths(String text) {

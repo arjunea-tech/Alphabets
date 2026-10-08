@@ -62,7 +62,7 @@ class _AudioButtonState extends State<AudioButton>
         audioPath: widget.audioPath,
       );
     } else {
-      await AudioService.instance.playTamilAudio(widget.word ?? widget.letter);
+      await AudioService.instance.playTamilAudio(widget.letter);
     }
 
     if (mounted) {
