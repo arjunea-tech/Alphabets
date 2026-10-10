@@ -10,8 +10,10 @@ import '../../widgets/kid_app_bar.dart';
 import '../../widgets/kid_scaffold_background.dart';
 import '../../widgets/mascot_widget.dart';
 import '../auth/login_screen.dart';
+import '../language/language_selection_screen.dart';
 import '../profile/profile_screen.dart';
 import '../writing/writing_history_screen.dart';
+import '../../services/language_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   final ProgressService progressService;
@@ -350,6 +352,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           activeThumbColor: AppColors.secondary,
                           onChanged: (val) {
                             progress.toggleSound(val);
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // 2.5 Language Selection
+                    _buildSectionHeader('மொழித் தேர்வு / Language', Icons.translate_rounded),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          leading: Container(
+                            width: 44,
+                            height: 44,
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFEFF6FF),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              LanguageService.instance.currentLanguage.flagEmoji,
+                              style: const TextStyle(fontSize: 22),
+                            ),
+                          ),
+                          title: Text(
+                            '${LanguageService.instance.currentLanguage.nativeName} (${LanguageService.instance.currentLanguage.name})',
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                          ),
+                          subtitle: const Text(
+                            'தேர்ந்தெடுக்கப்பட்ட மொழி • Selected Language',
+                            style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                          ),
+                          trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.primary),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const LanguageSelectionScreen(),
+                              ),
+                            );
                           },
                         ),
                       ),

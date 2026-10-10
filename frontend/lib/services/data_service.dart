@@ -17,6 +17,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'api_config.dart';
 
+import '../data/telugu_letters_data.dart';
+import 'language_service.dart';
+
 abstract class IDataRepository {
   Future<List<LetterModel>> getUyirLetters();
   Future<List<LetterModel>> getMeiLetters();
@@ -33,11 +36,17 @@ abstract class IDataRepository {
 class LocalDataRepository implements IDataRepository {
   @override
   Future<List<LetterModel>> getUyirLetters() async {
+    if (LanguageService.instance.currentLanguageCode == 'te') {
+      return teluguAchuluList;
+    }
     return uyirLettersList;
   }
 
   @override
   Future<List<LetterModel>> getMeiLetters() async {
+    if (LanguageService.instance.currentLanguageCode == 'te') {
+      return teluguHalluluList;
+    }
     return meiLettersList;
   }
 
@@ -87,14 +96,25 @@ class ApiDataRepository implements IDataRepository {
   Map<String, List<LetterModel>>? _cachedUyirmeiMap;
   List<LetterModel>? _cachedUyir;
   List<LetterModel>? _cachedMei;
+  String? _cachedLang;
+
+  void _checkLanguageCache() {
+    final curLang = LanguageService.instance.currentLanguageCode;
+    if (_cachedLang != curLang) {
+      _cachedUyir = null;
+      _cachedMei = null;
+      _cachedUyirmeiMap = null;
+      _cachedLang = curLang;
+    }
+  }
 
   LetterModel _enrichWithLocalAssets(LetterModel letter) {
     if (letter.imagePath == null ||
         letter.imagePath!.isEmpty ||
         letter.imagePath == 'assets/images/welcome.png') {
       final List<LetterModel> sourceList = letter.type == LetterType.uyir
-          ? uyirLettersList
-          : (letter.type == LetterType.mei ? meiLettersList : []);
+          ? (LanguageService.instance.currentLanguageCode == 'te' ? teluguAchuluList : uyirLettersList)
+          : (letter.type == LetterType.mei ? (LanguageService.instance.currentLanguageCode == 'te' ? teluguHalluluList : meiLettersList) : []);
       
       final localMatch = sourceList.firstWhere(
         (l) => l.letter == letter.letter || l.id == letter.id,
@@ -126,11 +146,13 @@ class ApiDataRepository implements IDataRepository {
 
   @override
   Future<List<LetterModel>> getUyirLetters() async {
+    _checkLanguageCache();
     if (_cachedUyir != null && _cachedUyir!.isNotEmpty) {
       return _cachedUyir!;
     }
+    final lang = LanguageService.instance.currentLanguageCode;
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/letters?type=uyir&all=true');
+      final uri = Uri.parse('${ApiConfig.baseUrl}/letters?type=uyir&lang=$lang&all=true');
       final res = await http.get(uri).timeout(const Duration(seconds: 4));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
@@ -153,11 +175,13 @@ class ApiDataRepository implements IDataRepository {
 
   @override
   Future<List<LetterModel>> getMeiLetters() async {
+    _checkLanguageCache();
     if (_cachedMei != null && _cachedMei!.isNotEmpty) {
       return _cachedMei!;
     }
+    final lang = LanguageService.instance.currentLanguageCode;
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/letters?type=mei&all=true');
+      final uri = Uri.parse('${ApiConfig.baseUrl}/letters?type=mei&lang=$lang&all=true');
       final res = await http.get(uri).timeout(const Duration(seconds: 4));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);

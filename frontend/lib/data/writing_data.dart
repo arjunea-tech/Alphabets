@@ -72,17 +72,15 @@ class WritingData {
     WritingLetterGuide(
       letter: 'இ',
       categoryName: 'உயிர் எழுத்து',
-      strokeCount: 3,
-      instruction: 'இ எழுத்தை சுருள் வளைவாக எழுதுவோம்!',
+      strokeCount: 1,
+      instruction: 'இ எழுத்தை சுழியில் தொடங்கி குடை வளைத்து ஒரே வீச்சில் எழுதுவோம்!',
       strokeHints: [
-        '1. மேல் சுழியில் தொடங்குங்கள்',
-        '2. கீழிறங்கி உட்புறமாக வளைத்து முடியுங்கள்',
+        '1. சுழியில் தொடங்கி தலை வளைத்து குடை மேலேறி வலப்பக்கம் முடிக்கவும் (ஒரே படி)',
       ],
       sampleWord: 'இலை',
       sampleEmoji: '🍃',
       startingPoints: [
-        OffsetGuide(xRatio: 0.35, yRatio: 0.28, label: '1'),
-        OffsetGuide(xRatio: 0.60, yRatio: 0.60, label: '2'),
+        OffsetGuide(xRatio: 0.38, yRatio: 0.36, label: '1'),
       ],
     ),
     WritingLetterGuide(
@@ -91,16 +89,18 @@ class WritingData {
       strokeCount: 4,
       instruction: 'ஈ எழுத்தை நேர்க்கோடுகளுடன் எழுதுவோம்!',
       strokeHints: [
-        '1. இடது நேர்க்கோடு போடவும்',
-        '2. படுக்கைக் கோடு மற்றும் வலது நேர்க்கோடு',
-        '3. இரண்டு புள்ளிகள் வைக்கவும்',
+        '1. இடது நேர்க்கோடு மேலிருந்து கீழ் போடவும் (⬇️)',
+        '2. மேல் படுக்கைக் கோடு மற்றும் வலது நேர்க்கோடு வரையவும் (➡️⬇️)',
+        '3. கோடுகளுக்கு நடுவில் உள் புள்ளி வைக்கவும் (•)',
+        '4. வலது கோட்டின் வெளியே வெளிப் புள்ளி வைக்கவும் (•)',
       ],
       sampleWord: 'ஈ',
       sampleEmoji: '🪰',
       startingPoints: [
-        OffsetGuide(xRatio: 0.28, yRatio: 0.30, label: '1'),
-        OffsetGuide(xRatio: 0.72, yRatio: 0.30, label: '2'),
-        OffsetGuide(xRatio: 0.50, yRatio: 0.45, label: '3'),
+        OffsetGuide(xRatio: 0.32, yRatio: 0.26, label: '1'),
+        OffsetGuide(xRatio: 0.24, yRatio: 0.26, label: '2'),
+        OffsetGuide(xRatio: 0.50, yRatio: 0.51, label: '3'),
+        OffsetGuide(xRatio: 0.84, yRatio: 0.51, label: '4'),
       ],
     ),
     WritingLetterGuide(
@@ -163,8 +163,9 @@ class WritingData {
       sampleWord: 'ஏணி',
       sampleEmoji: '🪜',
       startingPoints: [
-        OffsetGuide(xRatio: 0.35, yRatio: 0.35, label: '1'),
-        OffsetGuide(xRatio: 0.35, yRatio: 0.82, label: '2'),
+        OffsetGuide(xRatio: 0.35, yRatio: 0.56, label: '1'),
+        OffsetGuide(xRatio: 0.68, yRatio: 0.28, label: '2'),
+        OffsetGuide(xRatio: 0.68, yRatio: 0.76, label: '3'),
       ],
     ),
     WritingLetterGuide(
@@ -608,6 +609,101 @@ class WritingData {
       startingPoints: [
         OffsetGuide(xRatio: 0.35, yRatio: 0.40, label: '1'),
         OffsetGuide(xRatio: 0.55, yRatio: 0.18, label: '2'),
+      ],
+    ),
+  ];
+
+  static const List<WritingLetterGuide> teluguAchuluGuides = [
+    WritingLetterGuide(
+      letter: 'అ',
+      categoryName: 'అచ్చులు',
+      strokeCount: 2,
+      instruction: 'అ అక్షరాన్ని అందంగా రాద్దాం!',
+      strokeHints: [
+        '1. ఎడమవైపు సున్నాతో ప్రారంభించండి',
+        '2. పైకి వెళ్లి కుడివైపు వంచి పూర్తి చేయండి',
+      ],
+      sampleWord: 'అమ్మ',
+      sampleEmoji: '👩‍👧',
+      startingPoints: [
+        OffsetGuide(xRatio: 0.35, yRatio: 0.35, label: '1'),
+        OffsetGuide(xRatio: 0.60, yRatio: 0.50, label: '2'),
+      ],
+    ),
+    WritingLetterGuide(
+      letter: 'ఆ',
+      categoryName: 'అచ్చులు',
+      strokeCount: 3,
+      instruction: 'ఆ అక్షరాన్ని రాసి కుడివైపు కొమ్ము చేర్చుదాం!',
+      strokeHints: [
+        '1. అ అక్షరం లాగా రాయండి',
+        '2. చివరన దీర్ఘం చేర్చండి',
+      ],
+      sampleWord: 'ఆవు',
+      sampleEmoji: '🐄',
+      startingPoints: [
+        OffsetGuide(xRatio: 0.35, yRatio: 0.35, label: '1'),
+        OffsetGuide(xRatio: 0.70, yRatio: 0.40, label: '2'),
+      ],
+    ),
+    WritingLetterGuide(
+      letter: 'ఇ',
+      categoryName: 'అచ్చులు',
+      strokeCount: 2,
+      instruction: 'ఇ అక్షరాన్ని అందంగా రాద్దాం!',
+      strokeHints: [
+        '1. పైనుండి క్రిందికి రాయండి',
+        '2. కుడివైపుకి వంకర తిప్పండి',
+      ],
+      sampleWord: 'ఇల్లు',
+      sampleEmoji: '🏠',
+      startingPoints: [
+        OffsetGuide(xRatio: 0.40, yRatio: 0.30, label: '1'),
+      ],
+    ),
+    WritingLetterGuide(
+      letter: 'ఈ',
+      categoryName: 'అచ్చులు',
+      strokeCount: 3,
+      instruction: 'ఈ అక్షరాన్ని వృత్తాకారంలో రాద్దాం!',
+      strokeHints: [
+        '1. మధ్యలో సున్నా రాయండి',
+        '2. పైన మరియు క్రింద గీతలు చేర్చండి',
+      ],
+      sampleWord: 'ఈగ',
+      sampleEmoji: '🪰',
+      startingPoints: [
+        OffsetGuide(xRatio: 0.40, yRatio: 0.40, label: '1'),
+      ],
+    ),
+    WritingLetterGuide(
+      letter: 'ఉ',
+      categoryName: 'అచ్చులు',
+      strokeCount: 2,
+      instruction: 'ఉ అక్షరాన్ని రాద్దాం!',
+      strokeHints: [
+        '1. ఎడమవైపు నుండి ప్రారంభించండి',
+        '2. క్రిందికి వంచి కుడివైపుకి తిప్పండి',
+      ],
+      sampleWord: 'ఉడుత',
+      sampleEmoji: '🐿️',
+      startingPoints: [
+        OffsetGuide(xRatio: 0.35, yRatio: 0.35, label: '1'),
+      ],
+    ),
+    WritingLetterGuide(
+      letter: 'ఊ',
+      categoryName: 'అచ్చులు',
+      strokeCount: 3,
+      instruction: 'ఊ అక్షరాన్ని దీర్ఘంతో రాద్దాం!',
+      strokeHints: [
+        '1. ఉ అక్షరం లాగా రాయండి',
+        '2. పైన దీర్ఘం గీత చేర్చండి',
+      ],
+      sampleWord: 'ఊయల',
+      sampleEmoji: '🎪',
+      startingPoints: [
+        OffsetGuide(xRatio: 0.35, yRatio: 0.35, label: '1'),
       ],
     ),
   ];

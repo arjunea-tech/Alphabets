@@ -14,8 +14,12 @@ const progressRoutes = require('./progressRoutes');
 const dashboardRoutes = require('./dashboardRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const audioRoutes = require('./audioRoutes');
+const languageRoutes = require('./languageRoutes');
 
 const router = express.Router();
+
+// Supported Languages (/api/v1/languages)
+router.use('/languages', languageRoutes);
 
 // Admin Authentication (/api/v1/auth/admin or /api/v1/admin)
 router.use('/auth/admin', adminAuthRoutes);

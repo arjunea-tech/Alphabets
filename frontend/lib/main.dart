@@ -11,6 +11,9 @@ import 'services/progress_service.dart';
 import 'services/tamil_tts_service.dart';
 import 'theme/app_theme.dart';
 
+import 'screens/language/language_selection_screen.dart';
+import 'services/language_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -25,6 +28,9 @@ void main() async {
       statusBarIconBrightness: Brightness.dark,
     ),
   );
+
+  // Initialize Language Service
+  await LanguageService.instance.init();
 
   // Initialize Tamil TTS service at startup for zero-latency pronunciation
   unawaited(TamilTtsService.instance.init());
@@ -51,7 +57,7 @@ void main() async {
   ));
 }
 
-class AgaramApp extends StatelessWidget {
+class AgaramApp extends StatefulWidget {
   final AuthService? authService;
   final ProgressService progressService;
   final Widget? initialScreen;
@@ -64,20 +70,45 @@ class AgaramApp extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final auth = authService ?? AuthService();
+  State<AgaramApp> createState() => _AgaramAppState();
+}
 
-    return MaterialApp(
-      title: 'அகரம் (AGARAM)',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.theme,
-      home: initialScreen ??
-          (auth.isAuthenticated
-              ? MainNavigationScreen(progressService: progressService)
-              : LoginScreen(
-                  authService: auth,
-                  progressService: progressService,
-                )),
+class _AgaramAppState extends State<AgaramApp> {
+  @override
+  Widget build(BuildContext context) {
+    final auth = widget.authService ?? AuthService();
+
+    return ListenableBuilder(
+      listenable: LanguageService.instance,
+      builder: (context, _) {
+        final lang = LanguageService.instance;
+
+        Widget homeWidget;
+        if (widget.initialScreen != null) {
+          homeWidget = widget.initialScreen!;
+        } else if (!lang.hasSelectedLanguage) {
+          homeWidget = LanguageSelectionScreen(
+            isInitialSetup: true,
+            onLanguageSelected: () {
+              setState(() {});
+            },
+          );
+        } else if (auth.isAuthenticated) {
+          homeWidget = MainNavigationScreen(progressService: widget.progressService);
+        } else {
+          homeWidget = LoginScreen(
+            authService: auth,
+            progressService: widget.progressService,
+          );
+        }
+
+        return MaterialApp(
+          title: '${lang.brandTitle} (${lang.currentLanguage.name})',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.theme,
+          home: homeWidget,
+        );
+      },
     );
   }
 }

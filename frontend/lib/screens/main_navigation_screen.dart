@@ -8,6 +8,8 @@ import 'learning/learning_screen.dart';
 import 'quiz/quiz_screen.dart';
 import 'videos/videos_screen.dart';
 
+import '../services/language_service.dart';
+
 class MainNavigationScreen extends StatefulWidget {
   final ProgressService progressService;
 
@@ -39,23 +41,35 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       QuizScreen(progressService: widget.progressService),
     ];
 
-    return Scaffold(
-      extendBody: true,
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: screens,
-      ),
-      bottomNavigationBar: _buildCustomNavBar(),
+    return ListenableBuilder(
+      listenable: LanguageService.instance,
+      builder: (context, _) {
+        return Scaffold(
+          extendBody: true,
+          body: IndexedStack(
+            index: _selectedIndex,
+            children: screens,
+          ),
+          bottomNavigationBar: _buildCustomNavBar(),
+        );
+      },
     );
   }
 
   Widget _buildCustomNavBar() {
+    final lang = LanguageService.instance.currentLanguageCode;
+    final labels = lang == 'te'
+        ? ['హోమ్', 'నేర్చుకో', 'ఆటలు', 'వీడియోలు', 'క్విజ్']
+        : (lang == 'en'
+            ? ['Home', 'Learn', 'Games', 'Videos', 'Quiz']
+            : ['முகப்பு', 'கற்றல்', 'விளையாட்டு', 'காணொளி', 'வினாடி வினா']);
+
     final items = [
-      _NavItem(icon: Icons.home_rounded, label: 'முகப்பு', color: AppColors.primary),
-      _NavItem(icon: Icons.menu_book_rounded, label: 'கற்றல்', color: AppColors.secondary),
-      _NavItem(icon: Icons.sports_esports_rounded, label: 'விளையாட்டு', color: AppColors.candyPurple),
-      _NavItem(icon: Icons.play_circle_filled_rounded, label: 'காணொளி', color: AppColors.playfulPink),
-      _NavItem(icon: Icons.quiz_rounded, label: 'வினாடி வினா', color: AppColors.meiColor),
+      _NavItem(icon: Icons.home_rounded, label: labels[0], color: AppColors.primary),
+      _NavItem(icon: Icons.menu_book_rounded, label: labels[1], color: AppColors.secondary),
+      _NavItem(icon: Icons.sports_esports_rounded, label: labels[2], color: AppColors.candyPurple),
+      _NavItem(icon: Icons.play_circle_filled_rounded, label: labels[3], color: AppColors.playfulPink),
+      _NavItem(icon: Icons.quiz_rounded, label: labels[4], color: AppColors.meiColor),
     ];
 
     return SafeArea(

@@ -205,13 +205,26 @@ class TamilHandwritingRecognitionService {
       LetterSkeleton(
         strokes: [
           [Point2D(0.30, 0.22), Point2D(0.30, 0.78)],
-          [Point2D(0.30, 0.22), Point2D(0.70, 0.22), Point2D(0.70, 0.78)],
-          [Point2D(0.50, 0.50)],
-          [Point2D(0.82, 0.50)],
+          [Point2D(0.24, 0.22), Point2D(0.70, 0.22), Point2D(0.70, 0.78)],
+          [Point2D(0.50, 0.51)],
+          [Point2D(0.83, 0.51)],
         ],
         requiredZones: [
           ZoneConstraint(xMin: 0.18, yMin: 0.20, xMax: 0.42, yMax: 0.80, minPts: 2, name: 'ஈ_left_stem'),
-          ZoneConstraint(xMin: 0.58, yMin: 0.20, xMax: 0.82, yMax: 0.80, minPts: 2, name: 'ஈ_right_stem'),
+          ZoneConstraint(xMin: 0.58, yMin: 0.20, xMax: 0.84, yMax: 0.80, minPts: 2, name: 'ஈ_right_stem'),
+        ],
+      ),
+      LetterSkeleton(
+        strokes: [
+          [Point2D(0.30, 0.22), Point2D(0.30, 0.78)],
+          [Point2D(0.24, 0.22), Point2D(0.70, 0.22)],
+          [Point2D(0.70, 0.22), Point2D(0.70, 0.78)],
+          [Point2D(0.50, 0.51)],
+          [Point2D(0.83, 0.51)],
+        ],
+        requiredZones: [
+          ZoneConstraint(xMin: 0.18, yMin: 0.20, xMax: 0.42, yMax: 0.80, minPts: 2, name: 'ஈ_left_stem'),
+          ZoneConstraint(xMin: 0.58, yMin: 0.20, xMax: 0.84, yMax: 0.80, minPts: 2, name: 'ஈ_right_stem'),
         ],
       ),
     ],
@@ -852,7 +865,7 @@ class TamilHandwritingRecognitionService {
         invariantPassed = false;
         rejectionReason = ayuthamCheck.error;
       }
-    } else if (uyirSet.contains(expectedLetter) && hasTopPulli) {
+    } else if (uyirSet.contains(expectedLetter) && expectedLetter != 'ஈ' && hasTopPulli) {
       invariantPassed = false;
       rejectionReason = "உயிர் எழுத்துக்கு மேலே புள்ளி வைக்கக் கூடாது.";
     } else if (meiSet.contains(expectedLetter) && !hasTopPulli) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/language_service.dart';
 import '../../services/progress_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -6,6 +7,7 @@ import '../../widgets/bouncy_button.dart';
 import '../../widgets/kid_scaffold_background.dart';
 import '../../widgets/mascot_widget.dart';
 import '../../widgets/star_counter.dart';
+import '../language/language_selection_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
 import '../writing/writing_practice_screen.dart';
@@ -52,7 +54,9 @@ class HomeScreen extends StatelessWidget {
 
                         // Destinations Title
                         Text(
-                          'கற்றல் உலகங்கள்',
+                          LanguageService.instance.currentLanguageCode == 'te'
+                              ? 'నేర్చుకునే ప్రపంచాలు'
+                              : (LanguageService.instance.currentLanguageCode == 'en' ? 'Learning Worlds' : 'கற்றல் உலகங்கள்'),
                           style: AppTextStyles.cardTitle.copyWith(
                             fontSize: 19,
                             fontWeight: FontWeight.w900,
@@ -63,9 +67,15 @@ class HomeScreen extends StatelessWidget {
 
                         // Destination 1: கற்றுக்கொள்வோம் (Features learn.png)
                         _buildDestinationCard(
-                          title: 'கற்றுக்கொள்வோம்',
-                          subtitle: 'தமிழை மகிழ்ச்சியாக கற்போம்!',
-                          tag: '12 உயிர் • 18 மெய் • 216 உயிர்மெய்',
+                          title: LanguageService.instance.currentLanguageCode == 'te'
+                              ? 'అక్షరాలు నేర్చుకుందాం'
+                              : (LanguageService.instance.currentLanguageCode == 'en' ? 'Learn Letters' : 'கற்றுக்கொள்வோம்'),
+                          subtitle: LanguageService.instance.currentLanguageCode == 'te'
+                              ? 'సరదాగా అక్షరాలను నేర్చుకుందాం!'
+                              : (LanguageService.instance.currentLanguageCode == 'en' ? 'Learn letters with joy!' : 'தமிழை மகிழ்ச்சியாக கற்போம்!'),
+                          tag: LanguageService.instance.currentLanguageCode == 'te'
+                              ? '16 అచ్చులు • 36 హల్లులు'
+                              : (LanguageService.instance.currentLanguageCode == 'en' ? 'Vowels & Consonants' : '12 உயிர் • 18 மெய் • 216 உயிர்மெய்'),
                           imageAsset: 'assets/images/learn.png',
                           gradient: const [Color(0xFFFF9F1C), Color(0xFFFF6B6B)],
                           borderColor: const Color(0xFFFF9F1C),
@@ -145,6 +155,8 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildTopHeader(BuildContext context, int stars) {
+    final langService = LanguageService.instance;
+
     return Row(
       children: [
         // Brand logo
@@ -167,7 +179,7 @@ class HomeScreen extends StatelessWidget {
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                'அகரம்',
+                langService.brandTitle,
                 style: AppTextStyles.brandTitle.copyWith(
                   fontSize: 22,
                   color: Colors.white,
@@ -178,9 +190,56 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
+
+        // Language Switcher Chip: [ 🇮🇳 தமிழ் ▾ ]
+        BouncyButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const LanguageSelectionScreen(),
+              ),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFF3A86FF), width: 1.8),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF3A86FF).withValues(alpha: 0.15),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(langService.currentLanguage.flagEmoji, style: const TextStyle(fontSize: 14)),
+                const SizedBox(width: 4),
+                Text(
+                  langService.currentLanguage.nativeName,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1D4ED8),
+                  ),
+                ),
+                const SizedBox(width: 2),
+                const Icon(Icons.arrow_drop_down_rounded, size: 18, color: Color(0xFF1D4ED8)),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+
         // Star Counter
         StarCounter(count: stars),
         const SizedBox(width: 8),
+
         // Profile Button: "என் சுயவிவரம்"
         BouncyButton(
           onPressed: () {
@@ -209,6 +268,7 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
+
         // Settings Button
         BouncyButton(
           onPressed: () {
@@ -278,7 +338,7 @@ class HomeScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Text(
-                    'வணக்கம் $childName!',
+                    '${LanguageService.instance.greeting} $childName!',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
@@ -288,7 +348,9 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'தமிழை எளிதாகக் கற்கலாம் வா!',
+                  LanguageService.instance.currentLanguageCode == 'te'
+                      ? 'తెలుగు సులభంగా నేర్చుకుందాం!'
+                      : (LanguageService.instance.currentLanguageCode == 'en' ? 'Let\'s learn together!' : 'தமிழை எளிதாகக் கற்கலாம் வா!'),
                   style: AppTextStyles.cardTitle.copyWith(
                     fontSize: 19,
                     fontWeight: FontWeight.w900,
@@ -298,7 +360,9 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '“அகரத்தில் தொடங்கி, தமிழில் சிறக்க!”',
+                  LanguageService.instance.currentLanguageCode == 'te'
+                      ? '“అక్షరాలతో మొదలు, జ్ఞానంతో ముందుకు!”'
+                      : (LanguageService.instance.currentLanguageCode == 'en' ? '“Start with letters, soar with knowledge!”' : '“அகரத்தில் தொடங்கி, தமிழில் சிறக்க!”'),
                   style: AppTextStyles.tagLine.copyWith(
                     fontSize: 12.5,
                     color: const Color(0xFF7A4400),
