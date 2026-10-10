@@ -4,12 +4,20 @@
 const { pool } = require('../config/db');
 
 class LetterModel {
-  static async getAll({ type, groupId, meiBase, onlyActive = true } = {}) {
+  static async getAll({ type, groupId, meiBase, languageCode, tenantId, onlyActive = true } = {}) {
     const conditions = [];
     const values = [];
 
     if (onlyActive) {
       conditions.push('l.is_active = TRUE');
+    }
+    if (languageCode) {
+      conditions.push('l.language_code = ?');
+      values.push(languageCode);
+    }
+    if (tenantId) {
+      conditions.push('l.tenant_id = ?');
+      values.push(tenantId);
     }
     if (type) {
       conditions.push('l.type = ?');
@@ -149,22 +157,31 @@ class LetterModel {
   }
 
   // --- Letter Groups Operations ---
-  static async getGroups({ letterType } = {}) {
-    const condition = letterType ? 'WHERE letter_type = ?' : '';
-    const values = letterType ? [letterType] : [];
+  static async getGroups({ letterType, languageCode } = {}) {
+    const conditions = [];
+    const values = [];
+    if (letterType) {
+      conditions.push('letter_type = ?');
+      values.push(letterType);
+    }
+    if (languageCode) {
+      conditions.push('language_code = ?');
+      values.push(languageCode);
+    }
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     const [rows] = await pool.query(
-      `SELECT * FROM letter_groups ${condition} ORDER BY display_order ASC`,
+      `SELECT * FROM letter_groups ${whereClause} ORDER BY display_order ASC`,
       values
     );
     return rows;
   }
 
-  static async createGroup({ id, name, displayTitle, letterType, description = '', displayOrder = 0 }) {
+  static async createGroup({ id, name, displayTitle, letterType, description = '', displayOrder = 0, languageCode = 'ta', tenantId = 'default' }) {
     const groupId = id || `group_${letterType}_${Date.now()}`;
     await pool.query(
-      `INSERT INTO letter_groups (id, name, display_title, letter_type, description, display_order)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [groupId, name, displayTitle, letterType, description, displayOrder]
+      `INSERT INTO letter_groups (id, name, display_title, letter_type, description, display_order, language_code, tenant_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [groupId, name, displayTitle, letterType, description, displayOrder, languageCode, tenantId]
     );
     const [rows] = await pool.query('SELECT * FROM letter_groups WHERE id = ?', [groupId]);
     return rows[0];

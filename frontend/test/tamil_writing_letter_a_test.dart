@@ -353,6 +353,36 @@ void main() {
       );
       expect(resultAuVsO.isMatch, isFalse, reason: "Drawing 'ஔ' when expecting 'ஒ' must be rejected");
 
+      // 7c. Realistic handwritten 'ஈ' strokes with dots -> MUST MATCH and NOT be rejected
+      final mockStrokesEe = [
+        [
+          const Offset(100, 75),
+          const Offset(100, 160),
+          const Offset(100, 245),
+        ],
+        [
+          const Offset(75, 75),
+          const Offset(150, 75),
+          const Offset(220, 75),
+          const Offset(220, 160),
+          const Offset(220, 245),
+        ],
+        [
+          const Offset(160, 160),
+        ],
+        [
+          const Offset(265, 160),
+        ],
+      ];
+
+      final resultEe = await service.recognizeStrokes(
+        expectedLetter: 'ஈ',
+        userStrokes: mockStrokesEe,
+        canvasSize: canvasSize,
+      );
+      expect(resultEe.recognizedCharacter, 'ஈ');
+      expect(resultEe.isMatch, isTrue, reason: "Drawing 'ஈ' correctly with dots must match and not be rejected");
+
       // 8. Random scribble & zig-zag strokes must be rejected
       final mockScribble = [
         for (double y = 50; y <= 300; y += 30)

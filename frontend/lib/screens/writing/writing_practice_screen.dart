@@ -3,6 +3,7 @@ import '../../data/writing_data.dart';
 import '../../models/handwriting_ml_model.dart';
 import '../../models/writing_practice_model.dart';
 import '../../services/audio_service.dart';
+import '../../services/language_service.dart';
 import '../../services/progress_service.dart';
 import '../../services/writing_practice_repository.dart';
 import '../../theme/app_colors.dart';
@@ -32,7 +33,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
   final GlobalKey<WritingCanvasState> _canvasKey = GlobalKey<WritingCanvasState>();
   final WritingPracticeRepository _repo = LocalWritingPracticeRepository();
 
-  int _selectedCategoryIndex = 0; // 0: Uyir, 1: Mei
+  int _selectedCategoryIndex = 0; // 0: Uyir / Achulu, 1: Mei / Hallulu
   int _letterIndex = 0;
   WritingCanvasMode _activeMode = WritingCanvasMode.learn; // learn, practice
   Color _activeColor = const Color(0xFF3A86FF);
@@ -47,6 +48,10 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
   ];
 
   List<WritingLetterGuide> get _currentList {
+    final lang = LanguageService.instance.currentLanguageCode;
+    if (lang == 'te') {
+      return WritingData.teluguAchuluGuides;
+    }
     if (_selectedCategoryIndex == 1) return WritingData.meiGuides;
     if (_selectedCategoryIndex == 2) return WritingData.ayuthamGuides;
     return WritingData.uyirGuides;
@@ -839,9 +844,12 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     );
   }
 
-  /// 3-Category Switcher: [உயிர் (12)], [மெய் (18)] & [ஆய்தம் (1)]
+  /// Category Switcher
   Widget _buildCategorySwitcher() {
-    final categories = ['உயிர் (12)', 'மெய் (18)', 'ஆய்தம் (1)'];
+    final lang = LanguageService.instance.currentLanguageCode;
+    final categories = lang == 'te'
+        ? ['అచ్చులు (Achulu)']
+        : ['உயிர் (12)', 'மெய் (18)', 'ஆய்தம் (1)'];
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),

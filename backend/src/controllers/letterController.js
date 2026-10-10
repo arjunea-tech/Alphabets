@@ -7,13 +7,16 @@ const { successResponse, errorResponse } = require('../utils/apiResponse');
 class LetterController {
   static async getAll(req, res, next) {
     try {
-      const { type, groupId, meiBase } = req.query;
+      const { type, groupId, meiBase, tenantId } = req.query;
+      const languageCode = req.query.lang || req.query.language_code || req.query.language;
       const onlyActive = req.query.all !== 'true';
 
       const letters = await LetterModel.getAll({
         type,
         groupId,
         meiBase,
+        languageCode,
+        tenantId,
         onlyActive,
       });
 
@@ -72,7 +75,8 @@ class LetterController {
   static async getGroups(req, res, next) {
     try {
       const { letterType } = req.query;
-      const groups = await LetterModel.getGroups({ letterType });
+      const languageCode = req.query.lang || req.query.language_code || req.query.language;
+      const groups = await LetterModel.getGroups({ letterType, languageCode });
       return successResponse(res, 'Letter groups fetched successfully', groups);
     } catch (error) {
       next(error);

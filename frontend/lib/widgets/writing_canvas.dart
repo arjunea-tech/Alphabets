@@ -373,6 +373,87 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
             return Stack(
               alignment: Alignment.center,
               children: [
+                // 0. Authentic Font-Matched Hollow Tracing Guide (Learn Mode: 100% typography-accurate)
+                if (isLearn)
+                  Positioned.fill(
+                    child: Center(
+                      child: IgnorePointer(
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // 0a. Outer Track Boundary (Soft Educational Blue Border)
+                            Text(
+                              widget.letter,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'Catamaran',
+                                fontSize: math.min(constraints.maxWidth, constraints.maxHeight) * 0.65,
+                                fontWeight: FontWeight.w900,
+                                height: 1.0,
+                                foreground: Paint()
+                                  ..style = PaintingStyle.stroke
+                                  ..strokeWidth = 26.0
+                                  ..strokeCap = StrokeCap.round
+                                  ..strokeJoin = StrokeJoin.round
+                                  ..color = const Color(0xFF93C5FD).withValues(alpha: 0.90),
+                              ),
+                            ),
+
+                            // 0b. Hollow Tracing Channel (Smooth light canal where child traces)
+                            Text(
+                              widget.letter,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'Catamaran',
+                                fontSize: math.min(constraints.maxWidth, constraints.maxHeight) * 0.65,
+                                fontWeight: FontWeight.w900,
+                                height: 1.0,
+                                foreground: Paint()
+                                  ..style = PaintingStyle.stroke
+                                  ..strokeWidth = 16.0
+                                  ..strokeCap = StrokeCap.round
+                                  ..strokeJoin = StrokeJoin.round
+                                  ..color = const Color(0xFFF0F7FF),
+                              ),
+                            ),
+
+                            // 0c. Soft inner letter core (shows authentic glyph shape clearly)
+                            Text(
+                              widget.letter,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'Catamaran',
+                                fontSize: math.min(constraints.maxWidth, constraints.maxHeight) * 0.65,
+                                fontWeight: FontWeight.w900,
+                                height: 1.0,
+                                color: const Color(0xFF3A86FF).withValues(alpha: 0.14),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  // Practice Mode: Gentle watermark background
+                  Positioned.fill(
+                    child: Center(
+                      child: IgnorePointer(
+                        child: Text(
+                          widget.letter,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Catamaran',
+                            fontSize: math.min(constraints.maxWidth, constraints.maxHeight) * 0.65,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFFFFB703).withValues(alpha: 0.12),
+                            height: 1.0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
                 // 1. Progressive Guided Path (Renders ACTIVE STEP ONLY; past steps faint, future steps hidden!)
                 if (isLearn && _pulseController != null && _demoController != null)
                   Positioned.fill(
@@ -464,14 +545,10 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
                                         if (isDone)
                                           const Icon(Icons.check_circle_rounded, size: 14, color: Colors.white)
                                         else
-                                          Text(
-                                            '${s.strokeNumber}',
-                                            style: TextStyle(
-                                              fontFamily: 'Catamaran',
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w900,
-                                              color: isCur ? Colors.white : const Color(0xFF475569),
-                                            ),
+                                          Icon(
+                                            Icons.edit_note_rounded,
+                                            size: 14,
+                                            color: isCur ? Colors.white : const Color(0xFF475569),
                                           ),
                                         const SizedBox(width: 4),
                                         Text(
@@ -575,9 +652,9 @@ class _LetterPathGuidePainter extends CustomPainter {
       return;
     }
 
-    // 1. Maintain 1:1 Aspect Ratio and Center on the Canvas
+    // 1. Maintain 1:1 Aspect Ratio and Center on the Canvas (Alignd with font glyph)
     final double boxSide = math.min(size.width, size.height);
-    final double drawSize = boxSide * 0.84;
+    final double drawSize = boxSide * 0.76;
     final double offsetX = (size.width - drawSize) / 2;
     final double offsetY = (size.height - drawSize) / 2;
 
@@ -588,101 +665,13 @@ class _LetterPathGuidePainter extends CustomPainter {
       );
     }
 
-    // Track width configurations (scaled proportionally with clear loop opening)
-    final double trackBorderWidth = drawSize * 0.086; // ~27px
-    final double trackFillWidth = drawSize * 0.066;   // ~21px
+    final double trackFillWidth = drawSize * 0.055;
 
     final int safeStep = letterData.strokes.isNotEmpty
         ? activeStepIndex.clamp(0, letterData.strokes.length - 1)
         : 0;
 
-    final dashedPaint = Paint()
-      ..color = const Color(0xFF3A86FF).withValues(alpha: 0.65)
-      ..strokeWidth = 3.0
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final arrowPaint = Paint()
-      ..color = const Color(0xFF1D4ED8).withValues(alpha: 0.90)
-      ..style = PaintingStyle.fill;
-
-    // --- PHASE 1: Draw the wide hollow tracing tracks (ONLY past and active steps; NEVER future!) ---
-    for (int sIdx = 0; sIdx < letterData.strokes.length; sIdx++) {
-      final stroke = letterData.strokes[sIdx];
-      final isCurrent = sIdx == safeStep;
-
-      // CRITICAL: DO NOT draw future strokes to eliminate confusing overlapping lines!
-      if (sIdx > safeStep) continue;
-
-      final canvasPts = stroke.pathPoints.map(toCanvas).toList();
-      if (canvasPts.isEmpty) continue;
-
-      if (stroke.isDot) {
-        final c = toCanvas(stroke.startPoint);
-        final r = trackBorderWidth * 0.52;
-        final borderCol = isCurrent ? const Color(0xFFC7D9FE) : const Color(0xFFE2E8F0);
-        final fillCol = isCurrent ? const Color(0xFFF1F6FF) : const Color(0xFFF8FAFC);
-        canvas.drawCircle(c, r + 2.5, Paint()..color = borderCol..style = PaintingStyle.fill);
-        canvas.drawCircle(c, r, Paint()..color = fillCol..style = PaintingStyle.fill);
-      } else {
-        final path = _buildPath(canvasPts);
-        final borderPaint = Paint()
-          ..color = isCurrent ? const Color(0xFFC7D9FE) : const Color(0xFFE2E8F0).withValues(alpha: 0.6)
-          ..strokeWidth = isCurrent ? trackBorderWidth : trackBorderWidth * 0.75
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round;
-
-        final fillPaint = Paint()
-          ..color = isCurrent ? const Color(0xFFF1F6FF) : const Color(0xFFF8FAFC).withValues(alpha: 0.6)
-          ..strokeWidth = isCurrent ? trackFillWidth : trackFillWidth * 0.75
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round;
-
-        canvas.drawPath(path, borderPaint);
-        canvas.drawPath(path, fillPaint);
-      }
-    }
-
-    // --- PHASE 2: Draw the dashed center guide & directional arrows for the ACTIVE STEP ONLY ---
-    if (safeStep >= 0 && safeStep < letterData.strokes.length) {
-      final stroke = letterData.strokes[safeStep];
-      if (stroke.isDot) {
-        final c = toCanvas(stroke.startPoint);
-        canvas.drawCircle(
-          c,
-          7.0,
-          Paint()
-            ..color = const Color(0xFF3A86FF).withValues(alpha: 0.50)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 2.0,
-        );
-      } else {
-        final canvasPts = stroke.pathPoints.map(toCanvas).toList();
-        if (canvasPts.length >= 2) {
-          for (int i = 0; i < canvasPts.length - 1; i++) {
-            final p0 = canvasPts[i];
-            final p1 = canvasPts[i + 1];
-            _drawDashedLine(canvas, p0, p1, dashedPaint, dashWidth: 7.0, dashSpace: 5.0);
-          }
-
-          final arrowIndices = <int>{
-            (canvasPts.length * 0.25).round().clamp(0, canvasPts.length - 2),
-            (canvasPts.length * 0.55).round().clamp(0, canvasPts.length - 2),
-            (canvasPts.length * 0.85).round().clamp(0, canvasPts.length - 2),
-          }.toList();
-
-          for (final idx in arrowIndices) {
-            final p0 = canvasPts[idx];
-            final p1 = canvasPts[idx + 1];
-            _drawArrowhead(canvas, p0, p1, arrowPaint);
-          }
-        }
-      }
-    }
-
-    // --- PHASE 3: Draw Start Badge ONLY at current active step start point ---
+    // --- PHASE 1: Draw Start Badge ONLY at current active step start point ---
     if (safeStep >= 0 && safeStep < letterData.strokes.length) {
       final stroke = letterData.strokes[safeStep];
       final startPos = toCanvas(stroke.startPoint);
@@ -695,89 +684,11 @@ class _LetterPathGuidePainter extends CustomPainter {
       );
     }
 
-    // --- PHASE 4: Animated Demo Motion (for ACTIVE STEP ONLY) ---
+    // --- PHASE 2: Animated Demo Motion (for ACTIVE STEP ONLY when demo is triggered) ---
     if (isDemoActive && safeStep >= 0 && safeStep < letterData.strokes.length) {
       final stroke = letterData.strokes[safeStep];
       _drawSingleStrokeDemoMotion(canvas, stroke, toCanvas, trackFillWidth, demoProgress);
     }
-  }
-
-  Path _buildPath(List<Offset> pts) {
-    final path = Path();
-    if (pts.isEmpty) return path;
-    if (pts.length == 1) {
-      path.moveTo(pts.first.dx, pts.first.dy);
-      path.lineTo(pts.first.dx + 0.1, pts.first.dy + 0.1);
-      return path;
-    }
-    if (pts.length == 2) {
-      path.moveTo(pts[0].dx, pts[0].dy);
-      path.lineTo(pts[1].dx, pts[1].dy);
-      return path;
-    }
-
-    path.moveTo(pts[0].dx, pts[0].dy);
-    for (int i = 0; i < pts.length - 1; i++) {
-      final p0 = pts[i];
-      final p1 = pts[i + 1];
-      final mid = Offset((p0.dx + p1.dx) / 2, (p0.dy + p1.dy) / 2);
-      if (i == 0) {
-        path.lineTo(mid.dx, mid.dy);
-      } else {
-        path.quadraticBezierTo(p0.dx, p0.dy, mid.dx, mid.dy);
-      }
-    }
-    path.lineTo(pts.last.dx, pts.last.dy);
-    return path;
-  }
-
-  void _drawDashedLine(Canvas canvas, Offset p1, Offset p2, Paint paint, {double dashWidth = 7.0, double dashSpace = 5.0}) {
-    final dx = p2.dx - p1.dx;
-    final dy = p2.dy - p1.dy;
-    final distance = math.sqrt(dx * dx + dy * dy);
-    if (distance <= 0) return;
-
-    final unitX = dx / distance;
-    final unitY = dy / distance;
-
-    double currentDist = 0.0;
-    while (currentDist < distance) {
-      final nextDist = math.min(currentDist + dashWidth, distance);
-      canvas.drawLine(
-        Offset(p1.dx + unitX * currentDist, p1.dy + unitY * currentDist),
-        Offset(p1.dx + unitX * nextDist, p1.dy + unitY * nextDist),
-        paint,
-      );
-      currentDist += dashWidth + dashSpace;
-    }
-  }
-
-  void _drawArrowhead(Canvas canvas, Offset from, Offset to, Paint paint) {
-    final dx = to.dx - from.dx;
-    final dy = to.dy - from.dy;
-    final len = math.sqrt(dx * dx + dy * dy);
-    if (len < 10) return;
-
-    final mid = Offset((from.dx + to.dx) / 2, (from.dy + to.dy) / 2);
-    final angle = math.atan2(dy, dx);
-    const arrowSize = 6.5;
-
-    final path = Path();
-    path.moveTo(
-      mid.dx + arrowSize * math.cos(angle),
-      mid.dy + arrowSize * math.sin(angle),
-    );
-    path.lineTo(
-      mid.dx - arrowSize * math.cos(angle - math.pi / 5.5),
-      mid.dy - arrowSize * math.sin(angle - math.pi / 5.5),
-    );
-    path.lineTo(
-      mid.dx - arrowSize * math.cos(angle + math.pi / 5.5),
-      mid.dy - arrowSize * math.sin(angle + math.pi / 5.5),
-    );
-    path.close();
-
-    canvas.drawPath(path, paint);
   }
 
   void _drawStepBadge(Canvas canvas, Offset center, int stepNumber, double pulse, {required bool isCurrent}) {

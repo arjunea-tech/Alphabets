@@ -27,8 +27,40 @@ DROP TABLE IF EXISTS letter_groups;
 DROP TABLE IF EXISTS lessons;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS admins;
+DROP TABLE IF EXISTS languages;
+DROP TABLE IF EXISTS tenants;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- ---------------------------------------------------------------------
+-- 0. Table: languages
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS languages (
+  id VARCHAR(10) PRIMARY KEY,
+  code VARCHAR(10) NOT NULL UNIQUE,
+  name VARCHAR(64) NOT NULL,
+  native_name VARCHAR(64) NOT NULL,
+  brand_title VARCHAR(64) NOT NULL DEFAULT 'அகரம்',
+  flag_emoji VARCHAR(32) NOT NULL DEFAULT '🇮🇳',
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  display_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- 0.1 Table: tenants (Multi-Tenant Organization Support)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS tenants (
+  id VARCHAR(64) PRIMARY KEY,
+  name VARCHAR(128) NOT NULL,
+  subdomain VARCHAR(64) UNIQUE,
+  default_language VARCHAR(10) NOT NULL DEFAULT 'ta',
+  logo_url VARCHAR(255) NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_tenant_subdomain (subdomain)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
 -- 1. Table: admins
@@ -407,8 +439,8 @@ VALUES
 ('mei_ing', 'ங்', 'mei', 'group_mei', 'சங்கு', 'Conch', 'ing', '🐚', 'assets/images/sangu.png', 'கடல் சங்கு', 2),
 ('mei_ich', 'ச்', 'mei', 'group_mei', 'எலுமிச்சை', 'புளிப்பான எலுமிச்சை', 'ich', '🍋', NULL, 'மெய் எழுத்து "ச்". (எலுமிச்சை)', 3),
 ('mei_inj', 'ஞ்', 'mei', 'group_mei', 'ஊஞ்சல்', 'Swing', 'inj', '🎪', 'assets/images/swing (2).jpg', 'ஆடும் ஊஞ்சல்', 4),
-('mei_it', 'ட்', 'mei', 'group_mei', 'பட்டம்', 'Kite', 'it', '🪁', 'assets/images/skite.jpg', 'பறக்கும் பட்டம்', 5),
-('mei_inn', 'ண்', 'mei', 'group_mei', 'கண்', 'Eye', 'inn', '👁️', 'assets/images/eye.jpg', 'அழகிய கண்', 6),
+('mei_it', 'ட்', 'mei', 'group_mei', 'பட்டம்', 'Kite', 'iT', '🪁', 'assets/images/skite.jpg', 'பறக்கும் பட்டம்', 5),
+('mei_inn', 'ண்', 'mei', 'group_mei', 'கண்', 'Eye', 'iN', '👁️', 'assets/images/eye.jpg', 'அழகிய கண்', 6),
 ('mei_ith', 'த்', 'mei', 'group_mei', 'நத்தை', 'Snail', 'ith', '🐌', 'assets/images/snail.jpg', 'மெல்ல நகரும் நத்தை', 7),
 ('mei_indh', 'ந்', 'mei', 'group_mei', 'பந்து', 'Ball', 'indh', '⚽', 'assets/images/ball.jpg', 'விளையாடும் பந்து', 8),
 ('mei_ip', 'ப்', 'mei', 'group_mei', 'கப்பல்', 'Ship', 'ip', '🚢', 'assets/images/ship.jpg', 'பெரிய கப்பல்', 9),
