@@ -96,15 +96,15 @@ class _VideosScreenState extends State<VideosScreen> {
     return list;
   }
 
-  List<VideoItem> get _otherVideos {
-    return _videos.where((v) => !_isUyirVideo(v) && !_isMeiVideo(v)).toList();
+  List<VideoItem> get _aythamVideos {
+    return _videos.where((v) => v.title.trim() == 'ஃ' || v.category == 'ஆய்த எழுத்து' || v.category == 'பாடம்').toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final uyirList = _uyirVideos;
     final meiList = _meiVideos;
-    final othersList = _otherVideos;
+    final aythamList = _aythamVideos;
 
     return ListenableBuilder(
       listenable: widget.progressService,
@@ -132,7 +132,7 @@ class _VideosScreenState extends State<VideosScreen> {
                         const SizedBox(height: 16),
 
                         // Filter Pills
-                        _buildFilterChips(uyirList.length, meiList.length, othersList.length),
+                        _buildFilterChips(uyirList.length, meiList.length, aythamList.length),
                         const SizedBox(height: 18),
 
                         if (_isLoading)
@@ -177,17 +177,17 @@ class _VideosScreenState extends State<VideosScreen> {
                             const SizedBox(height: 24),
                           ],
 
-                          // Section 3: Other Videos (Songs / Stories)
-                          if ((_selectedFilter == 'all' || _selectedFilter == 'others') && othersList.isNotEmpty) ...[
+                          // Section 3: Aytham Letter (ஃ)
+                          if ((_selectedFilter == 'all' || _selectedFilter == 'aytham') && aythamList.isNotEmpty) ...[
                             _buildSectionHeader(
-                              icon: Icons.music_note_rounded,
-                              title: 'பாடல்கள் & கதைகள்',
-                              countText: '${othersList.length}',
-                              subtitle: 'இனிமையான தமிழ் மழலையர் காணொளிகள்',
-                              badgeColor: AppColors.storyColor,
+                              icon: Icons.shield_rounded,
+                              title: 'ஆய்த எழுத்து காணொளி',
+                              countText: '${aythamList.length}',
+                              subtitle: 'ஃ - தனிநிலை ஆய்த எழுத்துப் பாடம்',
+                              badgeColor: AppColors.aythamColor,
                             ),
                             const SizedBox(height: 10),
-                            ...othersList.map((v) => _buildVideoCard(v)),
+                            ...aythamList.map((v) => _buildVideoCard(v, isUyir: true)),
                             const SizedBox(height: 20),
                           ],
                         ],
@@ -276,12 +276,12 @@ class _VideosScreenState extends State<VideosScreen> {
     );
   }
 
-  Widget _buildFilterChips(int uyirCount, int meiCount, int othersCount) {
+  Widget _buildFilterChips(int uyirCount, int meiCount, int aythamCount) {
     final filters = [
       {'id': 'all', 'label': 'அனைத்தும்', 'count': _videos.length},
       {'id': 'uyir', 'label': 'உயிர் எழுத்துகள்', 'count': uyirCount},
       {'id': 'mei', 'label': 'மெய் எழுத்துகள்', 'count': meiCount},
-      if (othersCount > 0) {'id': 'others', 'label': 'பாடல்கள்', 'count': othersCount},
+      if (aythamCount > 0) {'id': 'aytham', 'label': 'ஆய்த எழுத்து (ஃ)', 'count': aythamCount},
     ];
 
     return SingleChildScrollView(
@@ -295,7 +295,9 @@ class _VideosScreenState extends State<VideosScreen> {
               ? AppColors.uyirColor
               : id == 'mei'
                   ? AppColors.meiColor
-                  : AppColors.primary;
+                  : id == 'aytham'
+                      ? AppColors.aythamColor
+                      : AppColors.primary;
 
           return Padding(
             padding: const EdgeInsets.only(right: 8),

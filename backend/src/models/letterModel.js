@@ -116,14 +116,14 @@ class LetterModel {
     if (data.iconEmoji !== undefined) dbUpdates.icon_emoji = data.iconEmoji;
     else if (data.icon_emoji !== undefined) dbUpdates.icon_emoji = data.icon_emoji;
 
-    if (data.imagePath !== undefined) dbUpdates.image_path = data.imagePath;
-    else if (data.image_path !== undefined) dbUpdates.image_path = data.image_path;
+    if (data.imagePath !== undefined) dbUpdates.image_path = data.imagePath || null;
+    else if (data.image_path !== undefined) dbUpdates.image_path = data.image_path || null;
 
-    if (data.audioPath !== undefined) dbUpdates.audio_path = data.audioPath;
-    else if (data.audio_path !== undefined) dbUpdates.audio_path = data.audio_path;
+    if (data.audioPath !== undefined) dbUpdates.audio_path = data.audioPath || null;
+    else if (data.audio_path !== undefined) dbUpdates.audio_path = data.audio_path || null;
 
-    if (data.videoUrl !== undefined) dbUpdates.video_url = data.videoUrl;
-    else if (data.video_url !== undefined) dbUpdates.video_url = data.video_url;
+    if (data.videoUrl !== undefined) dbUpdates.video_url = data.videoUrl || null;
+    else if (data.video_url !== undefined) dbUpdates.video_url = data.video_url || null;
 
     if (data.explanation !== undefined) dbUpdates.explanation = data.explanation;
 
@@ -136,13 +136,14 @@ class LetterModel {
     if (data.displayOrder !== undefined) dbUpdates.display_order = data.displayOrder;
     else if (data.display_order !== undefined) dbUpdates.display_order = data.display_order;
 
-    if (data.isActive !== undefined) dbUpdates.is_active = data.isActive;
-    else if (data.is_active !== undefined) dbUpdates.is_active = data.is_active;
+    if (data.isActive !== undefined) dbUpdates.is_active = data.isActive ? 1 : 0;
+    else if (data.is_active !== undefined) dbUpdates.is_active = data.is_active ? 1 : 0;
 
     const cols = Object.keys(dbUpdates);
     if (cols.length === 0) return this.getById(id);
 
     const fields = cols.map((col) => `${col} = ?`);
+    fields.push('updated_at = CURRENT_TIMESTAMP');
     const values = cols.map((col) => dbUpdates[col]);
 
     values.push(id);

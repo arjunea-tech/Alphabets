@@ -5,23 +5,48 @@ import 'cloudinary_media.dart';
 class ApiConfig {
   // Custom server IP override if testing on a physical phone on the same Wi-Fi network
   static String? customServerUrl;
+  static String? _discoveredBaseUrl;
+
+  /// Candidate backend URLs for seamless connectivity across physical devices, emulators, and web
+  static List<String> get candidateBaseUrls {
+    if (customServerUrl != null && customServerUrl!.trim().isNotEmpty) {
+      return [customServerUrl!.trim()];
+    }
+    if (_discoveredBaseUrl != null && _discoveredBaseUrl!.isNotEmpty) {
+      return [_discoveredBaseUrl!];
+    }
+    if (kIsWeb) {
+      return ['http://localhost:5000/api/v1'];
+    }
+    if (Platform.isAndroid) {
+      return [
+        'http://192.168.1.34:5000/api/v1', // Wi-Fi LAN IP (Physical Android devices)
+        'http://localhost:5000/api/v1',     // USB adb reverse (tcp:5000 -> tcp:5000)
+        'http://10.0.2.2:5000/api/v1',     // Android Emulator loopback
+      ];
+    }
+    return ['http://localhost:5000/api/v1'];
+  }
 
   static String get baseUrl {
-    if (customServerUrl != null && customServerUrl!.isNotEmpty) {
-      return customServerUrl!;
+    if (customServerUrl != null && customServerUrl!.trim().isNotEmpty) {
+      return customServerUrl!.trim();
     }
-
+    if (_discoveredBaseUrl != null && _discoveredBaseUrl!.isNotEmpty) {
+      return _discoveredBaseUrl!;
+    }
     if (kIsWeb) {
       return 'http://localhost:5000/api/v1';
     }
-
-    // Android Emulator routes 10.0.2.2 to host machine's localhost
     if (Platform.isAndroid) {
-      return 'http://10.0.2.2:5000/api/v1';
+      // Default to Wi-Fi IP which connects on physical Android devices
+      return 'http://192.168.1.34:5000/api/v1';
     }
-
-    // Windows, macOS, Linux desktop testing
     return 'http://localhost:5000/api/v1';
+  }
+
+  static void setWorkingBaseUrl(String url) {
+    _discoveredBaseUrl = url;
   }
 
   static String get serverRoot {

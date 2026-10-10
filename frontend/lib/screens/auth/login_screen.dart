@@ -114,8 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: 90,
                         height: 90,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
                               color: AppColors.primary.withValues(alpha: 0.25),
@@ -123,16 +122,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               offset: const Offset(0, 8),
                             ),
                           ],
-                          border: Border.all(color: const Color(0xFFFFE5B4), width: 3.5),
                         ),
-                        child: const Center(
-                          child: Text(
-                            'அ',
-                            style: TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.primary,
-                            ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: Image.asset(
+                            'assets/images/app_logo.png',
+                            fit: BoxFit.cover,
                           ),
                         ),
                       ),
@@ -140,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 16),
 
                     Text(
-                      'அகரம் (AGARAM)',
+                      'எழுத்துக்கள்',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.catamaran(
                         fontSize: 28,

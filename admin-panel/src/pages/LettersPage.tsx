@@ -442,13 +442,26 @@ export const LettersPage: React.FC = () => {
               onUploaded={(path) => setCurrentLetter((prev) => (prev ? { ...prev, audio_path: path } : prev))}
               onClear={() => setCurrentLetter((prev) => (prev ? { ...prev, audio_path: null } : prev))}
             />
-            <FileUpload
-              type="image"
-              label={t('letters.imageFile')}
-              currentValue={currentLetter?.image_path}
-              onUploaded={(path) => setCurrentLetter((prev) => (prev ? { ...prev, image_path: path } : prev))}
-              onClear={() => setCurrentLetter((prev) => (prev ? { ...prev, image_path: null } : prev))}
-            />
+            <div>
+              <FileUpload
+                type="image"
+                label={t('letters.imageFile')}
+                currentValue={currentLetter?.image_path}
+                onUploaded={(path) => setCurrentLetter((prev) => (prev ? { ...prev, image_path: path } : prev))}
+                onClear={() => setCurrentLetter((prev) => (prev ? { ...prev, image_path: null } : prev))}
+              />
+              <div className="form-group" style={{ marginTop: '8px' }}>
+                <label className="form-label" style={{ fontSize: '12px', fontWeight: 600 }}>Cloudinary / Image URL</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  style={{ fontSize: '13px' }}
+                  placeholder="https://res.cloudinary.com/... or assets/images/..."
+                  value={currentLetter?.image_path || ''}
+                  onChange={(e) => setCurrentLetter((prev) => (prev ? { ...prev, image_path: e.target.value } : prev))}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Optional Video File Upload for Letter */}

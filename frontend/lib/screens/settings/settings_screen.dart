@@ -347,7 +347,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             'ஒலி மற்றும் பின்னணி இசை',
                             style: AppTextStyles.cardTitle.copyWith(fontSize: 16),
                           ),
-                          subtitle: const Text('பாடல்கள் மற்றும் எழுத்து உச்சரிப்பு'),
+                          subtitle: const Text('எழுத்து உச்சரிப்பு மற்றும் ஒலி'),
                           value: progress.soundEnabled,
                           activeThumbColor: AppColors.secondary,
                           onChanged: (val) {
@@ -442,7 +442,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('அகரம் (AGARAM)', style: AppTextStyles.cardTitle.copyWith(fontSize: 18)),
+                                    Text('எழுத்துக்கள்', style: AppTextStyles.cardTitle.copyWith(fontSize: 18)),
                                     const SizedBox(height: 2),
                                     Text('“அகரத்தில் தொடங்கி, தமிழில் சிறக்க!”', style: AppTextStyles.tagLine),
                                   ],
@@ -452,7 +452,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           const SizedBox(height: 14),
                           Text(
-                            'அகரம் என்பது மழலையர் பள்ளி மற்றும் தொடக்கப் பள்ளி குழந்தைகளுக்காக உருவாக்கப்பட்ட வண்ணமயமான தமிழ் மொழிக் கற்றல் செயலியாகும்.',
+                            'எழுத்துக்கள் என்பது மழலையர் பள்ளி மற்றும் தொடக்கப் பள்ளி குழந்தைகளுக்காக உருவாக்கப்பட்ட வண்ணமயமான தமிழ் மொழிக் கற்றல் செயலியாகும்.',
                             style: AppTextStyles.bodyText.copyWith(color: AppColors.textMuted, fontSize: 14),
                           ),
                         ],

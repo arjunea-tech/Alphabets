@@ -73,6 +73,7 @@ class AgaramApp extends StatefulWidget {
   State<AgaramApp> createState() => _AgaramAppState();
 }
 
+<<<<<<< HEAD
 class _AgaramAppState extends State<AgaramApp> {
   @override
   Widget build(BuildContext context) {
@@ -109,6 +110,19 @@ class _AgaramAppState extends State<AgaramApp> {
           home: homeWidget,
         );
       },
+=======
+    return MaterialApp(
+      title: 'எழுத்துக்கள்',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.theme,
+      home: initialScreen ??
+          (auth.isAuthenticated
+              ? MainNavigationScreen(progressService: progressService)
+              : LoginScreen(
+                  authService: auth,
+                  progressService: progressService,
+                )),
+>>>>>>> 658e0e6e8a16f1e48754297357978b56952f7752
     );
   }
 }

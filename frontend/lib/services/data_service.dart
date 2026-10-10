@@ -117,16 +117,16 @@ class ApiDataRepository implements IDataRepository {
           : (letter.type == LetterType.mei ? (LanguageService.instance.currentLanguageCode == 'te' ? teluguHalluluList : meiLettersList) : []);
       
       final localMatch = sourceList.firstWhere(
-        (l) => l.letter == letter.letter || l.id == letter.id,
+        (l) => (l.letter == letter.letter || l.id == letter.id) && l.word == letter.word,
         orElse: () => letter,
       );
 
-      if (localMatch.imagePath != null && localMatch.imagePath != 'assets/images/welcome.png') {
+      if (localMatch != letter && localMatch.imagePath != null && localMatch.imagePath != 'assets/images/welcome.png') {
         return LetterModel(
           id: letter.id,
           letter: letter.letter,
           type: letter.type,
-          word: letter.word.isNotEmpty ? letter.word : localMatch.word,
+          word: letter.word,
           meaning: letter.meaning.isNotEmpty ? letter.meaning : localMatch.meaning,
           phonetic: letter.phonetic.isNotEmpty ? letter.phonetic : localMatch.phonetic,
           iconEmoji: letter.iconEmoji.isNotEmpty && letter.iconEmoji != '⭐'

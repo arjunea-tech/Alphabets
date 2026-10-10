@@ -40,6 +40,7 @@ class _UyirmeiScreenState extends State<UyirmeiScreen>
   final ScrollController _uyirScrollController = ScrollController();
 
   bool _isAutoPlaying = false;
+  int _activeFormulaStep = 0; // 0: none, 1: Mei, 2: Plus, 3: Uyir, 4: Result
 
   @override
   void initState() {
@@ -171,43 +172,59 @@ class _UyirmeiScreenState extends State<UyirmeiScreen>
     );
   }
 
-  /// Plays sequential letter sound breakdown: க் ... அ ... க
+  /// Plays sequential letter sound breakdown:
+  /// Audio 1: க் (Mei)
+  /// Audio 2: + (கூட்டல்)
+  /// Audio 3: அ (Uyir)
+  /// -> Smooth flip to result card -> Audio 4: க (Uyirmei) with handwriting animation & star reward
   Future<void> _playFullSequence() async {
     if (_isAutoPlaying) return;
     setState(() {
       _isAutoPlaying = true;
+      _activeFormulaStep = 0;
     });
 
     try {
-      // Step 1: Flip to equation side
-      await _flipController.reverse();
-      await Future.delayed(const Duration(milliseconds: 150));
+      // Step 1: Smoothly flip to equation side if currently showing result
+      if (_flipController.value > 0.0) {
+        await _flipController.reverse();
+        await Future.delayed(const Duration(milliseconds: 200));
+      }
 
-      // Play Mei sound
+      // Audio 1: Play Mei sound (e.g. க்)
       if (!mounted) return;
+      setState(() => _activeFormulaStep = 1);
       await TamilAudioService.instance.playLetterSound(
         context,
         letter: _selectedMei,
         showIndicator: true,
       );
-      await Future.delayed(const Duration(milliseconds: 700));
+      await Future.delayed(const Duration(milliseconds: 800));
 
-      // Play Uyir sound
+      // Audio 2: Play Plus sound ('+' / 'கூட்டல்')
       if (!mounted) return;
+      setState(() => _activeFormulaStep = 2);
+      await TamilAudioService.instance.playPlusSound(context);
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      // Audio 3: Play Uyir sound (e.g. அ)
+      if (!mounted) return;
+      setState(() => _activeFormulaStep = 3);
       await TamilAudioService.instance.playLetterSound(
         context,
         letter: _selectedUyir,
         showIndicator: true,
       );
-      await Future.delayed(const Duration(milliseconds: 700));
+      await Future.delayed(const Duration(milliseconds: 800));
 
-      // Step 2: Flip to result side and animate handwriting
+      // Step 2: Smoothly flip to result side and animate handwriting
       if (!mounted) return;
+      setState(() => _activeFormulaStep = 4);
       _writingController.forward(from: 0.0);
       await _flipController.forward();
-      await Future.delayed(const Duration(milliseconds: 200));
+      await Future.delayed(const Duration(milliseconds: 250));
 
-      // Play result letter sound only
+      // Audio 4: Play result letter sound (e.g. க)
       if (!mounted) return;
       await TamilAudioService.instance.playLetterSound(
         context,
@@ -220,6 +237,7 @@ class _UyirmeiScreenState extends State<UyirmeiScreen>
       if (mounted) {
         setState(() {
           _isAutoPlaying = false;
+          _activeFormulaStep = 0;
         });
       }
     }
@@ -330,37 +348,67 @@ class _UyirmeiScreenState extends State<UyirmeiScreen>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppColors.meiColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Text(
-                'மெய்',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.meiColor,
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                TamilAudioService.instance.playLetterSound(context, letter: _selectedMei, showIndicator: true);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.meiColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  'மெய்',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.meiColor,
+                  ),
                 ),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 6),
-              child: Text('+', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppColors.uyirColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.mediumImpact();
+                TamilAudioService.instance.playPlusSound(context);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8338EC).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  '+',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF8338EC),
+                  ),
+                ),
               ),
-              child: const Text(
-                'உயிர்',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.uyirColor,
+            ),
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                TamilAudioService.instance.playLetterSound(context, letter: _selectedUyir, showIndicator: true);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.uyirColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  'உயிர்',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.uyirColor,
+                  ),
                 ),
               ),
             ),
@@ -658,34 +706,98 @@ class _UyirmeiScreenState extends State<UyirmeiScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  '$_selectedMei ',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.meiColor,
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    TamilAudioService.instance.playLetterSound(context, letter: _selectedMei, showIndicator: true);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: _activeFormulaStep == 1 ? AppColors.meiColor.withValues(alpha: 0.18) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '$_selectedMei ',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: _activeFormulaStep == 1 ? const Color(0xFF2563EB) : AppColors.meiColor,
+                      ),
+                    ),
                   ),
                 ),
-                const Text('+ ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
-                Text(
-                  '$_selectedUyir ',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: _isUorOoSeries
-                        ? const Color(0xFFFF007F)
-                        : AppColors.uyirColor,
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    TamilAudioService.instance.playPlusSound(context);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    margin: const EdgeInsets.symmetric(horizontal: 1),
+                    decoration: BoxDecoration(
+                      color: _activeFormulaStep == 2 ? const Color(0xFF8338EC) : const Color(0xFF8338EC).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '+',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        color: _activeFormulaStep == 2 ? Colors.white : const Color(0xFF8338EC),
+                      ),
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    TamilAudioService.instance.playLetterSound(context, letter: _selectedUyir, showIndicator: true);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: _activeFormulaStep == 3 ? AppColors.uyirColor.withValues(alpha: 0.18) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      ' $_selectedUyir ',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: _activeFormulaStep == 3
+                            ? const Color(0xFFEA580C)
+                            : (_isUorOoSeries ? const Color(0xFFFF007F) : AppColors.uyirColor),
+                      ),
+                    ),
                   ),
                 ),
                 const Text('= ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
-                Text(
-                  _currentUyirmei,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: _isUorOoSeries
-                        ? const Color(0xFFD81159)
-                        : AppColors.secondaryDark,
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    TamilAudioService.instance.playLetterSound(context, letter: _currentUyirmei, showIndicator: true);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: _activeFormulaStep == 4 ? AppColors.secondaryDark.withValues(alpha: 0.18) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      _currentUyirmei,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: _activeFormulaStep == 4
+                            ? const Color(0xFF059669)
+                            : (_isUorOoSeries ? const Color(0xFFD81159) : AppColors.secondaryDark),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -787,72 +899,150 @@ class _UyirmeiScreenState extends State<UyirmeiScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Mei Box
-                Container(
-                  constraints: const BoxConstraints(minWidth: 60, minHeight: 60),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF4361EE), Color(0xFF4CC9F0)],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.meiColor.withValues(alpha: 0.35),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    TamilAudioService.instance.playLetterSound(
+                      context,
+                      letter: _selectedMei,
+                      showIndicator: true,
+                    );
+                  },
+                  child: AnimatedScale(
+                    scale: _activeFormulaStep == 1 ? 1.08 : 1.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      constraints: const BoxConstraints(minWidth: 60, minHeight: 60),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF4361EE), Color(0xFF4CC9F0)],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: _activeFormulaStep == 1 ? const Color(0xFFFFD166) : Colors.white.withValues(alpha: 0.3),
+                          width: _activeFormulaStep == 1 ? 3.0 : 1.0,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (_activeFormulaStep == 1 ? const Color(0xFFFFD166) : AppColors.meiColor).withValues(alpha: 0.45),
+                            blurRadius: _activeFormulaStep == 1 ? 14 : 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    _selectedMei,
-                    style: const TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                      alignment: Alignment.center,
+                      child: Text(
+                        _selectedMei,
+                        style: const TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ),
                 ),
 
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    '+',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textMuted),
+                // Plus (+) Button with Audio
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    TamilAudioService.instance.playPlusSound(context);
+                  },
+                  child: AnimatedScale(
+                    scale: _activeFormulaStep == 2 ? 1.15 : 1.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: _activeFormulaStep == 2
+                            ? const LinearGradient(
+                                colors: [Color(0xFF8338EC), Color(0xFF3A86FF)],
+                              )
+                            : const LinearGradient(
+                                colors: [Color(0xFFFFFFFF), Color(0xFFEDE9FE)],
+                              ),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _activeFormulaStep == 2
+                              ? const Color(0xFFFFD166)
+                              : const Color(0xFF8B5CF6).withValues(alpha: 0.5),
+                          width: _activeFormulaStep == 2 ? 3.0 : 2.0,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (_activeFormulaStep == 2
+                                    ? const Color(0xFF8338EC)
+                                    : const Color(0xFF7C3AED))
+                                .withValues(alpha: _activeFormulaStep == 2 ? 0.5 : 0.18),
+                            blurRadius: _activeFormulaStep == 2 ? 14 : 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.add_rounded,
+                        size: 26,
+                        color: _activeFormulaStep == 2 ? Colors.white : const Color(0xFF7C3AED),
+                      ),
+                    ),
                   ),
                 ),
 
                 // Uyir Box (Special highlight if 'உ' or 'ஊ')
-                Container(
-                  constraints: const BoxConstraints(minWidth: 60, minHeight: 60),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    gradient: _isUorOoSeries
-                        ? const LinearGradient(
-                            colors: [Color(0xFFFF007F), Color(0xFFFF9F1C)],
-                          )
-                        : const LinearGradient(
-                            colors: [Color(0xFFFF6B6B), Color(0xFFFF9F1C)],
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    TamilAudioService.instance.playLetterSound(
+                      context,
+                      letter: _selectedUyir,
+                      showIndicator: true,
+                    );
+                  },
+                  child: AnimatedScale(
+                    scale: _activeFormulaStep == 3 ? 1.08 : 1.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      constraints: const BoxConstraints(minWidth: 60, minHeight: 60),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        gradient: _isUorOoSeries
+                            ? const LinearGradient(
+                                colors: [Color(0xFFFF007F), Color(0xFFFF9F1C)],
+                              )
+                            : const LinearGradient(
+                                colors: [Color(0xFFFF6B6B), Color(0xFFFF9F1C)],
+                              ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: _activeFormulaStep == 3 ? const Color(0xFFFFD166) : Colors.white.withValues(alpha: 0.3),
+                          width: _activeFormulaStep == 3 ? 3.0 : 1.0,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (_activeFormulaStep == 3
+                                    ? const Color(0xFFFFD166)
+                                    : (_isUorOoSeries ? const Color(0xFFFF007F) : AppColors.uyirColor))
+                                .withValues(alpha: 0.45),
+                            blurRadius: _activeFormulaStep == 3 ? 14 : 8,
+                            offset: const Offset(0, 4),
                           ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (_isUorOoSeries
-                                ? const Color(0xFFFF007F)
-                                : AppColors.uyirColor)
-                            .withValues(alpha: 0.35),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
+                        ],
                       ),
-                    ],
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    _selectedUyir,
-                    style: const TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                      alignment: Alignment.center,
+                      child: Text(
+                        _selectedUyir,
+                        style: const TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ),
                 ),

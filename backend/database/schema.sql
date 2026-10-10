@@ -147,9 +147,9 @@ CREATE TABLE IF NOT EXISTS letters (
   meaning VARCHAR(128) NOT NULL,
   phonetic VARCHAR(128) NOT NULL,
   icon_emoji VARCHAR(32) DEFAULT '⭐',
-  image_path VARCHAR(255) NULL,
-  audio_path VARCHAR(255) NULL,
-  video_url VARCHAR(255) NULL,
+  image_path VARCHAR(500) NULL,
+  audio_path VARCHAR(500) NULL,
+  video_url VARCHAR(500) NULL,
   explanation TEXT NULL,
   mei_base VARCHAR(32) NULL,
   uyir_base VARCHAR(32) NULL,
@@ -437,7 +437,7 @@ INSERT INTO letters (id, letter, type, group_id, word, meaning, phonetic, icon_e
 VALUES
 ('mei_ik', 'க்', 'mei', 'group_mei', 'சக்கரம்', 'Wheel', 'ik', '🎡', 'assets/images/wheel.jpg', 'சுழலும் சக்கரம்', 1),
 ('mei_ing', 'ங்', 'mei', 'group_mei', 'சங்கு', 'Conch', 'ing', '🐚', 'assets/images/sangu.png', 'கடல் சங்கு', 2),
-('mei_ich', 'ச்', 'mei', 'group_mei', 'தச்சர்', 'Carpenter', 'ich', '🪚', 'assets/images/Carpenter.jpg', 'மரம் செதுக்கும் தச்சர்', 3),
+('mei_ich', 'ச்', 'mei', 'group_mei', 'எலுமிச்சை', 'புளிப்பான எலுமிச்சை', 'ich', '🍋', NULL, 'மெய் எழுத்து "ச்". (எலுமிச்சை)', 3),
 ('mei_inj', 'ஞ்', 'mei', 'group_mei', 'ஊஞ்சல்', 'Swing', 'inj', '🎪', 'assets/images/swing (2).jpg', 'ஆடும் ஊஞ்சல்', 4),
 ('mei_it', 'ட்', 'mei', 'group_mei', 'பட்டம்', 'Kite', 'iT', '🪁', 'assets/images/skite.jpg', 'பறக்கும் பட்டம்', 5),
 ('mei_inn', 'ண்', 'mei', 'group_mei', 'கண்', 'Eye', 'iN', '👁️', 'assets/images/eye.jpg', 'அழகிய கண்', 6),
@@ -445,6 +445,7 @@ VALUES
 ('mei_indh', 'ந்', 'mei', 'group_mei', 'பந்து', 'Ball', 'indh', '⚽', 'assets/images/ball.jpg', 'விளையாடும் பந்து', 8),
 ('mei_ip', 'ப்', 'mei', 'group_mei', 'கப்பல்', 'Ship', 'ip', '🚢', 'assets/images/ship.jpg', 'பெரிய கப்பல்', 9),
 ('mei_im', 'ம்', 'mei', 'group_mei', 'மரம்', 'Tree', 'im', '🌳', 'assets/images/tree.jpg', 'நிழல் தரும் மரம்', 10),
+<<<<<<< HEAD
 ('mei_iy', 'ய்', 'mei', 'group_mei', 'பாய்', 'Mat', 'ei', '🧺', 'assets/images/mat.jpg', 'படுக்க உதவும் பாய்', 11),
 ('mei_ir', 'ர்', 'mei', 'group_mei', 'ஏர்', 'Plough', 'ir', '🌾', 'assets/images/river.jpg', 'உழவு செய்யும் ஏர்', 12),
 ('mei_il', 'ல்', 'mei', 'group_mei', 'சேவல்', 'Rooster', 'il', '🐓', 'assets/images/hen.jpg', 'கூவும் சேவல்', 13),
@@ -452,8 +453,17 @@ VALUES
 ('mei_izh', 'ழ்', 'mei', 'group_mei', 'யாழ்', 'Harp', 'lzh', '🪕', 'assets/images/Harp.jpg', 'இசைக்கும் யாழ்', 15),
 ('mei_ill', 'ள்', 'mei', 'group_mei', 'வாள்', 'Sword', 'iLL', '🗡️', 'assets/images/sward.jpg', 'வீர வாள்', 16),
 ('mei_irr', 'ற்', 'mei', 'group_mei', 'புற்று', 'Ant-hill', 'irr', '🪨', 'assets/images/putru.jpg', 'மண் புற்று', 17),
+=======
+('mei_iy', 'ய்', 'mei', 'group_mei', 'பாய்', 'Mat', 'iy', '🧺', 'assets/images/mat.jpg', 'படுக்க உதவும் பாய்', 11),
+('mei_ir', 'ர்', 'mei', 'group_mei', 'தேர்', 'கோவில் தேர்', 'ir', '🛕', NULL, 'மெய் எழுத்து "ர்". (தேர்)', 12),
+('mei_il', 'ல்', 'mei', 'group_mei', 'சேவல்', 'Rooster', 'il', '🐓', 'assets/images/hen.jpg', 'கூவும் சேவல்', 13),
+('mei_iv', 'வ்', 'mei', 'group_mei', 'செவ்வானம்', 'மாலைச் செவ்வானம்', 'iv', '🌅', 'https://res.cloudinary.com/dy8bu8suk/image/upload/v1791177499/agaram_media/images/backend_pic__tura_de_ap___s__n__toas___1789718909825_30607.jpg', 'மெய் எழுத்து "வ்". (செவ்வானம்)', 14),
+('mei_izh', 'ழ்', 'mei', 'group_mei', 'யாழ்', 'Harp', 'izh', '🪕', 'assets/images/Harp.jpg', 'இசைக்கும் யாழ்', 15),
+('mei_ill', 'ள்', 'mei', 'group_mei', 'வாள்', 'Sword', 'ill', '🗡️', 'assets/images/sward.jpg', 'வீர வாள்', 16),
+('mei_irr', 'ற்', 'mei', 'group_mei', 'வெற்றிலை', 'பச்சை வெற்றிலை', 'irr', '🍃', 'https://res.cloudinary.com/dy8bu8suk/image/upload/v1791177419/agaram_media/images/frontend_leaf.jpg', 'மெய் எழுத்து "ற்". (வெற்றிலை)', 17),
+>>>>>>> 658e0e6e8a16f1e48754297357978b56952f7752
 ('mei_in', 'ன்', 'mei', 'group_mei', 'மீன்', 'Fish', 'in', '🐟', 'assets/images/fish.jpg', 'நீந்தும் மீன்', 18)
-ON DUPLICATE KEY UPDATE word = VALUES(word), image_path = VALUES(image_path);
+ON DUPLICATE KEY UPDATE word = VALUES(word), meaning = VALUES(meaning), phonetic = VALUES(phonetic), icon_emoji = VALUES(icon_emoji), image_path = VALUES(image_path), explanation = VALUES(explanation);
 
 -- Reading Story: முயலும் ஆமையும்
 INSERT INTO reading_stories (id, title, subtitle, cover_emoji, cover_image, moral, display_order, is_published)
