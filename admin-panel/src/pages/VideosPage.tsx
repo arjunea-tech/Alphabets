@@ -176,18 +176,22 @@ export const VideosPage: React.FC = () => {
         >
           ✍️ மெய் எழுத்துகள் ({meiCount}/18)
         </button>
-        <button
-          className={`tab-btn ${selectedFilter === 'song' ? 'active' : ''}`}
-          onClick={() => setSelectedFilter('song')}
-        >
-          🎵 பாடல்கள் ({songsCount})
-        </button>
-        <button
-          className={`tab-btn ${selectedFilter === 'story' ? 'active' : ''}`}
-          onClick={() => setSelectedFilter('story')}
-        >
-          📖 கதைகள் ({storiesCount})
-        </button>
+        {songsCount > 0 && (
+          <button
+            className={`tab-btn ${selectedFilter === 'song' ? 'active' : ''}`}
+            onClick={() => setSelectedFilter('song')}
+          >
+            🎵 பாடல்கள் ({songsCount})
+          </button>
+        )}
+        {storiesCount > 0 && (
+          <button
+            className={`tab-btn ${selectedFilter === 'story' ? 'active' : ''}`}
+            onClick={() => setSelectedFilter('story')}
+          >
+            📖 கதைகள் ({storiesCount})
+          </button>
+        )}
         {lessonsCount > 0 && (
           <button
             className={`tab-btn ${selectedFilter === 'lesson' ? 'active' : ''}`}

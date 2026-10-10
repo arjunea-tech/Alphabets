@@ -53,20 +53,43 @@ class AuthService extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/users/register');
-      final response = await http
-          .post(
-            url,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'name': name.trim(),
-              'email': email.trim().toLowerCase(),
-              'password': password,
-            }),
-          )
-          .timeout(const Duration(seconds: 12));
+    final candidates = ApiConfig.candidateBaseUrls;
+    http.Response? response;
 
+    for (final base in candidates) {
+      try {
+        final url = Uri.parse('$base/users/register');
+        final res = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'name': name.trim(),
+            'email': email.trim().toLowerCase(),
+            'password': password,
+          }),
+        ).timeout(const Duration(seconds: 4));
+
+        ApiConfig.setWorkingBaseUrl(base);
+        response = res;
+        break;
+      } on SocketException catch (_) {
+        continue;
+      } on TimeoutException catch (_) {
+        continue;
+      } catch (_) {
+        continue;
+      }
+    }
+
+    if (response == null) {
+      _isLoading = false;
+      notifyListeners();
+      return AuthResult.failure(
+        'சேவையகத்துடன் இணைக்க முடியவில்லை. இணைய இணைப்பை சரிபார்க்கவும்.',
+      );
+    }
+
+    try {
       final Map<String, dynamic> responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -92,18 +115,6 @@ class AuthService extends ChangeNotifier {
         final msg = responseData['message']?.toString() ?? 'பதிவு செய்வதில் சிக்கல் ஏற்பட்டது';
         return AuthResult.failure(_translateError(msg));
       }
-    } on SocketException {
-      _isLoading = false;
-      notifyListeners();
-      return AuthResult.failure(
-        'சேவையகத்துடன் இணைக்க முடியவில்லை. இணைய இணைப்பை சரிபார்க்கவும்.',
-      );
-    } on TimeoutException {
-      _isLoading = false;
-      notifyListeners();
-      return AuthResult.failure(
-        'இணைப்பு நேரம் முடிந்தது. மீண்டும் முயற்சிக்கவும்.',
-      );
     } catch (e) {
       _isLoading = false;
       notifyListeners();
@@ -119,19 +130,42 @@ class AuthService extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/users/login');
-      final response = await http
-          .post(
-            url,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'email': email.trim().toLowerCase(),
-              'password': password,
-            }),
-          )
-          .timeout(const Duration(seconds: 12));
+    final candidates = ApiConfig.candidateBaseUrls;
+    http.Response? response;
 
+    for (final base in candidates) {
+      try {
+        final url = Uri.parse('$base/users/login');
+        final res = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'email': email.trim().toLowerCase(),
+            'password': password,
+          }),
+        ).timeout(const Duration(seconds: 4));
+
+        ApiConfig.setWorkingBaseUrl(base);
+        response = res;
+        break;
+      } on SocketException catch (_) {
+        continue;
+      } on TimeoutException catch (_) {
+        continue;
+      } catch (_) {
+        continue;
+      }
+    }
+
+    if (response == null) {
+      _isLoading = false;
+      notifyListeners();
+      return AuthResult.failure(
+        'சேவையகத்துடன் இணைக்க முடியவில்லை. இணைய இணைப்பை சரிபார்க்கவும்.',
+      );
+    }
+
+    try {
       final Map<String, dynamic> responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
@@ -155,18 +189,6 @@ class AuthService extends ChangeNotifier {
         final msg = responseData['message']?.toString() ?? 'உள்நுழைவு தோல்வியடைந்தது';
         return AuthResult.failure(_translateError(msg));
       }
-    } on SocketException {
-      _isLoading = false;
-      notifyListeners();
-      return AuthResult.failure(
-        'சேவையகத்துடன் இணைக்க முடியவில்லை. இணைய இணைப்பை சரிபார்க்கவும்.',
-      );
-    } on TimeoutException {
-      _isLoading = false;
-      notifyListeners();
-      return AuthResult.failure(
-        'இணைப்பு நேரம் முடிந்தது. மீண்டும் முயற்சிக்கவும்.',
-      );
     } catch (e) {
       _isLoading = false;
       notifyListeners();

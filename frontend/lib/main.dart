@@ -68,7 +68,7 @@ class AgaramApp extends StatelessWidget {
     final auth = authService ?? AuthService();
 
     return MaterialApp(
-      title: 'அகரம் (AGARAM)',
+      title: 'எழுத்துக்கள்',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       home: initialScreen ??

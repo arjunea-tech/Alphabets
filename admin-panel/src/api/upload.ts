@@ -60,9 +60,6 @@ async function uploadDirectToCloudinary(
 
   // 3. Post directly to Cloudinary (using clean axios without app authorization headers)
   const cldResponse = await axios.post(targetUrl, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
     onUploadProgress: (progressEvent) => {
       if (progressEvent.total && onProgress) {
         const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);

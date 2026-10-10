@@ -133,8 +133,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
                               color: AppColors.primary.withValues(alpha: 0.25),
@@ -142,16 +141,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               offset: const Offset(0, 8),
                             ),
                           ],
-                          border: Border.all(color: const Color(0xFFFFE5B4), width: 3),
                         ),
-                        child: const Center(
-                          child: Text(
-                            'அ',
-                            style: TextStyle(
-                              fontSize: 42,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.primary,
-                            ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image.asset(
+                            'assets/images/app_logo.png',
+                            fit: BoxFit.cover,
                           ),
                         ),
                       ),
@@ -159,7 +154,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 14),
 
                     Text(
-                      'அகரம் (AGARAM)',
+                      'எழுத்துக்கள்',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.catamaran(
                         fontSize: 26,

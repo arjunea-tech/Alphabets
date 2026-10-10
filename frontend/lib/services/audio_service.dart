@@ -58,6 +58,11 @@ class AudioService {
     );
   }
 
+  /// Plays pronunciation for the '+' (கூட்டல்) operator symbol
+  Future<void> playPlusSound(BuildContext context, {bool showIndicator = true}) async {
+    await TamilAudioService.instance.playPlusSound(context, showIndicator: showIndicator);
+  }
+
   /// Speaks any Tamil text (letter, word, sentence, story, quiz question).
   Future<void> speakText(String? text, {String? fallbackTamilText}) async {
     await TamilAudioService.instance.playTamilAudio(text, fallbackTamilText: fallbackTamilText);

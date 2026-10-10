@@ -119,6 +119,11 @@ class TamilAudioService {
     // 1 Aytham Letter
     map['ஃ'] = 'assets/audio/tamil/aytham/aytham_01_ak.mp3';
 
+    // Operator and special symbols (+ / கூட்டல்)
+    map['+'] = 'assets/audio/tamil/plus.mp3';
+    map['கூட்டல்'] = 'assets/audio/tamil/plus.mp3';
+    map['plus'] = 'assets/audio/tamil/plus.mp3';
+
     // 216 Uyirmei Combinations (18 Mei × 12 Uyir)
     const meiKeys = [
       'k', 'ng', 'c', 'nj', 't', 'nn', 'th', 'nth', 'p', 'm', 'y', 'r', 'l', 'v', 'zh', 'll', 'rr', 'n'
@@ -455,7 +460,7 @@ class TamilAudioService {
     return reverse;
   }
 
-  /// Checks whether an asset is physically available in the app bundle.
+  /// Checks whether an asset is physically available in the app bundle or local file tree.
   Future<bool> isAssetAvailable(String path) async {
     final clean = path.trim();
     final withPrefix = clean.startsWith('assets/') ? clean : 'assets/$clean';
@@ -468,6 +473,10 @@ class TamilAudioService {
         final byteData = await rootBundle.load(withoutPrefix);
         return byteData.lengthInBytes > 0;
       } catch (_) {
+        try {
+          final file = File(withPrefix);
+          if (file.existsSync()) return true;
+        } catch (_) {}
         return false;
       }
     }
@@ -514,14 +523,32 @@ class TamilAudioService {
 
   Future<bool> _playAsset(String path) async {
     try {
+      final clean = path.trim();
+      final withPrefix = clean.startsWith('assets/') ? clean : 'assets/$clean';
       if (!await isAssetAvailable(path)) {
+        final localFile = File(withPrefix);
+        if (localFile.existsSync()) {
+          await player.stop();
+          await player.setVolume(1.0);
+          await player.play(DeviceFileSource(localFile.absolute.path), volume: 1.0);
+          return true;
+        }
         return false;
       }
       final cleanPath = path.startsWith('assets/') ? path.substring(7) : path;
       await player.stop();
       await player.setVolume(1.0);
-      await player.play(AssetSource(cleanPath), volume: 1.0);
-      return true;
+      try {
+        await player.play(AssetSource(cleanPath), volume: 1.0);
+        return true;
+      } catch (assetErr) {
+        final localFile = File(withPrefix);
+        if (localFile.existsSync()) {
+          await player.play(DeviceFileSource(localFile.absolute.path), volume: 1.0);
+          return true;
+        }
+        rethrow;
+      }
     } catch (e) {
       debugPrint('[TamilAudioService] Asset playback failed for $path: $e');
       return false;
@@ -826,6 +853,12 @@ if (\$taVoice) {
 
   static List<String> _getLetterCandidatePaths(String text) {
     final t = text.trim();
+    if (t == '+' || t == 'கூட்டல்' || t == 'plus') {
+      return const [
+        'assets/audio/tamil/plus.mp3',
+        'assets/sounds/plus.mp3',
+      ];
+    }
     if (t == 'அ' || t == 'uyir_1' || t == 'uyir_a' || t == 'uyir_01_a') {
       return const [
         'assets/sounds/uyir/uyir_a.mp3',
@@ -835,6 +868,33 @@ if (\$taVoice) {
       ];
     }
     return const [];
+  }
+
+  /// Plays pronunciation for the '+' (கூட்டல்) operator symbol
+  Future<void> playPlusSound(BuildContext context, {bool showIndicator = true}) async {
+    if (_isMuted) return;
+
+    if (showIndicator && context.mounted) {
+      showAudioIndicator(
+        context,
+        text: '+',
+        subtext: 'கூட்டல்',
+      );
+    }
+
+    const candidatePaths = [
+      'assets/audio/tamil/plus.mp3',
+      'assets/sounds/plus.mp3',
+    ];
+
+    for (final path in candidatePaths) {
+      if (await isAssetAvailable(path)) {
+        final played = await _playAsset(path);
+        if (played) return;
+      }
+    }
+
+    await playTamilAudio('கூட்டல்');
   }
 
   /// Convenience method for speaking any text

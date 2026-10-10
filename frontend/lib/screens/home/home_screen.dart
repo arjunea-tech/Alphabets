@@ -89,7 +89,7 @@ class HomeScreen extends StatelessWidget {
                         _buildDestinationCard(
                           title: 'காணொளிகள்',
                           subtitle: 'பார்த்து கற்றுக்கொள்வோம்!',
-                          tag: 'பாடல்கள் • கதைகள் • எழுத்துகள்',
+                          tag: 'உயிர் • மெய் • ஆய்த எழுத்துகள்',
                           imageAsset: 'assets/images/video.png',
                           gradient: const [Color(0xFF2EC4B6), Color(0xFF0F9F90)],
                           borderColor: const Color(0xFF2EC4B6),
