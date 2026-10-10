@@ -480,6 +480,23 @@ VALUES
 -- Educational Games
 INSERT INTO games (id, game_type, title, prompt, clue, clue_image, correct_index, options_json, success_praise, stars_reward, is_active, display_order)
 VALUES
-('game_puzzle_1', 'puzzle', 'எழுத்துப் புதிர்', 'அம்மா சொல்லின் முதல் எழுத்தைத் தொடுக!', 'அ - ம்மா', 'assets/images/welcome.png', 0, '["அ", "ஆ", "இ", "ஈ"]', 'அற்புதம்! அ என்பது சரி! ⭐', 3, TRUE, 1),
-('game_balloon_1', 'balloon', 'பலூன் விளையாட்டு', 'ஆ எழுத்துள்ள பலூனைத் தொடு!', 'ஆடு', 'assets/images/welcome.png', 1, '["அ", "ஆ", "இ", "ஈ"]', 'அருமை! பலூன் வெடித்தது! 🎈', 3, TRUE, 2)
-ON DUPLICATE KEY UPDATE title = VALUES(title);
+('game_runner_1', 'runner', 'அகரம் ஓட்டம் (2D Runner)', 'ஓடி விளையாடி தமிழ் எழுத்துகளை சேகரிக்கவும்!', '2D ஓட்டப் பந்தயம் - அ, ஆ, இ, ஈ', 'assets/images/welcome.png', 0, '["அ", "ஆ", "இ", "ஈ"]', 'அருமை! இலக்கை அடைந்துவிட்டீர்கள்! 🏃⭐', 3, TRUE, 1),
+('game_candy_1', 'candy', 'தமிழ் எழுத்து மிட்டாய் (Match-3)', 'ஒரே மாதிரி உள்ள தமிழ் எழுத்து மிட்டாய்களை இணைத்து மகிழுங்கள்!', 'Match-3 மிட்டாய் விளையாட்டு', 'assets/images/welcome.png', 0, '["அ", "ஆ", "இ", "ஈ"]', 'மிட்டாய் வெடித்தது! சூப்பர்! 🍬✨', 3, TRUE, 2),
+('game_racing_1', 'racing', 'உயிர் எழுத்து கார் பந்தயம் (Car Racing)', 'ஒலியைக் கேட்டு காரை ஓட்டி சரியான உயிர் எழுத்துகளை சேகரியுங்கள்!', 'கார் பந்தயம் - உயிர் எழுத்துகள்', 'assets/images/welcome.png', 0, '["அ", "ஆ", "இ", "ஈ"]', 'வெற்றிப் பாதை! வேகம் சூப்பர்! 🚗🏁', 3, TRUE, 3),
+('game_fishing_1', 'fishing', 'எழுத்து மீன்பிடி (Letter Fishing)', 'நீந்தும் வண்ண மீன்களில் சரியான உயிர் எழுத்துகளைப் பிடித்து மகிழுங்கள்!', 'மீன்பிடி விளையாட்டு', 'assets/images/welcome.png', 1, '["அ", "ஆ", "இ", "ஈ"]', 'மீன் சிக்கியது! அருமை! 🎣🐟', 3, TRUE, 4),
+('game_basket_1', 'basket', 'எழுத்துக் கூடை (Basket - உயிர் எழுத்துகள்)', 'வானிலிருந்து விழும் சரியான உயிர் எழுத்துகளைக் கூடையில் பிடியுங்கள்!', 'கூடை விளையாட்டு - உயிர் எழுத்துகள்', 'assets/images/welcome.png', 0, '["அ", "ஆ", "இ", "ஈ"]', 'கூடையில் விழுந்தது! அற்புதம்! 🧺🍎', 3, TRUE, 5),
+('game_basket_2', 'basket', 'எழுத்துக் கூடை (Basket - மெய் எழுத்துகள்)', 'வானிலிருந்து விழும் புள்ளியிட்ட மெய் எழுத்துகளைக் கூடையில் பிடியுங்கள்!', 'கூடை விளையாட்டு - மெய் எழுத்துகள்', 'assets/images/welcome.png', 0, '["க்", "ங்", "ச்", "ஞ்"]', 'மெய் எழுத்து பிடித்தாச்சு! 🧺⭐', 3, TRUE, 6),
+('game_puzzle_1', 'puzzle', 'சொல் புதிர் (Word Puzzle)', 'அம்மா சொல்லின் முதல் எழுத்தைத் தொடுக!', 'அ - ம்மா', 'assets/images/welcome.png', 0, '["அ", "ஆ", "இ", "ஈ"]', 'அற்புதம்! அ என்பது சரி! ⭐', 3, TRUE, 7),
+('game_balloon_1', 'balloon', 'பலூன் வெடிப்பு (Balloon Pop)', 'ஆ எழுத்துள்ள பலூனைத் தொடு!', 'ஆடு', 'assets/images/welcome.png', 1, '["அ", "ஆ", "இ", "ஈ"]', 'அருமை! பலூன் வெடித்தது! 🎈', 3, TRUE, 8)
+ON DUPLICATE KEY UPDATE 
+  game_type = VALUES(game_type),
+  title = VALUES(title),
+  prompt = VALUES(prompt),
+  clue = VALUES(clue),
+  clue_image = VALUES(clue_image),
+  correct_index = VALUES(correct_index),
+  options_json = VALUES(options_json),
+  success_praise = VALUES(success_praise),
+  stars_reward = VALUES(stars_reward),
+  display_order = VALUES(display_order),
+  is_active = VALUES(is_active);

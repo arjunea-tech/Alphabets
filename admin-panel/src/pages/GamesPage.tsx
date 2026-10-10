@@ -6,15 +6,15 @@ import { FileUpload } from '../components/common/FileUpload';
 import { useLanguage } from '../context/LanguageContext';
 import { Plus, Edit2, Trash2, CheckCircle2, XCircle, Loader2, Gamepad2, Image as ImageIcon } from 'lucide-react';
 
-const GAME_TYPE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  runner: { label: 'அகரம் ஓட்டம் (2D Runner)', color: '#16A34A', bg: '#DCFCE7' },
-  candy: { label: 'எழுத்து மிட்டாய் (Match-3)', color: '#DB2777', bg: '#FCE7F3' },
-  fishing: { label: 'எழுத்து மீன்பிடி (Fishing)', color: '#0284C7', bg: '#E0F2FE' },
-  basket: { label: 'எழுத்துக் கூடை (Basket)', color: '#D97706', bg: '#FEF3C7' },
-  racing: { label: 'கார் பந்தயம் (Car Racing)', color: '#2563EB', bg: '#DBEAFE' },
-  puzzle: { label: 'சொல் புதிர் (Word Puzzle)', color: '#7C3AED', bg: '#EDE9FE' },
-  balloon: { label: 'பலூன் வெடிப்பு (Balloon Pop)', color: '#DC2626', bg: '#FEE2E2' },
-  matching: { label: 'பொருத்துதல் (Matching)', color: '#4B5563', bg: '#F3F4F6' },
+const GAME_TYPE_LABELS: Record<string, { label: string; shortLabel: string; color: string; bg: string }> = {
+  runner: { label: '🏃 அகரம் ஓட்டம் (2D Runner)', shortLabel: '🏃 அகரம் ஓட்டம்', color: '#16A34A', bg: '#DCFCE7' },
+  candy: { label: '🍬 எழுத்து மிட்டாய் (Match-3)', shortLabel: '🍬 மிட்டாய்', color: '#DB2777', bg: '#FCE7F3' },
+  fishing: { label: '🎣 எழுத்து மீன்பிடி (Fishing)', shortLabel: '🎣 மீன்பிடி', color: '#0284C7', bg: '#E0F2FE' },
+  basket: { label: '🧺 எழுத்துக் கூடை (Basket)', shortLabel: '🧺 கூடை', color: '#D97706', bg: '#FEF3C7' },
+  racing: { label: '🚗 கார் பந்தயம் (Car Racing)', shortLabel: '🚗 கார் பந்தயம்', color: '#2563EB', bg: '#DBEAFE' },
+  puzzle: { label: '🧩 சொல் புதிர் (Word Puzzle)', shortLabel: '🧩 சொல் புதிர்', color: '#7C3AED', bg: '#EDE9FE' },
+  balloon: { label: '🎈 பலூன் வெடிப்பு (Balloon Pop)', shortLabel: '🎈 பலூன்', color: '#DC2626', bg: '#FEE2E2' },
+  matching: { label: '🔄 பொருத்துதல் (Matching)', shortLabel: '🔄 பொருத்துதல்', color: '#4B5563', bg: '#F3F4F6' },
 };
 
 export const GamesPage: React.FC = () => {
@@ -162,7 +162,7 @@ export const GamesPage: React.FC = () => {
                 color: selectedFilter === key ? undefined : info.color,
               }}
             >
-              {info.label.split(' ')[0]} ({count})
+              {info.shortLabel} ({count})
             </button>
           );
         })}
