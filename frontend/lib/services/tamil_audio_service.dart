@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'api_config.dart';
 import 'tamil_tts_service.dart';
 
 /// Centralized Tamil Audio Service for the AGARAM Educational Platform.
@@ -661,7 +662,7 @@ class TamilAudioService {
 
       // 1. Try local backend audio synthesis endpoint (ElevenLabs/Node backend)
       try {
-        final backendUri = Uri.parse('http://localhost:5000/api/v1/audio/synthesize');
+        final backendUri = Uri.parse('${ApiConfig.baseUrl}/audio/synthesize');
         final backendRes = await http.post(
           backendUri,
           headers: {'Content-Type': 'application/json'},

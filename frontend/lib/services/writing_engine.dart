@@ -7,12 +7,32 @@ import 'writing_boundary_validator.dart';
 
 /// Comprehensive Writing Engine for Tamil Handwriting Learning
 class WritingEngine {
+  /// Fraction of the canvas' shorter side used by the letter guide square.
+  static const double guideScale = 0.76;
+
+  /// The square on the canvas that stroke data and glyph outlines are normalized to.
+  /// Every normalized -> canvas mapping must go through this so the letter,
+  /// start/end markers and hit-testing all line up.
+  static Rect guideRect(Size size) {
+    final side = math.min(size.width, size.height) * guideScale;
+    return Rect.fromLTWH((size.width - side) / 2, (size.height - side) / 2, side, side);
+  }
+
+  /// Maps a normalized (0..1) guide point to canvas pixels.
+  static Offset toCanvas(Offset p, Size size) {
+    final r = guideRect(size);
+    return Offset(r.left + p.dx * r.width, r.top + p.dy * r.height);
+  }
+
+  /// Converts a normalized length (e.g. stroke tolerance) to canvas pixels.
+  static double toCanvasLength(double v, Size size) => v * guideRect(size).width;
+
   /// Converts normalized waypoints into a continuous high-density smooth Catmull-Rom cubic Bezier path
   static Path generateSmoothSplinePath(List<Offset> pts, Size size) {
     final path = Path();
     if (pts.isEmpty || size.width <= 0 || size.height <= 0) return path;
 
-    final realPts = pts.map((p) => Offset(p.dx * size.width, p.dy * size.height)).toList();
+    final realPts = pts.map((p) => toCanvas(p, size)).toList();
     if (realPts.length == 1) {
       path.addOval(Rect.fromCircle(center: realPts[0], radius: 3));
       return path;
@@ -47,7 +67,7 @@ class WritingEngine {
   static List<Offset> sampleDensePoints(LetterStrokeData stroke, Size size, {double step = 6.0}) {
     if (stroke.pathPoints.isEmpty || size.width <= 0 || size.height <= 0) return [];
     if (stroke.pathPoints.length == 1) {
-      return [Offset(stroke.pathPoints[0].dx * size.width, stroke.pathPoints[0].dy * size.height)];
+      return [toCanvas(stroke.pathPoints[0], size)];
     }
 
     final path = generateSmoothSplinePath(stroke.pathPoints, size);

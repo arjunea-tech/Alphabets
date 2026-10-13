@@ -20,7 +20,7 @@ class ApiConfig {
     }
     if (Platform.isAndroid) {
       return [
-        'http://192.168.1.34:5000/api/v1', // Wi-Fi LAN IP (Physical Android devices)
+        'http://192.168.1.49:5000/api/v1', // Wi-Fi LAN IP (Physical Android devices)
         'http://localhost:5000/api/v1',     // USB adb reverse (tcp:5000 -> tcp:5000)
         'http://10.0.2.2:5000/api/v1',     // Android Emulator loopback
       ];
@@ -40,7 +40,7 @@ class ApiConfig {
     }
     if (Platform.isAndroid) {
       // Default to Wi-Fi IP which connects on physical Android devices
-      return 'http://192.168.1.34:5000/api/v1';
+      return 'http://192.168.1.49:5000/api/v1';
     }
     return 'http://localhost:5000/api/v1';
   }
