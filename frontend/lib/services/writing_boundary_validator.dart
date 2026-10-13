@@ -60,6 +60,9 @@ class WritingBoundaryValidator {
   static List<double> getCheckpointRatios(LetterStrokeData stroke) {
     if (stroke.isDot || stroke.pathPoints.length < 3) return const [];
     if (stroke.directionHint == 'loop_cw') {
+      if (stroke.pathPoints.length > 120) {
+        return const [0.03, 0.12, 0.28, 0.46, 0.65, 0.85];
+      }
       return const [0.06, 0.19, 0.42, 0.65, 0.85];
     }
     if (stroke.pathPoints.length >= 16) {
