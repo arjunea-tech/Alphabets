@@ -259,9 +259,11 @@ class WritingBoundaryValidator {
     final onPath = nearestDist.where((d) => d <= tol * _onPathRadius).length;
     final precision = onPath / userPoints.length;
 
-    final startsAtStart = (userPoints.first - start).distance <= tol * _startEndRadius;
-    final startsAtEnd = (userPoints.first - end).distance <= tol * _startEndRadius;
-    final endsAtEnd = (userPoints.last - end).distance <= tol * _startEndRadius;
+    final maxStartDist = target > 0 ? math.min(tol * _startEndRadius, target * 0.25) : tol * _startEndRadius;
+    final maxEndDist = target > 0 ? math.min(tol * _startEndRadius, target * 0.45) : tol * _startEndRadius;
+    final startsAtStart = (userPoints.first - start).distance <= maxStartDist;
+    final startsAtEnd = (userPoints.first - end).distance <= maxEndDist;
+    final endsAtEnd = (userPoints.last - end).distance <= maxEndDist;
 
     // Direction: does the child move forward along the path (start -> end)?
     // Sample ~24 points; ignore large index jumps (closed loops wrap around).
