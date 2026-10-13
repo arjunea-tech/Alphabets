@@ -9,11 +9,12 @@ const config = {
   port: parseInt(process.env.PORT, 10) || 5000,
   apiPrefix: process.env.API_PREFIX || '/api/v1',
   db: {
+    client: (process.env.DB_CLIENT || (parseInt(process.env.DB_PORT, 10) === 5432 ? 'postgres' : 'mysql')).toLowerCase(),
     host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT, 10) || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || 'root',
-    name: process.env.DB_NAME || 'agaram_db',
+    port: parseInt(process.env.DB_PORT, 10) || (process.env.DB_CLIENT === 'postgres' ? 5432 : 3306),
+    user: process.env.DB_USER || process.env.DB_USERNAME || (process.env.DB_CLIENT === 'postgres' ? 'postgres' : 'root'),
+    password: process.env.DB_PASSWORD || process.env.DB_PSSWORD || 'root',
+    name: process.env.DB_NAME || process.env.DB_DATABASE || 'agaram_db',
     connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT, 10) || 10,
   },
   jwt: {
