@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS reading_story_pages (
   interactive_words JSON NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (story_id) REFERENCES reading_stories(id) ON DELETE CASCADE,
-  UNIQUE KEY uk_story_page (story_id, page_number)
+  CONSTRAINT uk_story_page UNIQUE (story_id, page_number)
 );
 
 CREATE INDEX IF NOT EXISTS idx_page_story ON reading_story_pages (story_id);
@@ -299,7 +299,7 @@ CREATE TABLE IF NOT EXISTS user_progress (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  UNIQUE KEY uk_user_content (user_id, content_type, content_id)
+  CONSTRAINT uk_user_content UNIQUE (user_id, content_type, content_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_progress_user ON user_progress (user_id);
