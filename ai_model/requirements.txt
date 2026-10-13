@@ -8,3 +8,8 @@ matplotlib>=3.7.0
 seaborn>=0.12.0
 tqdm>=4.66.0
 requests>=2.31.0
+
+# Writing-guide generator (scripts/generate_tamil_stroke_data.py)
+scipy>=1.10.0
+fonttools>=4.40.0
+uharfbuzz>=0.39.0

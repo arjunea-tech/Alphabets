@@ -70,12 +70,10 @@ class HandwritingValidator {
     if (userStrokes.isNotEmpty && targetLetter.strokes.isNotEmpty) {
       int matchedStartCount = 0;
       for (int i = 0; i < math.min(userStrokes.length, targetLetter.strokes.length); i++) {
-        final expectedStart = Offset(
-          targetLetter.strokes[i].startPoint.dx * canvasSize.width,
-          targetLetter.strokes[i].startPoint.dy * canvasSize.height,
-        );
+        final expectedStart = WritingEngine.toCanvas(targetLetter.strokes[i].startPoint, canvasSize);
         final userStart = userStrokes[i].first;
-        final startTolerance = targetLetter.strokes[i].tolerance * canvasSize.width * 1.6;
+        final startTolerance =
+            WritingEngine.toCanvasLength(targetLetter.strokes[i].tolerance, canvasSize) * 1.6;
         if ((userStart - expectedStart).distance <= startTolerance) {
           matchedStartCount++;
         }
@@ -91,14 +89,8 @@ class HandwritingValidator {
         final userStroke = userStrokes[i];
         if (userStroke.length >= 2) {
           final targetStroke = targetLetter.strokes[i];
-          final expectedStart = Offset(
-            targetStroke.startPoint.dx * canvasSize.width,
-            targetStroke.startPoint.dy * canvasSize.height,
-          );
-          final expectedEnd = Offset(
-            targetStroke.effectiveEndPoint.dx * canvasSize.width,
-            targetStroke.effectiveEndPoint.dy * canvasSize.height,
-          );
+          final expectedStart = WritingEngine.toCanvas(targetStroke.startPoint, canvasSize);
+          final expectedEnd = WritingEngine.toCanvas(targetStroke.effectiveEndPoint, canvasSize);
           final expectedVec = expectedEnd - expectedStart;
           final userVec = userStroke.last - userStroke.first;
 

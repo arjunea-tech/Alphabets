@@ -37,6 +37,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
   int _letterIndex = 0;
   WritingCanvasMode _activeMode = WritingCanvasMode.learn; // learn, practice
   Color _activeColor = const Color(0xFF3A86FF);
+  bool _isCanvasDrawing = false;
   final Set<String> _awardedLetters = {};
 
   final List<Color> _brushColors = const [
@@ -143,7 +144,9 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
   }
 
   /// Handles "சரிபார் / முடித்தேன்" using the AI Model recognition
-  Future<void> _handleFinishWriting() async {
+  /// [guidedComplete] is true when Learn mode finished every step and each stroke
+  /// already passed the start/direction/path/end check in the canvas.
+  Future<void> _handleFinishWriting({bool guidedComplete = false}) async {
     final canvasState = _canvasKey.currentState;
     final hasDrawn = canvasState?.hasContent ?? false;
 
@@ -166,8 +169,20 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
       return;
     }
 
-    // Evaluate writing accuracy using the Real ML Recognition Pipeline
-    final mlResult = await canvasState!.evaluateWithML();
+    // Learn mode: every stroke was already verified against the stroke guide, so the
+    // letter is correct. The ML model is not trained on these guided strokes and must
+    // not overrule that. Practice mode (free writing) still uses ML recognition.
+    final HandwritingRecognitionResult mlResult = guidedComplete
+        ? HandwritingRecognitionResult(
+            expectedCharacter: _currentGuide.letter,
+            recognizedCharacter: _currentGuide.letter,
+            confidence: 1.0,
+            strokeCount: canvasState!.strokeCount,
+            totalPointCount: canvasState.totalPointsDrawn,
+            modelStatus: MLModelStatus.loaded,
+            isMatchExplicit: true,
+          )
+        : await canvasState!.evaluateWithML();
 
     if (mlResult.isMatch) {
       // Auto-save this successful practice
@@ -667,6 +682,9 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                     // Writing Area and Controls
                     Expanded(
                       child: SingleChildScrollView(
+                        physics: _isCanvasDrawing
+                            ? const NeverScrollableScrollPhysics()
+                            : const BouncingScrollPhysics(),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                         child: Column(
                           children: [
@@ -699,7 +717,12 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                                 strokeWidth: 20.0,
                                 onStrokeUpdated: (_) {},
                                 onLetterCompleted: () {
-                                  _handleFinishWriting();
+                                  _handleFinishWriting(guidedComplete: true);
+                                },
+                                onDrawingStateChanged: (drawing) {
+                                  if (_isCanvasDrawing != drawing && mounted) {
+                                    setState(() => _isCanvasDrawing = drawing);
+                                  }
                                 },
                               ),
                             ),
