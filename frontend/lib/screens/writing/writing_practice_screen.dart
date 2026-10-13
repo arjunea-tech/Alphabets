@@ -35,18 +35,12 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
 
   int _selectedCategoryIndex = 0; // 0: Uyir / Achulu, 1: Mei / Hallulu
   int _letterIndex = 0;
-  WritingCanvasMode _activeMode = WritingCanvasMode.learn; // learn, practice
-  Color _activeColor = const Color(0xFF3A86FF);
+  final WritingCanvasMode _activeMode = WritingCanvasMode.learn; // learn
+  final Color _activeColor = const Color(0xFF3A86FF);
   bool _isCanvasDrawing = false;
   final Set<String> _awardedLetters = {};
 
-  final List<Color> _brushColors = const [
-    Color(0xFF3A86FF), // Royal Blue
-    Color(0xFFFF006E), // Vibrant Magenta
-    Color(0xFF8338EC), // Purple
-    Color(0xFFFB5607), // Orange
-    Color(0xFF06D6A0), // Green
-  ];
+
 
   List<WritingLetterGuide> get _currentList {
     final lang = LanguageService.instance.currentLanguageCode;
@@ -445,209 +439,9 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  // Switch to Learn mode button
-                  if (_activeMode != WritingCanvasMode.learn)
-                    TextButton.icon(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        setState(() => _activeMode = WritingCanvasMode.learn);
-                        _canvasKey.currentState?.clearCanvas();
-                      },
-                      icon: const Icon(Icons.edit_note_rounded, color: Color(0xFF3A86FF), size: 18),
-                      label: const Text(
-                        'கற்றுக்கொள் முறைக்கு மாறுக',
-                        style: TextStyle(
-                          fontFamily: 'Catamaran',
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF3A86FF),
-                        ),
-                      ),
-                    ),
                 ],
               ],
             ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Show bottom sheet with past handwriting attempts for the current letter
-  void _showPreviousAttempts() async {
-    final letter = _currentGuide.letter;
-    final practices = await _repo.getPracticesForLetter(letter);
-
-    if (!mounted) return;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.65,
-          padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 48,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF9F1C), Color(0xFFFF6B6B)],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      letter,
-                      style: const TextStyle(
-                        fontFamily: 'Catamaran',
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'முந்தைய பயிற்சிகள்',
-                      style: TextStyle(
-                        fontFamily: 'Catamaran',
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Expanded(
-                child: practices.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              'assets/images/writing.png',
-                              width: 100,
-                              height: 100,
-                              errorBuilder: (context, error, stackTrace) => const Icon(
-                                Icons.history_edu_rounded,
-                                size: 60,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            const Text(
-                              'இந்த எழுத்திற்கு முந்தைய பயிற்சிகள் இல்லை',
-                              style: TextStyle(
-                                fontFamily: 'Catamaran',
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF64748B),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'எழுதி முடித்ததும் இங்கு தானாகச் சேமிக்கப்படும்!',
-                              style: TextStyle(
-                                fontFamily: 'Catamaran',
-                                fontSize: 13,
-                                color: Color(0xFF94A3B8),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: practices.length,
-                        itemBuilder: (context, idx) {
-                          final p = practices[idx];
-                          final timeStr =
-                              '${p.createdAt.day}/${p.createdAt.month}/${p.createdAt.year} ${p.createdAt.hour}:${p.createdAt.minute.toString().padLeft(2, '0')}';
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
-                            ),
-                            child: Row(
-                              children: [
-                                SizedBox(
-                                  width: 70,
-                                  height: 70,
-                                  child: SavedHandwritingPreview(
-                                    strokes: p.strokes,
-                                    ghostLetter: letter,
-                                    strokeColor: const Color(0xFF3A86FF),
-                                    strokeWidth: 3.5,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'பயிற்சி முறை #${p.attemptNumber}',
-                                        style: const TextStyle(
-                                          fontFamily: 'Catamaran',
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF1E293B),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        timeStr,
-                                        style: const TextStyle(
-                                          fontFamily: 'Catamaran',
-                                          fontSize: 13,
-                                          color: Color(0xFF64748B),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.check_circle_rounded,
-                                  color: Color(0xFF10B981),
-                                  size: 22,
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
           ),
         );
       },
@@ -698,15 +492,11 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                             ),
                             const SizedBox(height: 8),
 
-                            // Mode Selector Bar: [ கற்றுக்கொள் ] | [ சுய பயிற்சி ]
+                            // Mode Header: [ கற்றுக்கொள் ]
                             _buildModeSelector(),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 12),
 
-                            // Mascot & Instruction Banner
-                            _buildInstructionBanner(guide),
-                            const SizedBox(height: 10),
-
-                            // Writing Canvas (Learn & Practice)
+                            // Writing Canvas (Learn Mode)
                             AspectRatio(
                               aspectRatio: 1.05,
                               child: WritingCanvas(
@@ -726,18 +516,10 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                                 },
                               ),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 14),
 
-                            // Crayon Color Palette
-                            _buildColorPalette(),
-                            const SizedBox(height: 12),
-
-                            // Bottom Control Buttons: [ மீண்டும் எழுது ] & [ சரிபார் (Check) ]
+                            // Bottom Control Buttons: [ மீண்டும் எழுது ] & [ சரிபார் / முடித்தேன் ]
                             _buildBottomControls(),
-                            const SizedBox(height: 10),
-
-                            // Previous attempts button
-                            _buildPreviousAttemptsButton(),
                             const SizedBox(height: 14),
                           ],
                         ),
@@ -920,199 +702,42 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     );
   }
 
-  /// 2-Mode Selector: [ கற்றுக்கொள் ] | [ சுய பயிற்சி ]
+  /// Mode Header: [ கற்றுக்கொள் ]
   Widget _buildModeSelector() {
-    final modes = [
-      {'mode': WritingCanvasMode.learn, 'title': 'கற்றுக்கொள்', 'icon': Icons.edit_rounded, 'color': const Color(0xFF3A86FF)},
-      {'mode': WritingCanvasMode.practice, 'title': 'சுய பயிற்சி', 'icon': Icons.track_changes_rounded, 'color': const Color(0xFF2EC4B6)},
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEEF2F6),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.5),
-      ),
-      child: Row(
-        children: modes.map((m) {
-          final modeVal = m['mode'] as WritingCanvasMode;
-          final isSelected = _activeMode == modeVal;
-          final activeColor = m['color'] as Color;
-          final iconData = m['icon'] as IconData;
-
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                if (_activeMode != modeVal) {
-                  setState(() => _activeMode = modeVal);
-                  _canvasKey.currentState?.clearCanvas();
-                }
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                decoration: BoxDecoration(
-                  color: isSelected ? activeColor : Colors.transparent,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: activeColor.withValues(alpha: 0.35),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      iconData,
-                      size: 15,
-                      color: isSelected ? Colors.white : const Color(0xFF64748B),
-                    ),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        m['title'] as String,
-                        style: TextStyle(
-                          fontFamily: 'Catamaran',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
-                          color: isSelected ? Colors.white : const Color(0xFF64748B),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 22),
+        decoration: BoxDecoration(
+          color: const Color(0xFF3A86FF),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF3A86FF).withValues(alpha: 0.35),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.edit_rounded, color: Colors.white, size: 16),
+            SizedBox(width: 8),
+            Text(
+              'கற்றுக்கொள்',
+              style: TextStyle(
+                fontFamily: 'Catamaran',
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
               ),
             ),
-          );
-        }).toList(),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildInstructionBanner(WritingLetterGuide guide) {
-    String bannerTitle;
-    String bannerSub;
-    Color bannerBg;
-    Color bannerBorder;
-    Color titleColor;
-
-    if (_activeMode == WritingCanvasMode.learn) {
-      bannerTitle = 'கற்றுக்கொள்: ①, ②, ③ வரிசைப்படி அம்புக்குறி வழியே எழுதுங்கள்!';
-      bannerSub = 'எழுதும் முறையைக் காண "எழுதும் முறை ▶" பட்டனை அழுத்தவும்.';
-      bannerBg = const Color(0xFFE0F2FE);
-      bannerBorder = const Color(0xFF7DD3FC);
-      titleColor = const Color(0xFF0369A1);
-    } else {
-      bannerTitle = 'சுய பயிற்சி: நீங்களே எழுதி சரிபாருங்கள்!';
-      bannerSub = 'சரியாக எழுதினால் மட்டுமே வெற்றி கிடைக்கும். தவறாக எழுதினால் திருத்தலாம்.';
-      bannerBg = const Color(0xFFFFF3CD);
-      bannerBorder = const Color(0xFFFFE082);
-      titleColor = const Color(0xFF5A3E00);
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-      decoration: BoxDecoration(
-        color: bannerBg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: bannerBorder, width: 2),
-      ),
-      child: Row(
-        children: [
-          Image.asset(
-            'assets/images/writing.png',
-            width: 44,
-            height: 44,
-            errorBuilder: (context, error, stackTrace) =>
-                const Icon(Icons.edit_rounded, size: 30, color: Color(0xFF3A86FF)),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  bannerTitle,
-                  style: TextStyle(
-                    fontFamily: 'Catamaran',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    color: titleColor,
-                  ),
-                ),
-                Text(
-                  bannerSub,
-                  style: TextStyle(
-                    fontFamily: 'Catamaran',
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: titleColor.withValues(alpha: 0.85),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildColorPalette() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            'வண்ணங்கள்: ',
-            style: TextStyle(
-              fontFamily: 'Catamaran',
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: Color(0xFF475569),
-            ),
-          ),
-          ..._brushColors.map((c) {
-            final isSelected = _activeColor == c;
-            return GestureDetector(
-              onTap: () => setState(() => _activeColor = c),
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 6),
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: c,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isSelected ? Colors.white : Colors.transparent,
-                    width: 3,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: c.withValues(alpha: isSelected ? 0.6 : 0.25),
-                      blurRadius: isSelected ? 8 : 4,
-                    ),
-                  ],
-                ),
-                child: isSelected
-                    ? const Icon(Icons.check, color: Colors.white, size: 16)
-                    : null,
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
 
   Widget _buildBottomControls() {
     return Row(
@@ -1199,22 +824,6 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildPreviousAttemptsButton() {
-    return TextButton.icon(
-      onPressed: _showPreviousAttempts,
-      icon: const Icon(Icons.visibility_rounded, color: Color(0xFF3A86FF), size: 18),
-      label: Text(
-        '${_currentGuide.letter} – முந்தைய பயிற்சிகள்',
-        style: const TextStyle(
-          fontFamily: 'Catamaran',
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF3A86FF),
-        ),
-      ),
     );
   }
 }
