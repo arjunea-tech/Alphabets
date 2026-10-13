@@ -15,17 +15,11 @@ class ApiConfig {
     if (_discoveredBaseUrl != null && _discoveredBaseUrl!.isNotEmpty) {
       return [_discoveredBaseUrl!];
     }
-    if (kIsWeb) {
-      return ['http://localhost:5000/api/v1'];
-    }
-    if (Platform.isAndroid) {
-      return [
-        'http://192.168.1.49:5000/api/v1', // Wi-Fi LAN IP (Physical Android devices)
-        'http://localhost:5000/api/v1',     // USB adb reverse (tcp:5000 -> tcp:5000)
-        'http://10.0.2.2:5000/api/v1',     // Android Emulator loopback
-      ];
-    }
-    return ['http://localhost:5000/api/v1'];
+    return [
+      'https://eluthukkal-api.macvelsoftware.com/api/v1',
+      if (!kIsWeb && Platform.isAndroid) 'http://10.0.2.2:5000/api/v1',
+      'http://localhost:5000/api/v1',
+    ];
   }
 
   static String get baseUrl {
@@ -35,14 +29,7 @@ class ApiConfig {
     if (_discoveredBaseUrl != null && _discoveredBaseUrl!.isNotEmpty) {
       return _discoveredBaseUrl!;
     }
-    if (kIsWeb) {
-      return 'http://localhost:5000/api/v1';
-    }
-    if (Platform.isAndroid) {
-      // Default to Wi-Fi IP which connects on physical Android devices
-      return 'http://192.168.1.49:5000/api/v1';
-    }
-    return 'http://localhost:5000/api/v1';
+    return 'https://eluthukkal-api.macvelsoftware.com/api/v1';
   }
 
   static void setWorkingBaseUrl(String url) {
