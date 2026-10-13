@@ -48,17 +48,17 @@ void main() {
     }
   }
 
-  test('validate TamilStrokeDataRepository for ண் (9), ன் (6), ழ் (8)', () {
+  test('validate TamilStrokeDataRepository for ண் (9), ன் (6), ழ் (5)', () {
     testLetter('ண்', 9);
     testLetter('ன்', 6);
-    testLetter('ழ்', 8);
+    testLetter('ழ்', 5);
   });
 
-  test('validate WritingData meiGuides for ண் (9), ன் (6), ழ் (8)', () {
+  test('validate WritingData meiGuides for ண் (9), ன் (6), ழ் (5)', () {
     final expected = {
       'ண்': 9,
       'ன்': 6,
-      'ழ்': 8,
+      'ழ்': 5,
     };
     for (final entry in expected.entries) {
       final guide = WritingData.meiGuides.firstWhere((g) => g.letter == entry.key);
