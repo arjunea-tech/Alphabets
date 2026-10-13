@@ -60,27 +60,24 @@ const CLOUDINARY_VIDEOS = [
   'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790855080/agaram_media/videos/btefhsc3k9n0kgfhmcrn.mp4',
 
   // 18 Mei
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791006753/agaram_media/videos/fg18xjxo2q4p9wsyfvpo.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791007508/agaram_media/videos/zjmzubpswzwhlkvl5ojn.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791007812/agaram_media/videos/fsagxkudps6vh6lybuno.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791007916/agaram_media/videos/ykprwmafp4al32alrsa6.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791008045/agaram_media/videos/sd0kk4jfqz572vowz63j.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791011858/agaram_media/videos/mrj9929eyumtpsvwvk49.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791012537/agaram_media/videos/xayiuz964o3qwkbtpjkr.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791012754/agaram_media/videos/jb0av76qcjimjylof1oh.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791013206/agaram_media/videos/hgdp4p7sjj4zuemigges.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791178025/agaram_media/videos/rvu5tcop5a4inyy2myty.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791178069/agaram_media/videos/zm4plb84tszsg6bty9vr.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791178322/agaram_media/videos/pzjgq9yxjcf3xcyaxbbh.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791178852/agaram_media/videos/k4tqtli6kuwysaqx7muw.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179035/agaram_media/videos/p8fcozkulcpzcpvdcsgd.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179306/agaram_media/videos/jkhfxzw7ksobhb7hawpv.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179352/agaram_media/videos/iinovuxh3dnlsajorpsp.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179466/agaram_media/videos/ibjoez182v1nsagtyedb.mp4',
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179595/agaram_media/videos/umbutwkkjznope99qwnw.mp4',
-
-  // 1 Aytham
-  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179910/agaram_media/videos/asrp5x7m9ynstmklzx40.mp4',
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791006753/agaram_media/videos/fg18xjxo2q4p9wsyfvpo.mp4', // க்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791007508/agaram_media/videos/zjmzubpswzwhlkvl5ojn.mp4', // ங்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791007812/agaram_media/videos/fsagxkudps6vh6lybuno.mp4', // ச்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791007916/agaram_media/videos/ykprwmafp4al32alrsa6.mp4', // ஞ்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791008045/agaram_media/videos/sd0kk4jfqz572vowz63j.mp4', // ட்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791011858/agaram_media/videos/mrj9929eyumtpsvwvk49.mp4', // ண்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791012537/agaram_media/videos/xayiuz964o3qwkbtpjkr.mp4', // த்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791012754/agaram_media/videos/jb0av76qcjimjylof1oh.mp4', // ந்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791013206/agaram_media/videos/hgdp4p7sjj4zuemigges.mp4', // ப்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791178025/agaram_media/videos/rvu5tcop5a4inyy2myty.mp4', // ம்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791178322/agaram_media/videos/pzjgq9yxjcf3xcyaxbbh.mp4', // ய்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791178852/agaram_media/videos/k4tqtli6kuwysaqx7muw.mp4', // ர்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179035/agaram_media/videos/p8fcozkulcpzcpvdcsgd.mp4', // ல்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179306/agaram_media/videos/jkhfxzw7ksobhb7hawpv.mp4', // வ்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179352/agaram_media/videos/iinovuxh3dnlsajorpsp.mp4', // ழ்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179466/agaram_media/videos/ibjoez182v1nsagtyedb.mp4', // ள்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179595/agaram_media/videos/umbutwkkjznope99qwnw.mp4', // ற்
+  'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179910/agaram_media/videos/asrp5x7m9ynstmklzx40.mp4', // ன்
 ];
 
 async function seedVideos() {
@@ -92,7 +89,7 @@ async function seedVideos() {
     const videoUrl = CLOUDINARY_VIDEOS[i];
     const id = `vid_uyir_${i + 1}`;
     const title = item.letter;
-    const description = `உயிர் எழுத்து ${item.letter} - ${item.word}`;
+    const description = `உயிர் எழுத்து ${item.letter}`;
     const category = 'உயிர் எழுத்துகள்';
     const displayOrder = i + 1;
 
@@ -117,7 +114,7 @@ async function seedVideos() {
     const videoUrl = CLOUDINARY_VIDEOS[12 + i];
     const id = `vid_mei_${i + 1}`;
     const title = item.letter;
-    const description = `மெய் எழுத்து ${item.letter} - ${item.word}`;
+    const description = `மெய் எழுத்து ${item.letter}`;
     const category = 'மெய் எழுத்துகள்';
     const displayOrder = i + 1;
 
@@ -136,15 +133,8 @@ async function seedVideos() {
   }
   console.log('✅ 18 Mei videos seeded.');
 
-  // 3. Seed 1 Aytham Video
-  const aythamVideoUrl = CLOUDINARY_VIDEOS[30];
-  await pool.query(
-    `INSERT INTO videos (id, title, description, category, duration, thumbnail_emoji, video_url, display_order, is_published)
-     VALUES (?, 'ஃ', 'ஆய்த எழுத்து ஃ - எஃகு', 'பாடம்', '00:15', '🛡️', ?, 19, TRUE)
-     ON DUPLICATE KEY UPDATE video_url = VALUES(video_url), is_published = TRUE`,
-    ['vid_aytham_1', aythamVideoUrl]
-  );
-  console.log('✅ Aytham video seeded.');
+  // Ensure Aytham video is not present
+  await pool.query("DELETE FROM videos WHERE id = 'vid_aytham_1' OR title = 'ஃ' OR category = 'ஆய்த எழுத்து'");
 
   const [count] = await pool.query('SELECT COUNT(*) as total FROM videos');
   console.log(`🎉 Total videos in MySQL database: ${count[0].total}`);
