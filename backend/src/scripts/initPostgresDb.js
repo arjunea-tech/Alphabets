@@ -72,6 +72,18 @@ async function initPostgresDatabase() {
     await dbClient.query(schemaSql);
     console.log('✅ Schema and seed data executed successfully!');
 
+    // 3. Ensure superadmin password hash is verified
+    const bcrypt = require('bcryptjs');
+    const salt = await bcrypt.genSalt(10);
+    const superAdminPassword = process.env.SUPERADMIN_PASSWORD || 'Admin@123';
+    const hash = await bcrypt.hash(superAdminPassword, salt);
+    await dbClient.query(
+      `INSERT INTO admins (username, email, password_hash, role, full_name, is_active)
+       VALUES ('superadmin', 'admin@agaram.app', $1, 'super_admin', 'AGARAM Super Admin', TRUE)
+       ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash;`,
+      [hash]
+    );
+
     // Verify row counts
     const letterCount = await dbClient.query('SELECT COUNT(*) as count FROM letters');
     const userCount = await dbClient.query('SELECT COUNT(*) as count FROM users');
@@ -81,6 +93,7 @@ async function initPostgresDatabase() {
     console.log(`📊 Letters Seeded : ${letterCount.rows[0].count}`);
     console.log(`📊 Users Seeded   : ${userCount.rows[0].count}`);
     console.log(`📊 Admins Seeded  : ${adminCount.rows[0].count}`);
+    console.log(`👤 Super Admin verified: Username: 'superadmin', Password: '${superAdminPassword}'`);
     console.log('====================================================');
     console.log('🎉 PostgreSQL Database is ready for AGARAM!');
     console.log('====================================================');

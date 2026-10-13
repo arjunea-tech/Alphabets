@@ -338,17 +338,16 @@ CREATE TABLE IF NOT EXISTS user_stars (
 -- INITIAL SEED DATA
 -- =====================================================================
 
--- Default Super Admin (password: Admin@123)
--- bcrypt hash: $2a$10$G0N0n3Zpvd7L9y6l0lK7b.Y.3x0O8bXzVv7T8g4jP9sH1wJ6hM1aO
+-- Default Super Admin (username: superadmin, password: Admin@123)
 INSERT INTO admins (username, email, password_hash, role, full_name, is_active)
 VALUES (
   'superadmin',
-  'admin@agaram.app',
-  '$2a$10$wEeV9FqGZk/5JqR1tI5Yf.p0j9o8H0Uo5v3C2B1A0x9Z8Y7X6W5V4',
+  'admin@gmail.com',
+  '$2a$10$3Gmn4mOc6xZ1rhY4H60qLOFsdSPDb.9XDlorRu6SWzBDC/7T08pS.',
   'super_admin',
   'AGARAM Super Admin',
   TRUE
-) ON CONFLICT DO NOTHING;
+) ON CONFLICT (username) DO UPDATE SET email = EXCLUDED.email, password_hash = EXCLUDED.password_hash;
 
 -- Default Child User
 INSERT INTO users (id, child_name, age, avatar_asset, total_stars, is_active)
