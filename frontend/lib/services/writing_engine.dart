@@ -10,22 +10,47 @@ class WritingEngine {
   /// Fraction of the canvas' shorter side used by the letter guide square.
   static const double guideScale = 0.76;
 
+  /// Currently active letter being rendered or validated.
+  static String? activeLetter;
+
+  /// Returns true for wide/compound letters that have multiple glyphs side-by-side (like ஔ, கா, ஊ).
+  static bool isWideLetter(String? letter) {
+    if (letter == null) return false;
+    return letter == 'ஔ' || letter == 'கா' || letter == 'ஊ' || letter.length > 1;
+  }
+
   /// The square on the canvas that stroke data and glyph outlines are normalized to.
   /// Every normalized -> canvas mapping must go through this so the letter,
   /// start/end markers and hit-testing all line up.
-  static Rect guideRect(Size size) {
-    final side = math.min(size.width, size.height) * guideScale;
+  static Rect guideRect(Size size, [String? letter]) {
+    final effectiveLetter = letter ?? activeLetter;
+    final bool wide = isWideLetter(effectiveLetter);
+
+    double side = math.min(size.width, size.height) * guideScale;
+    if (wide) {
+      // Wide compound letters (e.g. ஔ, கா) have ink that only occupies ~36% of
+      // the normalized square's height, leaving vast empty space above and below.
+      // Scaling the guide square up to fill ~94% of canvas width makes the compound
+      // letter ~40%-55% larger, prominent, and comfortably legible while leaving
+      // generous top and bottom margins.
+      final maxSideWidth = size.width * 0.94;
+      final maxSideHeight = size.height * 1.55;
+      final wideSide = math.min(maxSideWidth, maxSideHeight);
+      side = math.max(side, wideSide);
+    }
+
     return Rect.fromLTWH((size.width - side) / 2, (size.height - side) / 2, side, side);
   }
 
   /// Maps a normalized (0..1) guide point to canvas pixels.
-  static Offset toCanvas(Offset p, Size size) {
-    final r = guideRect(size);
+  static Offset toCanvas(Offset p, Size size, [String? letter]) {
+    final r = guideRect(size, letter);
     return Offset(r.left + p.dx * r.width, r.top + p.dy * r.height);
   }
 
   /// Converts a normalized length (e.g. stroke tolerance) to canvas pixels.
-  static double toCanvasLength(double v, Size size) => v * guideRect(size).width;
+  static double toCanvasLength(double v, Size size, [String? letter]) =>
+      v * guideRect(size, letter).width;
 
   /// Converts normalized waypoints into a continuous high-density smooth Catmull-Rom cubic Bezier path
   static Path generateSmoothSplinePath(List<Offset> pts, Size size) {

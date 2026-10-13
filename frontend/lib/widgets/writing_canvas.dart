@@ -108,6 +108,7 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
   @override
   void initState() {
     super.initState();
+    WritingEngine.activeLetter = widget.letter;
     _activeStepIndex = 0;
     _initControllers();
     TamilHandwritingRecognitionService.instance.initialize().then((_) {
@@ -125,6 +126,7 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
   @override
   void didUpdateWidget(covariant WritingCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
+    WritingEngine.activeLetter = widget.letter;
     if (oldWidget.letter != widget.letter || oldWidget.mode != widget.mode) {
       _activeStepIndex = 0;
       clearCanvas();
@@ -498,6 +500,7 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
   @override
   Widget build(BuildContext context) {
     _initControllers();
+    WritingEngine.activeLetter = widget.letter;
     final curStep = activeStepIndex;
     _activeStepIndex = curStep;
     final isLearn = widget.mode == WritingCanvasMode.learn;
@@ -858,7 +861,7 @@ class _LetterOutlinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (size.width <= 0 || size.height <= 0) return;
-    final path = TamilLetterOutlines.pathFor(letter, WritingEngine.guideRect(size));
+    final path = TamilLetterOutlines.pathFor(letter, WritingEngine.guideRect(size, letter));
     if (path == null) return;
 
     if (!isLearn) {
@@ -922,8 +925,8 @@ class _LetterPathGuidePainter extends CustomPainter {
     }
 
     // 1. Same guide square as the letter outline and the stroke validators
-    final double drawSize = WritingEngine.guideRect(size).width;
-    Offset toCanvas(Offset p) => WritingEngine.toCanvas(p, size);
+    final double drawSize = WritingEngine.guideRect(size, letterData.letter).width;
+    Offset toCanvas(Offset p) => WritingEngine.toCanvas(p, size, letterData.letter);
 
     final double trackFillWidth = drawSize * 0.055;
 
