@@ -5,6 +5,7 @@ import { Modal } from '../components/common/Modal';
 import { FileUpload } from '../components/common/FileUpload';
 import { useLanguage } from '../context/LanguageContext';
 import { Plus, Edit2, Trash2, Layers, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { resolveMediaUrl } from '../api/client';
 
 export const StoriesPage: React.FC = () => {
   const { t } = useLanguage();
@@ -205,7 +206,7 @@ export const StoriesPage: React.FC = () => {
                       <span style={{ fontSize: '24px' }}>{story.cover_emoji}</span>
                       {story.cover_image && (
                         <img
-                          src={story.cover_image.startsWith('http') ? story.cover_image : `http://localhost:5000${story.cover_image}`}
+                          src={resolveMediaUrl(story.cover_image)}
                           alt=""
                           style={{ width: '36px', height: '36px', borderRadius: '4px', objectFit: 'cover' }}
                         />

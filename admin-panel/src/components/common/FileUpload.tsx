@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { UploadCloud, CheckCircle2, AlertCircle, Loader2, Video, Volume2, Image as ImageIcon, Trash2, RefreshCw, PlayCircle } from 'lucide-react';
 import { uploadApi } from '../../api/upload';
 import { useLanguage } from '../../context/LanguageContext';
+import { resolveMediaUrl } from '../../api/client';
 
 interface FileUploadProps {
   type: 'image' | 'audio' | 'video';
@@ -138,12 +139,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     video: 'video/mp4,video/webm,video/quicktime,video/mov,.mp4,.webm,.mov',
   };
 
-  const mediaBaseUrl = import.meta.env.VITE_MEDIA_BASE_URL || 'http://localhost:5000';
-  const getMediaUrl = (path: string) => {
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    const clean = path.startsWith('/') ? path.slice(1) : path;
-    return `${mediaBaseUrl}/${clean}`;
-  };
+  const getMediaUrl = resolveMediaUrl;
 
   const previewSrc = localPreview || (uploadedPath ? getMediaUrl(uploadedPath) : null);
 

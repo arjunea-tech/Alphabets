@@ -3,7 +3,15 @@
  */
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://eluthukkal-api.macvelsoftware.com/api/v1';
+export const MEDIA_BASE_URL = import.meta.env.VITE_MEDIA_BASE_URL || 'https://eluthukkal-api.macvelsoftware.com';
+
+export const resolveMediaUrl = (path?: string | null) => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  const clean = path.startsWith('/') ? path.slice(1) : path;
+  return `${MEDIA_BASE_URL}/${clean}`;
+};
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

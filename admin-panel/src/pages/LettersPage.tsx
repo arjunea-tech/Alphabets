@@ -6,13 +6,8 @@ import { FileUpload } from '../components/common/FileUpload';
 import { useLanguage } from '../context/LanguageContext';
 import { Edit2, Trash2, Plus, Search, Loader2, Volume2 } from 'lucide-react';
 
-const MEDIA_BASE_URL = import.meta.env.VITE_MEDIA_BASE_URL || 'http://localhost:5000';
-const resolveMediaUrl = (path?: string | null) => {
-  if (!path) return '';
-  if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  const clean = path.startsWith('/') ? path.slice(1) : path;
-  return `${MEDIA_BASE_URL}/${clean}`;
-};
+import { resolveMediaUrl } from '../api/client';
+
 
 const MEI_VARISAIS = [
   { mei: 'க்', title: 'க வரிசை (12)' },

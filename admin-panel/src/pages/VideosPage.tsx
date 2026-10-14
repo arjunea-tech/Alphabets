@@ -6,13 +6,8 @@ import { FileUpload } from '../components/common/FileUpload';
 import { useLanguage } from '../context/LanguageContext';
 import { Plus, Edit2, Trash2, Play, Eye, Loader2, Sparkles, Video as VideoIcon } from 'lucide-react';
 
-const MEDIA_BASE_URL = import.meta.env.VITE_MEDIA_BASE_URL || 'http://localhost:5000';
-const resolveMediaUrl = (path?: string | null) => {
-  if (!path) return '';
-  if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  const clean = path.startsWith('/') ? path.slice(1) : path;
-  return `${MEDIA_BASE_URL}/${clean}`;
-};
+import { resolveMediaUrl } from '../api/client';
+
 
 const UYIR_LETTERS = ['அ', 'ஆ', 'இ', 'ஈ', 'உ', 'ஊ', 'எ', 'ஏ', 'ஐ', 'ஒ', 'ஓ', 'ஔ'];
 const MEI_LETTERS = ['க்', 'ங்', 'ச்', 'ஞ்', 'ட்', 'ண்', 'த்', 'ந்', 'ப்', 'ம்', 'ய்', 'ர்', 'ல்', 'வ்', 'ழ்', 'ள்', 'ற்', 'ன்'];

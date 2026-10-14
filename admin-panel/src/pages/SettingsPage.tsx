@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { authApi } from '../api/auth';
 import { useLanguage } from '../context/LanguageContext';
 import { ShieldCheck, Lock, CheckCircle2, AlertCircle, Server } from 'lucide-react';
+import { API_BASE_URL } from '../api/client';
 
 export const SettingsPage: React.FC = () => {
   const { admin } = useAuth();
@@ -51,7 +52,7 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+  const apiUrl = API_BASE_URL;
 
   return (
     <div style={{ maxWidth: '800px' }}>

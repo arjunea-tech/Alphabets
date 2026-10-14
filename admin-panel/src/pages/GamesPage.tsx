@@ -5,6 +5,7 @@ import { Modal } from '../components/common/Modal';
 import { FileUpload } from '../components/common/FileUpload';
 import { useLanguage } from '../context/LanguageContext';
 import { Plus, Edit2, Trash2, CheckCircle2, XCircle, Loader2, Gamepad2, Image as ImageIcon } from 'lucide-react';
+import { resolveMediaUrl } from '../api/client';
 
 const GAME_TYPE_LABELS: Record<string, { label: string; shortLabel: string; color: string; bg: string }> = {
   runner: { label: '🏃 அகரம் ஓட்டம் (2D Runner)', shortLabel: '🏃 அகரம் ஓட்டம்', color: '#16A34A', bg: '#DCFCE7' },
@@ -121,12 +122,7 @@ export const GamesPage: React.FC = () => {
     ? games
     : games.filter((g) => g.game_type === selectedFilter);
 
-  const getMediaUrl = (path?: string | null) => {
-    if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    const clean = path.startsWith('/') ? path.slice(1) : path;
-    return `http://localhost:5000/${clean}`;
-  };
+  const getMediaUrl = resolveMediaUrl;
 
   return (
     <div>
