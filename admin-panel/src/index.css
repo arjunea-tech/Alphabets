@@ -131,6 +131,17 @@ body {
   flex-shrink: 0;
 }
 
+.sidebar-logo-img {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  object-fit: contain;
+  background: white;
+  padding: 2px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+
 .sidebar-title {
   font-size: 17px;
   font-weight: 700;
@@ -817,16 +828,24 @@ textarea.form-control {
 }
 
 .login-logo-box {
-  width: 60px;
-  height: 60px;
+  width: 72px;
+  height: 72px;
   border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, #FF6B8B, #FF8E53);
+  background: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 30px;
   margin: 0 auto 18px;
-  box-shadow: 0 6px 18px rgba(255, 107, 139, 0.35);
+  padding: 6px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.login-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: var(--radius-md);
 }
 
 .login-hint {

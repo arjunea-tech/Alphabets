@@ -23,7 +23,7 @@ export const Sidebar: React.FC = () => {
     <aside className="sidebar">
       {/* Brand Header */}
       <div className="sidebar-header">
-        <div className="sidebar-logo">⭐</div>
+        <img src="/app_logo.png" alt="App Logo" className="sidebar-logo-img" />
         <div>
           <div className="sidebar-title">{t('app_title')}</div>
           <div className="sidebar-subtitle">{t('app_subtitle')}</div>

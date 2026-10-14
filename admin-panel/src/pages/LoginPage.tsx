@@ -82,7 +82,9 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="login-logo-box">⭐</div>
+        <div className="login-logo-box">
+          <img src="/app_logo.png" alt="App Logo" className="login-logo-img" />
+        </div>
         <h2 style={{ textAlign: 'center', fontSize: '26px', fontWeight: 800, color: 'var(--text-main)' }}>
           {t('login_title')}
         </h2>
