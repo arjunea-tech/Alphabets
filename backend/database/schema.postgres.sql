@@ -456,13 +456,47 @@ VALUES
 ('story_tortoise_rabbit', 6, 'முயல் தன் தவறை உணர்ந்தது.\nவிடாமுயற்சி வெற்றி தரும்!', '🌟🤝🐰🐢💖', 'நீதி', 'assets/images/story_friends.jpg', NULL)
 ON CONFLICT DO NOTHING;
 
--- Videos
+-- Videos (12 Uyir + 18 Mei letters from Cloudinary)
 INSERT INTO videos (id, title, description, category, duration, thumbnail_emoji, video_url, display_order, is_published)
 VALUES
-('vid_uyir_song', 'உயிர் எழுத்துகள் பாடல்', 'அ முதல் ஔ வரையிலான குட்டிப் பாடல்', 'பாடல்', '03:15', '🎵', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', 1, TRUE),
-('vid_mei_rhyme', 'மெய் எழுத்துகள் கதை', 'க் முதல் ன் வரை அனிமேஷன் பாடம்', 'கதை', '04:20', '🎬', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', 2, TRUE),
-('vid_tamil_intro', 'தமிழ் வணக்கம் பாடல்', 'மழலையர் தமிழ் வணக்கம் பாடல்', 'பாடல்', '02:45', '⭐', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', 3, TRUE)
-ON CONFLICT DO NOTHING;
+('vid_uyir_1', 'அ', 'உயிர் எழுத்து அ (அம்மா)', 'உயிர் எழுத்துகள்', '00:15', '🎬அ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790841742/agaram_media/videos/lyai8f00wea5mpvknty5.mp4', 1, TRUE),
+('vid_uyir_2', 'ஆ', 'உயிர் எழுத்து ஆ (ஆடு)', 'உயிர் எழுத்துகள்', '00:15', '🎬ஆ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790849387/agaram_media/videos/yileko0mif4cuduhy3ty.mp4', 2, TRUE),
+('vid_uyir_3', 'இ', 'உயிர் எழுத்து இ (இலை)', 'உயிர் எழுத்துகள்', '00:15', '🎬இ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790849484/agaram_media/videos/pskdcrc7xqmdsqbgh9no.mp4', 3, TRUE),
+('vid_uyir_4', 'ஈ', 'உயிர் எழுத்து ஈ (ஈ)', 'உயிர் எழுத்துகள்', '00:15', '🎬ஈ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790849525/agaram_media/videos/lhylws8eq0iijt9azfhp.mp4', 4, TRUE),
+('vid_uyir_5', 'உ', 'உயிர் எழுத்து உ (உரல்)', 'உயிர் எழுத்துகள்', '00:15', '🎬உ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790849570/agaram_media/videos/srteaw6jwtppkt0e6esl.mp4', 5, TRUE),
+('vid_uyir_6', 'ஊ', 'உயிர் எழுத்து ஊ (ஊஞ்சல்)', 'உயிர் எழுத்துகள்', '00:15', '🎬ஊ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790849604/agaram_media/videos/mvtffw845vapnhrhokcu.mp4', 6, TRUE),
+('vid_uyir_7', 'எ', 'உயிர் எழுத்து எ (எலி)', 'உயிர் எழுத்துகள்', '00:15', '🎬எ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790849714/agaram_media/videos/losz1xmdpogdsyb3kfkb.mp4', 7, TRUE),
+('vid_uyir_8', 'ஏ', 'உயிர் எழுத்து ஏ (ஏணி)', 'உயிர் எழுத்துகள்', '00:15', '🎬ஏ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790849774/agaram_media/videos/ctcqwju9p8xcdppwxogk.mp4', 8, TRUE),
+('vid_uyir_9', 'ஐ', 'உயிர் எழுத்து ஐ (ஐந்து)', 'உயிர் எழுத்துகள்', '00:15', '🎬ஐ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790849825/agaram_media/videos/abyi5xu4ffymff9ioosy.mp4', 9, TRUE),
+('vid_uyir_10', 'ஒ', 'உயிர் எழுத்து ஒ (ஒட்டகம்)', 'உயிர் எழுத்துகள்', '00:15', '🎬ஒ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790854598/agaram_media/videos/ranfb0lwkaspm4mffrqp.mp4', 10, TRUE),
+('vid_uyir_11', 'ஓ', 'உயிர் எழுத்து ஓ (ஓடம்)', 'உயிர் எழுத்துகள்', '00:15', '🎬ஓ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790854646/agaram_media/videos/gv3wggfnpbus8n2fol4c.mp4', 11, TRUE),
+('vid_uyir_12', 'ஔ', 'உயிர் எழுத்து ஔ (ஔவையார்)', 'உயிர் எழுத்துகள்', '00:15', '🎬ஔ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790855080/agaram_media/videos/btefhsc3k9n0kgfhmcrn.mp4', 12, TRUE),
+('vid_mei_1', 'க்', 'மெய் எழுத்து க் (சக்கரம்)', 'மெய் எழுத்துகள்', '00:15', '✍️க்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791006753/agaram_media/videos/fg18xjxo2q4p9wsyfvpo.mp4', 1, TRUE),
+('vid_mei_2', 'ங்', 'மெய் எழுத்து ங் (சங்கு)', 'மெய் எழுத்துகள்', '00:15', '✍️ங்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791007508/agaram_media/videos/zjmzubpswzwhlkvl5ojn.mp4', 2, TRUE),
+('vid_mei_3', 'ச்', 'மெய் எழுத்துச் (தச்சர்)', 'மெய் எழுத்துகள்', '00:15', '✍️ச்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791007812/agaram_media/videos/fsagxkudps6vh6lybuno.mp4', 3, TRUE),
+('vid_mei_4', 'ஞ்', 'மெய் எழுத்து ஞ் (ஊஞ்சல்)', 'மெய் எழுத்துகள்', '00:15', '✍️ஞ்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791007916/agaram_media/videos/ykprwmafp4al32alrsa6.mp4', 4, TRUE),
+('vid_mei_5', 'ட்', 'மெய் எழுத்து ட் (பட்டம்)', 'மெய் எழுத்துகள்', '00:15', '✍️ட்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791008045/agaram_media/videos/sd0kk4jfqz572vowz63j.mp4', 5, TRUE),
+('vid_mei_6', 'ண்', 'மெய் எழுத்து ண் (கண்)', 'மெய் எழுத்துகள்', '00:15', '✍️ண்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791011858/agaram_media/videos/mrj9929eyumtpsvwvk49.mp4', 6, TRUE),
+('vid_mei_7', 'த்', 'மெய் எழுத்து த் (நத்தை)', 'மெய் எழுத்துகள்', '00:15', '✍️த்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791012537/agaram_media/videos/xayiuz964o3qwkbtpjkr.mp4', 7, TRUE),
+('vid_mei_8', 'ந்', 'மெய் எழுத்து ந் (பந்து)', 'மெய் எழுத்துகள்', '00:15', '✍️ந்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791012754/agaram_media/videos/jb0av76qcjimjylof1oh.mp4', 8, TRUE),
+('vid_mei_9', 'ப்', 'மெய் எழுத்து ப் (கப்பல்)', 'மெய் எழுத்துகள்', '00:15', '✍️ப்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791013206/agaram_media/videos/hgdp4p7sjj4zuemigges.mp4', 9, TRUE),
+('vid_mei_10', 'ம்', 'மெய் எழுத்து ம் (மரம்)', 'மெய் எழுத்துகள்', '00:15', '✍️ம்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791178025/agaram_media/videos/rvu5tcop5a4inyy2myty.mp4', 10, TRUE),
+('vid_mei_11', 'ய்', 'மெய் எழுத்து ய் (பாய்)', 'மெய் எழுத்துகள்', '00:15', '✍️ய்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791178322/agaram_media/videos/pzjgq9yxjcf3xcyaxbbh.mp4', 11, TRUE),
+('vid_mei_12', 'ர்', 'மெய் எழுத்து ர் (ஏர்)', 'மெய் எழுத்துகள்', '00:15', '✍️ர்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791178852/agaram_media/videos/k4tqtli6kuwysaqx7muw.mp4', 12, TRUE),
+('vid_mei_13', 'ல்', 'மெய் எழுத்து ல் (சேவல்)', 'மெய் எழுத்துகள்', '00:15', '✍️ல்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179035/agaram_media/videos/p8fcozkulcpzcpvdcsgd.mp4', 13, TRUE),
+('vid_mei_14', 'வ்', 'மெய் எழுத்து வ் (செவ்வந்தி)', 'மெய் எழுத்துகள்', '00:15', '✍️வ்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179306/agaram_media/videos/jkhfxzw7ksobhb7hawpv.mp4', 14, TRUE),
+('vid_mei_15', 'ழ்', 'மெய் எழுத்து ழ் (யாழ்)', 'மெய் எழுத்துகள்', '00:15', '✍️ழ்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179352/agaram_media/videos/iinovuxh3dnlsajorpsp.mp4', 15, TRUE),
+('vid_mei_16', 'ள்', 'மெய் எழுத்து ள் (வாள்)', 'மெய் எழுத்துகள்', '00:15', '✍️ள்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179466/agaram_media/videos/ibjoez182v1nsagtyedb.mp4', 16, TRUE),
+('vid_mei_17', 'ற்', 'மெய் எழுத்து ற் (புற்று)', 'மெய் எழுத்துகள்', '00:15', '✍️ற்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179595/agaram_media/videos/umbutwkkjznope99qwnw.mp4', 17, TRUE),
+('vid_mei_18', 'ன்', 'மெய் எழுத்து ன் (மீன்)', 'மெய் எழுத்துகள்', '00:15', '✍️ன்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179910/agaram_media/videos/asrp5x7m9ynstmklzx40.mp4', 18, TRUE)
+ON CONFLICT (id) DO UPDATE SET 
+  title = EXCLUDED.title,
+  description = EXCLUDED.description,
+  category = EXCLUDED.category,
+  thumbnail_emoji = EXCLUDED.thumbnail_emoji,
+  video_url = EXCLUDED.video_url,
+  display_order = EXCLUDED.display_order,
+  is_published = EXCLUDED.is_published;
 
 -- Quizzes
 INSERT INTO quizzes (id, title, subtitle, icon_emoji, category, question_count, pass_marks, stars_reward, is_active, display_order)
