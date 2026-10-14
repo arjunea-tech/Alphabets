@@ -67,7 +67,7 @@ class AuthService extends ChangeNotifier {
             'email': email.trim().toLowerCase(),
             'password': password,
           }),
-        ).timeout(const Duration(seconds: 4));
+        ).timeout(const Duration(seconds: 12));
 
         ApiConfig.setWorkingBaseUrl(base);
         response = res;
@@ -143,7 +143,7 @@ class AuthService extends ChangeNotifier {
             'email': email.trim().toLowerCase(),
             'password': password,
           }),
-        ).timeout(const Duration(seconds: 4));
+        ).timeout(const Duration(seconds: 12));
 
         ApiConfig.setWorkingBaseUrl(base);
         response = res;
