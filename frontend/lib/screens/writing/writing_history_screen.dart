@@ -16,7 +16,7 @@ class _WritingHistoryScreenState extends State<WritingHistoryScreen> {
   final WritingPracticeRepository _repo = LocalWritingPracticeRepository();
   List<WritingPractice> _history = [];
   bool _isLoading = true;
-  String _selectedFilter = 'அனைத்தும்';
+  String _selectedFilter = 'All';
 
   @override
   void initState() {
@@ -39,11 +39,11 @@ class _WritingHistoryScreenState extends State<WritingHistoryScreen> {
     if (widget.initialLetter != null) {
       return _history.where((p) => p.letter == widget.initialLetter).toList();
     }
-    if (_selectedFilter == 'உயிர்') {
+    if (_selectedFilter == 'Vowels') {
       return _history.where((p) => p.category == 'uyir').toList();
-    } else if (_selectedFilter == 'மெய்') {
+    } else if (_selectedFilter == 'Consonants') {
       return _history.where((p) => p.category == 'mei').toList();
-    } else if (_selectedFilter == 'உயிர்மெய்') {
+    } else if (_selectedFilter == 'Others') {
       return _history.where((p) => p.category == 'uyirmei').toList();
     }
     return _history;
@@ -52,18 +52,18 @@ class _WritingHistoryScreenState extends State<WritingHistoryScreen> {
   String _formatDate(DateTime dt) {
     const months = [
       '',
-      'ஜனவரி',
-      'பிப்ரவரி',
-      'மார்ச்',
-      'ஏப்ரல்',
-      'மே',
-      'ஜூன்',
-      'ஜூலை',
-      'ஆகஸ்ட்',
-      'செப்டம்பர்',
-      'அக்டோபர்',
-      'நவம்பர்',
-      'டிசம்பர்'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
     final monthName = months[dt.month];
     final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
@@ -78,17 +78,17 @@ class _WritingHistoryScreenState extends State<WritingHistoryScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text(
-          'பதிவுகளை அழிக்கவா?',
+          'Clear All Records?',
           style: TextStyle(fontFamily: 'Catamaran', fontWeight: FontWeight.bold),
         ),
         content: const Text(
-          'அனைத்து கையெழுத்துப் பயிற்சி பதிவுகளும் நீக்கப்படும்.',
+          'All handwriting practice records will be deleted.',
           style: TextStyle(fontFamily: 'Catamaran', fontSize: 16),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('வேண்டாம்', style: TextStyle(color: Colors.grey)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -101,7 +101,7 @@ class _WritingHistoryScreenState extends State<WritingHistoryScreen> {
               await _repo.clearHistory();
               _loadHistory();
             },
-            child: const Text('ஆம், அழி'),
+            child: const Text('Yes, Delete'),
           ),
         ],
       ),
@@ -116,7 +116,7 @@ class _WritingHistoryScreenState extends State<WritingHistoryScreen> {
       backgroundColor: const Color(0xFFF0F7FF),
       appBar: AppBar(
         title: const Text(
-          'எழுத்துப் பயிற்சி பதிவுகள்',
+          'Writing Practice History',
           style: TextStyle(
             fontFamily: 'Catamaran',
             fontWeight: FontWeight.w900,
@@ -130,7 +130,7 @@ class _WritingHistoryScreenState extends State<WritingHistoryScreen> {
           if (_history.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_sweep_rounded),
-              tooltip: 'பதிவுகளை அழி',
+              tooltip: 'Clear History',
               onPressed: _confirmClearAll,
             ),
         ],
@@ -151,10 +151,10 @@ class _WritingHistoryScreenState extends State<WritingHistoryScreen> {
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: [
-                          'அனைத்தும்',
-                          'உயிர்',
-                          'மெய்',
-                          'உயிர்மெய்',
+                          'All',
+                          'Vowels',
+                          'Consonants',
+                          'Others',
                         ].map((label) {
                           final isSelected = _selectedFilter == label;
                           return Padding(
@@ -192,7 +192,7 @@ class _WritingHistoryScreenState extends State<WritingHistoryScreen> {
                       const Icon(Icons.history_edu_rounded, color: Color(0xFF3A86FF), size: 22),
                       const SizedBox(width: 8),
                       Text(
-                        'மொத்தப் பயிற்சிகள்: ${filtered.length}',
+                        'Total Practices: ${filtered.length}',
                         style: const TextStyle(
                           fontFamily: 'Catamaran',
                           fontSize: 16,
@@ -223,7 +223,7 @@ class _WritingHistoryScreenState extends State<WritingHistoryScreen> {
                               ),
                               const SizedBox(height: 16),
                               const Text(
-                                'இன்னும் பயிற்சிகள் எதுவும் இல்லை!',
+                                'No practice records yet!',
                                 style: TextStyle(
                                   fontFamily: 'Catamaran',
                                   fontSize: 18,
@@ -233,7 +233,7 @@ class _WritingHistoryScreenState extends State<WritingHistoryScreen> {
                               ),
                               const SizedBox(height: 6),
                               const Text(
-                                'எழுதிப் பழகியவுடன் இங்கு பதிவாகும்.',
+                                'Your writing practices will appear here.',
                                 style: TextStyle(
                                   fontFamily: 'Catamaran',
                                   fontSize: 14,
@@ -316,7 +316,7 @@ class _WritingHistoryScreenState extends State<WritingHistoryScreen> {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'எழுத்து: ${item.letter}',
+                            'Letter: ${item.letter}',
                             style: const TextStyle(
                               fontFamily: 'Catamaran',
                               fontSize: 18,
@@ -336,7 +336,7 @@ class _WritingHistoryScreenState extends State<WritingHistoryScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            'பயிற்சி #${item.attemptNumber}',
+                            'Attempt #${item.attemptNumber}',
                             style: const TextStyle(
                               fontFamily: 'Catamaran',
                               fontSize: 12,
@@ -365,7 +365,7 @@ class _WritingHistoryScreenState extends State<WritingHistoryScreen> {
                       const Icon(Icons.stars_rounded, color: Color(0xFFFFD166), size: 18),
                       const SizedBox(width: 4),
                       Text(
-                        item.completed ? 'வெற்றிகரமாக முடித்தது' : 'பயிற்சி செய்தது',
+                        item.completed ? 'Completed' : 'Practiced',
                         style: const TextStyle(
                           fontFamily: 'Catamaran',
                           fontSize: 13,

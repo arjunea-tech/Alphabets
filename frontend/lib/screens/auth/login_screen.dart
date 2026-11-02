@@ -126,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(24),
                           child: Image.asset(
-                            'assets/images/app_logo.png',
+                            'assets/images/app_logo_english.png',
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -135,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 16),
 
                     Text(
-                      'எழுத்துக்கள்',
+                      'ALPHABETS',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.catamaran(
                         fontSize: 28,
@@ -147,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 4),
 
                     Text(
-                      'உள்நுழையவும்',
+                      'Sign In',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.catamaran(
                         fontSize: 22,
@@ -158,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 4),
 
                     Text(
-                      'மீண்டும் வருக! தமிழ் கற்பதை தொடர்வோம்.',
+                      'Welcome back! Let\'s continue learning English Alphabets.',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.catamaran(
                         fontSize: 15,
@@ -214,8 +214,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 1. மின்னஞ்சல் (Email)
-                          _buildFieldLabel('மின்னஞ்சல்', Icons.email_rounded),
+                          // 1.  (Email)
+                          _buildFieldLabel('Email Address', Icons.email_rounded),
                           const SizedBox(height: 6),
                           TextFormField(
                             controller: _emailController,
@@ -232,19 +232,19 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'மின்னஞ்சல் தேவை';
+                                return 'Email is required';
                               }
                               final trimmed = value.trim();
                               if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(trimmed)) {
-                                return 'சரியான மின்னஞ்சல் முகவரியை உள்ளிடவும்';
+                                return 'Please enter a valid email address';
                               }
                               return null;
                             },
                           ),
                           const SizedBox(height: 18),
 
-                          // 2. கடவுச்சொல் (Password)
-                          _buildFieldLabel('கடவுச்சொல்', Icons.lock_rounded),
+                          // 2.  (Password)
+                          _buildFieldLabel('Password', Icons.lock_rounded),
                           const SizedBox(height: 6),
                           TextFormField(
                             controller: _passwordController,
@@ -272,7 +272,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'கடவுச்சொல் தேவை';
+                                return 'Password is required';
                               }
                               return null;
                             },
@@ -282,7 +282,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Primary Button: உள்நுழையவும் (Login)
+                    // Primary Button:  (Login)
                     BouncyButton(
                       onPressed: _isLoading ? () {} : _handleLogin,
                       child: Container(
@@ -313,7 +313,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 )
                               : Text(
-                                  'உள்நுழையவும்',
+                                  'Sign In',
                                   style: GoogleFonts.catamaran(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w800,
@@ -326,7 +326,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Secondary Link: கணக்கு இல்லையா? பதிவு செய்யவும்
+                    // Secondary Link:  ?  
                     Center(
                       child: TextButton(
                         onPressed: _isLoading
@@ -351,7 +351,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: Text.rich(
                           TextSpan(
-                            text: 'கணக்கு இல்லையா? ',
+                            text: 'Don\'t have an account? ',
                             style: GoogleFonts.catamaran(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -359,7 +359,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             children: [
                               TextSpan(
-                                text: 'பதிவு செய்யவும்',
+                                text: 'Sign Up',
                                 style: GoogleFonts.catamaran(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,

@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import '../../data/uyir_data.dart';
+import '../../data/english_letters_data.dart';
 import '../../models/car_racing_game_model.dart';
 import '../../services/audio_service.dart';
 import '../../services/progress_service.dart';
@@ -149,8 +150,8 @@ class CarRacingGameState extends State<CarRacingGame>
   }
 
   void _setupGameData() {
-    // Strictly Uyir Letters (12 vowels: அ, ஆ, இ, ஈ, உ, ஊ, எ, ஏ, ஐ, ஒ, ஓ, ஔ)
-    _targetPool = uyirLettersList.map((u) {
+    // Strictly Uyir Letters (12 vowels: , , , , , , , , , , , )
+    _targetPool = englishLettersList.map((u) {
       return RacingTarget(
         id: u.id,
         text: u.letter,
@@ -375,7 +376,7 @@ class CarRacingGameState extends State<CarRacingGame>
       showIndicator: false,
     );
 
-    const praises = ['சூப்பர்!', 'அருமை!', 'சபாஷ்!', 'அற்புதம்!'];
+    const praises = ['Super!', 'Awesome!', 'Bravo!', 'Brilliant!'];
     _showFeedback(praises[_rng.nextInt(praises.length)], AppColors.mintGreen);
 
     // Auto-advance to next round smoothly
@@ -393,7 +394,7 @@ class CarRacingGameState extends State<CarRacingGame>
       showIndicator: false,
     );
     _audioService.playRetryFeedback(context);
-    _showFeedback('மீண்டும் முயற்சி செய்!', AppColors.playfulPink);
+    _showFeedback('Try again!', AppColors.playfulPink);
   }
 
   void _handleBonusStar(double hitX, double hitY) {
@@ -401,14 +402,14 @@ class CarRacingGameState extends State<CarRacingGame>
     _scoreBumpController.forward(from: 0.0);
     _audioService.playStarReward(context);
     _spawnConfetti(hitX, hitY, count: 12);
-    _showFeedback('+5 போனஸ்!', const Color(0xFFFFB300));
+    _showFeedback('+5 Bonus!', const Color(0xFFFFB300));
   }
 
   void _handleObstacle(double hitX, double hitY) {
     _speedModifier = 0.45; // Temporary slowdown
     _carShakeController.forward(from: 0.0);
     _audioService.playRetryFeedback(context);
-    _showFeedback('கவனம்!', const Color(0xFFFF7043));
+    _showFeedback('Watch out!', const Color(0xFFFF7043));
   }
 
   void _advanceToNextRound() {
@@ -710,7 +711,7 @@ class CarRacingGameState extends State<CarRacingGame>
                   const Text('🏎️', style: TextStyle(fontSize: 18)),
                   const SizedBox(width: 6),
                   Text(
-                    'உயிர் எழுத்து கார் பந்தயம்',
+                    'Alphabet Car Racing',
                     style: AppTextStyles.cardTitle.copyWith(
                       fontSize: 14,
                       color: const Color(0xFFBF360C),
@@ -862,7 +863,7 @@ class CarRacingGameState extends State<CarRacingGame>
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  'ஒலியைக் கேட்டு காரை ஓட்டுங்கள்! 🚗',
+                  'Listen to phonics and steer your car! 🚗',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
@@ -870,7 +871,7 @@ class CarRacingGameState extends State<CarRacingGame>
                   ),
                 ),
                 Text(
-                  'சரியான உயிர் எழுத்தை சேகரியுங்கள்! 🎵',
+                  'Collect matching alphabet letters! 🎵',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -910,7 +911,7 @@ class CarRacingGameState extends State<CarRacingGame>
                   ),
                   SizedBox(width: 4),
                   Text(
-                    'மீண்டும் கேள்',
+                    'Listen Again',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
@@ -1234,7 +1235,7 @@ class CarRacingGameState extends State<CarRacingGame>
                 Icon(Icons.arrow_back_rounded, color: Colors.white, size: 28),
                 SizedBox(width: 4),
                 Text(
-                  'இடது',
+                  'Left',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -1269,7 +1270,7 @@ class CarRacingGameState extends State<CarRacingGame>
             child: const Row(
               children: [
                 Text(
-                  'வலது',
+                  'Right',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -1319,7 +1320,7 @@ class CarRacingGameState extends State<CarRacingGame>
             ),
             const SizedBox(height: 12),
             const Text(
-              'பந்தயம் முடிந்தது! 🎉',
+              'Race Finished! 🎉',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w900,
@@ -1328,7 +1329,7 @@ class CarRacingGameState extends State<CarRacingGame>
             ),
             const SizedBox(height: 4),
             const Text(
-              'நீங்கள் சிறப்பாக விளையாடினீர்கள்!',
+              'Great driving and learning!',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
@@ -1378,7 +1379,7 @@ class CarRacingGameState extends State<CarRacingGame>
                   Expanded(
                     child: Column(
                       children: [
-                        const Text('மதிப்பெண்', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
+                        const Text('Score', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
                         Text('$_score', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFFE65100))),
                       ],
                     ),
@@ -1387,7 +1388,7 @@ class CarRacingGameState extends State<CarRacingGame>
                   Expanded(
                     child: Column(
                       children: [
-                        const Text('சேகரித்தவை', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
+                        const Text('Collected', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
                         Text('$_correctCatches', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF2E7D32))),
                       ],
                     ),
@@ -1396,7 +1397,7 @@ class CarRacingGameState extends State<CarRacingGame>
                   Expanded(
                     child: Column(
                       children: [
-                        const Text('நட்சத்திரங்கள்', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
+                        const Text('Stars', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
                         Text('+$starsEarned', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFFF57F17))),
                       ],
                     ),
@@ -1423,7 +1424,7 @@ class CarRacingGameState extends State<CarRacingGame>
                       ),
                       child: const Center(
                         child: Text(
-                          'விளையாட்டுகளுக்கு செல்',
+                          'Back to Games',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -1456,7 +1457,7 @@ class CarRacingGameState extends State<CarRacingGame>
                       ),
                       child: const Center(
                         child: Text(
-                          'மீண்டும் விளையாடு 🚀',
+                          'Race Again 🚀',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,

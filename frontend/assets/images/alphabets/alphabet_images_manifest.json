@@ -1,0 +1,152 @@
+{
+  "B": {
+    "letter": "B",
+    "word": "Ball",
+    "file": "ball.png",
+    "source": "local"
+  },
+  "C": {
+    "letter": "C",
+    "word": "Camel",
+    "file": "camel.png",
+    "source": "local"
+  },
+  "E": {
+    "letter": "E",
+    "word": "Eye",
+    "file": "eye.png",
+    "source": "local"
+  },
+  "F": {
+    "letter": "F",
+    "word": "Fish",
+    "file": "fish.png",
+    "source": "local"
+  },
+  "H": {
+    "letter": "H",
+    "word": "Hen",
+    "file": "hen.png",
+    "source": "local"
+  },
+  "K": {
+    "letter": "K",
+    "word": "Kite",
+    "file": "kite.png",
+    "source": "local"
+  },
+  "L": {
+    "letter": "L",
+    "word": "Leaf",
+    "file": "leaf.png",
+    "source": "local"
+  },
+  "M": {
+    "letter": "M",
+    "word": "Mat",
+    "file": "mat.png",
+    "source": "local"
+  },
+  "N": {
+    "letter": "N",
+    "word": "Number",
+    "file": "number.png",
+    "source": "local"
+  },
+  "R": {
+    "letter": "R",
+    "word": "Rabbit",
+    "file": "rabbit.png",
+    "source": "local"
+  },
+  "S": {
+    "letter": "S",
+    "word": "Ship",
+    "file": "ship.png",
+    "source": "local"
+  },
+  "T": {
+    "letter": "T",
+    "word": "Tree",
+    "file": "tree.png",
+    "source": "local"
+  },
+  "W": {
+    "letter": "W",
+    "word": "Wheel",
+    "file": "wheel.png",
+    "source": "local"
+  },
+  "A": {
+    "letter": "A",
+    "word": "Apple",
+    "file": "apple.png",
+    "source": "wikimedia"
+  },
+  "D": {
+    "letter": "D",
+    "word": "Dog",
+    "file": "dog.png",
+    "source": "wikimedia"
+  },
+  "G": {
+    "letter": "G",
+    "word": "Grape",
+    "file": "grapes.png",
+    "source": "wikimedia"
+  },
+  "I": {
+    "letter": "I",
+    "word": "Ice",
+    "file": "ice_cream.png",
+    "source": "wikimedia"
+  },
+  "J": {
+    "letter": "J",
+    "word": "Jug",
+    "file": "jug.png",
+    "source": "wikimedia"
+  },
+  "O": {
+    "letter": "O",
+    "word": "Orange",
+    "file": "orange.png",
+    "source": "wikimedia"
+  },
+  "P": {
+    "letter": "P",
+    "word": "Parrot",
+    "file": "parrot.png",
+    "source": "wikimedia"
+  },
+  "Q": {
+    "letter": "Q",
+    "word": "Queen",
+    "file": "queen.png",
+    "source": "wikimedia"
+  },
+  "U": {
+    "letter": "U",
+    "word": "Umbrella",
+    "file": "umbrella.png",
+    "source": "wikimedia"
+  },
+  "V": {
+    "letter": "V",
+    "word": "Van",
+    "file": "van.png",
+    "source": "wikimedia"
+  },
+  "X": {
+    "letter": "X",
+    "word": "Xylophone",
+    "file": "xylophone.png",
+    "source": "wikimedia"
+  },
+  "Z": {
+    "letter": "Z",
+    "word": "Zebra",
+    "file": "zebra.png",
+    "source": "wikimedia"
+  }
+}

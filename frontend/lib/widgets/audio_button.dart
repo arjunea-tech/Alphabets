@@ -76,7 +76,7 @@ class _AudioButtonState extends State<AudioButton>
     final fgColor = widget.iconColor ?? Colors.white;
 
     return Semantics(
-      label: '${widget.letter} உச்சரிப்பு ஒலி',
+      label: '${widget.letter} Sound',
       button: true,
       child: GestureDetector(
         onTap: _handleTap,

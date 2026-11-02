@@ -1,6 +1,6 @@
 /**
  * =====================================================================
- * AGARAM - Tamil Children's Educational Platform Backend API
+ * ALPHABETS - English Alphabet Educational Platform Backend API
  * Node.js + Express.js + MySQL REST API
  * =====================================================================
  */
@@ -46,8 +46,8 @@ app.use('/assets', express.static(path.join(__dirname, '../assets')));
 // Health Check Endpoint
 // ---------------------------------------------------------------------
 app.get('/api/health', (req, res) => {
-  return successResponse(res, 'AGARAM API is healthy', {
-    service: 'agaram-backend',
+  return successResponse(res, 'ALPHABETS API is healthy', {
+    service: 'alphabets-backend',
     version: '1.0.0',
     uptime: `${Math.floor(process.uptime())}s`,
     timestamp: new Date().toISOString(),
@@ -56,7 +56,7 @@ app.get('/api/health', (req, res) => {
 
 // Root friendly welcome endpoint
 app.get('/', (req, res) => {
-  return successResponse(res, 'Welcome to AGARAM Tamil Educational Platform API', {
+  return successResponse(res, 'Welcome to ALPHABETS Tamil Educational Platform API', {
     healthCheck: '/api/health',
     apiDocs: '/api/v1',
   });
@@ -84,7 +84,7 @@ async function startServer() {
 
   const server = app.listen(PORT, () => {
     logger.info(`====================================================`);
-    logger.info(`🌟 AGARAM Backend Server running on port ${PORT}`);
+    logger.info(`🌟 Backend Server running on port ${PORT}`);
     logger.info(`🌐 Environment: ${config.env}`);
     logger.info(`🩺 Health check: http://localhost:${PORT}/api/health`);
     logger.info(`📚 API Base: http://localhost:${PORT}${config.apiPrefix}`);
@@ -93,7 +93,7 @@ async function startServer() {
 
   // Graceful Shutdown
   const shutdown = () => {
-    logger.info('🛑 Shutting down AGARAM server gracefully...');
+    logger.info('🛑 Shutting down ALPHABETS server gracefully...');
     server.close(() => {
       logger.info('💤 Server closed.');
       process.exit(0);

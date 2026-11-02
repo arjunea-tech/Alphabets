@@ -1,9 +1,11 @@
-// GENERATED FILE - do not edit by hand.
+﻿// GENERATED FILE - do not edit by hand.
 // Source: ai_model/scripts/generate_tamil_stroke_data.py (Noto Sans Tamil, OFL).
 // Coordinates are normalized to the writing guide square (see WritingEngine.guideRect).
 
 import 'dart:ui';
 import '../models/letter_stroke_model.dart';
+import 'english_stroke_data.dart';
+import 'english_small_stroke_data.dart';
 
 /// Stroke order, start/end points and centre-line paths for each letter.
 /// Paths are traced on the same glyph outline that the canvas draws
@@ -5443,12 +5445,23 @@ class TamilStrokeDataRepository {
   };
 
   static TamilWritingLetter getLetter(String letter) {
+    if (EnglishSmallLettersStrokeData.letters.containsKey(letter)) {
+      return EnglishSmallLettersStrokeData.letters[letter]!;
+    }
+    final upper = letter.toUpperCase();
+    if (EnglishStrokeData.letters.containsKey(upper)) {
+      return EnglishStrokeData.letters[upper]!;
+    }
     if (_letters.containsKey(letter)) return _letters[letter]!;
     return _generateFallbackLetter(letter);
   }
 
-  static bool hasVerifiedLetter(String letter) => _letters.containsKey(letter);
-  static List<String> getAllVerifiedLetters() => _letters.keys.toList();
+  static bool hasVerifiedLetter(String letter) {
+    final upper = letter.toUpperCase();
+    return EnglishStrokeData.letters.containsKey(upper) || _letters.containsKey(letter);
+  }
+
+  static List<String> getAllVerifiedLetters() => [...EnglishStrokeData.letters.keys, ..._letters.keys];
 
   static TamilWritingLetter _generateFallbackLetter(String letter) {
     return TamilWritingLetter(
@@ -5459,8 +5472,8 @@ class TamilStrokeDataRepository {
       strokes: [
         LetterStrokeData(
           strokeNumber: 1,
-          title: 'படி 1: எழுத்து வடிவம் ✍️',
-          instruction: '$letter எழுத்தை விரலால் அழகாக எழுதிப் பழகுங்கள்',
+          title: 'Step 1: Letter Shape ✍️',
+          instruction: 'Trace the letter $letter carefully with your finger.',
           directionHint: 'down',
           startPoint: const Offset(0.35, 0.32),
           pathPoints: const [

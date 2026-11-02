@@ -34,10 +34,10 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
       final percentage = (widget.score / widget.totalQuestions);
       if (percentage >= 0.5) {
         AudioService.instance.playSuccessFeedback(context);
-        AudioService.instance.playTamilAudio('வாழ்த்துகள்! சூப்பர் வெற்றி!');
+        // Great celebration
       } else {
         AudioService.instance.playRetryFeedback(context);
-        AudioService.instance.playTamilAudio('நன்றாக முயற்சி செய்தாய்!');
+        // Good effort
       }
     });
   }
@@ -67,13 +67,13 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                       size: MascotSize.medium,
                       customHeight: 150,
                       showGlow: true,
-                      speechText: isAwesome ? 'அற்புதம்! சூப்பர் வெற்றி!' : 'நன்றாக முயற்சி செய்தாய்!',
+                      speechText: isAwesome ? 'Awesome! Great job!' : 'Good effort! Keep practicing!',
                     ),
                     const SizedBox(height: 16),
 
                     // Title
                     Text(
-                      isAwesome ? 'வாழ்த்துகள்!' : 'நன்றாக முயற்சி செய்தாய்!',
+                      isAwesome ? 'Congratulations!' : 'Good effort! Try again!',
                       style: AppTextStyles.brandTitle.copyWith(
                         color: AppColors.primaryDark,
                         fontSize: 26,
@@ -83,7 +83,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'உங்கள் மதிப்பெண்',
+                      'Your Score',
                       style: AppTextStyles.cardSubtitle.copyWith(
                         fontSize: 15,
                         color: AppColors.textMuted,
@@ -130,7 +130,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      '+$starsEarned நட்சத்திரங்கள் பெற்றீர்கள்!',
+                      '+$starsEarned Stars Earned!',
                       style: AppTextStyles.bodyTextBold.copyWith(
                         color: AppColors.textDark,
                         fontSize: 15,
@@ -160,7 +160,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                           children: [
                             const Icon(Icons.replay_rounded, color: Colors.white, size: 22),
                             const SizedBox(width: 8),
-                            Text('மீண்டும் விளையாடு', style: AppTextStyles.buttonText),
+                            Text('Play Again', style: AppTextStyles.buttonText),
                           ],
                         ),
                       ),
@@ -184,7 +184,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                             const Icon(Icons.home_rounded, color: AppColors.textDark, size: 22),
                             const SizedBox(width: 8),
                             Text(
-                              'முகப்புக்குச் செல்',
+                              'Back to Home',
                               style: AppTextStyles.buttonText.copyWith(color: AppColors.textDark),
                             ),
                           ],

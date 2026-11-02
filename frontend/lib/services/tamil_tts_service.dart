@@ -14,7 +14,7 @@ class TamilTtsService {
   bool _isInitialized = false;
   bool _isSpeaking = false;
   bool _isMuted = false;
-  String _activeLanguage = 'ta-IN';
+  String _activeLanguage = 'en-US';
   bool _tamilSupportedOnDevice = false;
   String? _detectedEngine;
   List<String> _availableLanguages = [];
@@ -116,7 +116,7 @@ class TamilTtsService {
       // Check ta-IN availability
       bool taInFound = false;
       try {
-        final dynamic taInCheck = await _tts!.isLanguageAvailable('ta-IN');
+        final dynamic taInCheck = await _tts!.isLanguageAvailable('en-US');
         taInFound = _isLanguageSupportedResult(taInCheck);
       } catch (_) {}
 
@@ -134,18 +134,18 @@ class TamilTtsService {
 
       // If available in list or reported by isLanguageAvailable
       final inList = _availableLanguages.any((l) =>
-          l == 'ta-IN' || l == 'ta_IN' || l == 'ta' || l.toLowerCase().startsWith('ta'));
+          l == 'en-US' || l == 'ta_IN' || l == 'ta' || l.toLowerCase().startsWith('ta'));
 
       _tamilSupportedOnDevice = taInFound || taGenericFound || taUnderscoreFound || inList;
 
       if (taInFound) {
-        _activeLanguage = 'ta-IN';
+        _activeLanguage = 'en-US';
       } else if (taUnderscoreFound) {
         _activeLanguage = 'ta_IN';
       } else if (taGenericFound) {
         _activeLanguage = 'ta';
       } else {
-        _activeLanguage = 'ta-IN'; // Default attempt
+        _activeLanguage = 'en-US'; // Default attempt
       }
 
       // Query available voices and explicitly select Tamil voice if present
@@ -268,7 +268,7 @@ class TamilTtsService {
   }
 
   /// Convenience static speak method so any widget or screen can call:
-  /// `await TamilTtsService.speak("அ");`
+  /// `await TamilTtsService.speak("A");`
   static Future<void> speak(String? text) async {
     await _instance.speakText(text);
   }

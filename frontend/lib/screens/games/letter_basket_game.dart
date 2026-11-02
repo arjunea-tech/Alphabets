@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import '../../data/uyir_data.dart';
 import '../../data/mei_data.dart';
+import '../../data/english_letters_data.dart';
 import '../../models/letter_model.dart';
 import '../../models/letter_basket_game_model.dart';
 import '../../services/audio_service.dart';
@@ -143,9 +144,9 @@ class LetterBasketGameState extends State<LetterBasketGame>
 
   void _setupGameData() {
     if (widget.mode == BasketGameMode.mei) {
-      _letterPool = List<LetterModel>.from(meiLettersList);
+      _letterPool = List<LetterModel>.from(englishVowelsList);
     } else {
-      _letterPool = List<LetterModel>.from(uyirLettersList);
+      _letterPool = List<LetterModel>.from(englishLettersList);
     }
 
     // Select 10 distinct rounds from the letter pool (guarantees different targets)
@@ -342,7 +343,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
     );
 
     // 4. Positive Tamil Praise
-    const praises = ['சூப்பர்! 🎉', 'அற்புதம்! 🌟', 'சபாஷ்! ✨', 'மிக நன்று! 👏'];
+    const praises = ['Super! 🎉', 'Awesome! 🌟', 'Bravo! ✨', 'Great Job! 👏'];
     _showFeedback(praises[_rng.nextInt(praises.length)], AppColors.mintGreen, Offset(hitX, hitY - 40));
 
     // 5. Clean, automatic transition to the next round after brief celebration
@@ -364,7 +365,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
     _audioService.playRetryFeedback(context);
 
     // Gentle encouraging message without ending or freezing the game
-    _showFeedback('மீண்டும் முயற்சி செய்! 😊', AppColors.playfulPink, Offset(hitX, hitY - 40));
+    _showFeedback('Try again! 😊', AppColors.playfulPink, Offset(hitX, hitY - 40));
   }
 
   void _advanceToNextRound() {
@@ -635,7 +636,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
                   const Text('🧺', style: TextStyle(fontSize: 18)),
                   const SizedBox(width: 6),
                   Text(
-                    'எழுத்துக் கூடை',
+                    'Letter Basket',
                     style: AppTextStyles.cardTitle.copyWith(
                       fontSize: 15,
                       color: const Color(0xFFBF360C),
@@ -787,7 +788,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '${_currentTarget.letter} எழுத்தைப் பிடி!',
+                  'Catch letter ${_currentTarget.letter}!',
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w900,
@@ -1056,7 +1057,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
             ),
             const SizedBox(height: 12),
             const Text(
-              'அற்புதம்! முயற்சி செய்வோம்!',
+              'Catch all target letters!',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 20,
@@ -1066,7 +1067,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
             ),
             const SizedBox(height: 8),
             Text(
-              'மதிப்பெண்: $_score',
+              'Score: $_score',
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -1087,7 +1088,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
                       ),
                       child: const Center(
                         child: Text(
-                          'வெளியேறு',
+                          'Exit',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -1119,7 +1120,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
                       ),
                       child: const Center(
                         child: Text(
-                          'மீண்டும் விளையாடு 🎮',
+                          'Play Again 🎮',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -1171,7 +1172,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
             ),
             const SizedBox(height: 12),
             const Text(
-              'வாழ்த்துகள்! 🎉',
+              'Congratulations! 🎉',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w900,
@@ -1180,7 +1181,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
             ),
             const SizedBox(height: 4),
             const Text(
-              'நீங்கள் சிறப்பாக விளையாடினீர்கள்!',
+              'Great catching skills!',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
@@ -1230,7 +1231,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
                   Expanded(
                     child: Column(
                       children: [
-                        const Text('மதிப்பெண்', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
+                        const Text('Score', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
                         Text('$_score', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFFE65100))),
                       ],
                     ),
@@ -1239,7 +1240,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
                   Expanded(
                     child: Column(
                       children: [
-                        const Text('பிடித்தவை', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
+                        const Text('Caught', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
                         Text('$_correctCatches', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF2E7D32))),
                       ],
                     ),
@@ -1248,7 +1249,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
                   Expanded(
                     child: Column(
                       children: [
-                        const Text('நட்சத்திரங்கள்', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
+                        const Text('Stars', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
                         Text('+$starsEarned', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFFF57F17))),
                       ],
                     ),
@@ -1274,7 +1275,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
                       ),
                       child: const Center(
                         child: Text(
-                          'விளையாட்டுகளுக்கு செல்',
+                          'Back to Games',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -1306,7 +1307,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
                       ),
                       child: const Center(
                         child: Text(
-                          'மீண்டும் விளையாடு 🚀',
+                          'Catch Again 🚀',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,

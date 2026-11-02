@@ -11,7 +11,7 @@ enum PlatformType {
 
 /// Types of collectible items
 enum CollectibleType {
-  targetLetter, // Tamil educational letter (e.g., 'அ')
+  targetLetter, //  Tamil educational letter (e.g., '')
   bonusStar,    // Collectible bonus star for extra points
 }
 

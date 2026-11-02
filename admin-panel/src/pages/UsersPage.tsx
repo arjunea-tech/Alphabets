@@ -141,9 +141,9 @@ export const UsersPage: React.FC = () => {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
             >
-              <option value="all">{language === 'ta' ? 'அனைத்து நிலைகள்' : 'All Status'}</option>
-              <option value="active">{language === 'ta' ? 'நேரலை (Active)' : 'Active'}</option>
-              <option value="inactive">{language === 'ta' ? 'முடக்கம் (Inactive)' : 'Inactive'}</option>
+              <option value="all">"All Status"</option>
+              <option value="active">"Active"</option>
+              <option value="inactive">"Inactive"</option>
             </select>
           </div>
         )}
@@ -151,7 +151,7 @@ export const UsersPage: React.FC = () => {
         <button
           onClick={fetchData}
           className="btn btn-secondary btn-sm"
-          title={language === 'ta' ? 'புதுப்பி' : 'Refresh'}
+          title="Refresh"
         >
           <RefreshCw size={15} />
         </button>
@@ -256,7 +256,7 @@ export const UsersPage: React.FC = () => {
                       {/* Age */}
                       <td>
                         <span className="badge badge-secondary" style={{ fontSize: '13px' }}>
-                          {u.age} {language === 'ta' ? 'வயது' : 'yrs'}
+                          {u.age} yrs
                         </span>
                       </td>
 
@@ -291,7 +291,7 @@ export const UsersPage: React.FC = () => {
                             fontSize: '13px',
                           }}
                         >
-                          {u.total_quizzes_taken || 0} {language === 'ta' ? 'வினாடிகள்' : 'quizzes'}
+                          {u.total_quizzes_taken || 0} {language === 'ta' ? 'quizzes' : 'quizzes'}
                         </span>
                       </td>
 
@@ -300,12 +300,12 @@ export const UsersPage: React.FC = () => {
                         {isActive ? (
                           <span className="badge badge-success" style={{ fontSize: '12px' }}>
                             <UserCheck size={12} style={{ marginRight: '3px' }} />
-                            {language === 'ta' ? 'நேரலை' : 'Active'}
+                            "Active"
                           </span>
                         ) : (
                           <span className="badge badge-danger" style={{ fontSize: '12px' }}>
                             <UserX size={12} style={{ marginRight: '3px' }} />
-                            {language === 'ta' ? 'முடக்கம்' : 'Inactive'}
+                            "Inactive"
                           </span>
                         )}
                       </td>
@@ -353,7 +353,7 @@ export const UsersPage: React.FC = () => {
                     <td style={{ fontSize: '14px' }}>{r.quiz_title || r.quiz_id}</td>
                     <td>
                       <span className="badge badge-primary" style={{ fontSize: '13px' }}>
-                        {r.score} / {r.total_questions} ({r.correct_answers} {language === 'ta' ? 'சரி' : 'correct'})
+                        {r.score} / {r.total_questions} ({r.correct_answers} correct)
                       </span>
                     </td>
                     <td>

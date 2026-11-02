@@ -80,7 +80,7 @@ class LetterCard extends StatelessWidget {
               ),
             ),
 
-            // Main Card Content: [ Image ] on top, and underneath ONLY the Tamil Letter [ அ ]
+            // Main Card Content: [ Image ] on top, and underneath ONLY the Tamil Letter [  ]
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 12, 10, 10),
               child: Column(

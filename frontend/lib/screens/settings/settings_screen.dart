@@ -56,7 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('சுயவிவரம் ($converted) சேமிக்கப்பட்டது!'),
+          content: Text('Profile saved successfully!'),
           backgroundColor: AppColors.mintGreen,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -71,7 +71,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       appBar: KidAppBar(
-        title: 'அமைப்புகள்',
+        title: 'Settings',
         starCount: progress.stars,
       ),
       body: KidScaffoldBackground(
@@ -85,7 +85,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 1. Profile Section with Character Avatars
-                    _buildSectionHeader('என் சுயவிவரம்', Icons.person_rounded),
+                    _buildSectionHeader('My Profile', Icons.person_rounded),
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -104,7 +104,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         children: [
                           // Avatar Selection Header
                           Text(
-                            'அவதாரத்தைத் தேர்ந்தெடுங்கள்',
+                            'Choose Avatar',
                             style: AppTextStyles.cardSubtitle.copyWith(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -188,7 +188,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     });
                                   },
                                   decoration: InputDecoration(
-                                    labelText: 'குழந்தையின் பெயர் (எ.கா: selva / செல்வா)',
+                                    labelText: 'Child Name (e.g. Alex)',
                                     labelStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                                     filled: true,
                                     fillColor: AppColors.background,
@@ -217,7 +217,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ],
                                   ),
                                   child: const Text(
-                                    'சேமி',
+                                    'Save',
                                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                                   ),
                                 ),
@@ -238,7 +238,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Text('தமிழ் வடிவம்: ', style: TextStyle(fontSize: 12, color: Color(0xFF78350F))),
+                                  const Text('Preview: ', style: TextStyle(fontSize: 12, color: Color(0xFF78350F))),
                                   Text(
                                     _liveTamilPreview,
                                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFFB45309)),
@@ -267,7 +267,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   label: const FittedBox(
                                     fit: BoxFit.scaleDown,
                                     child: Text(
-                                      'சுயவிவரம் பார்க்க',
+                                      'View Profile',
                                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                     ),
                                   ),
@@ -304,7 +304,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   label: const FittedBox(
                                     fit: BoxFit.scaleDown,
                                     child: Text(
-                                      'பயிற்சிப் பதிவுகள்',
+                                      'Practice Records',
                                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                     ),
                                   ),
@@ -326,7 +326,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 24),
 
                     // 2. Sound Settings
-                    _buildSectionHeader('ஒலி அமைப்புகள்', Icons.volume_up_rounded),
+                    _buildSectionHeader('Audio & Sounds', Icons.volume_up_rounded),
                     Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
@@ -344,10 +344,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: Colors.transparent,
                         child: SwitchListTile(
                           title: Text(
-                            'ஒலி மற்றும் பின்னணி இசை',
+                            'Sound Effects & Music',
                             style: AppTextStyles.cardTitle.copyWith(fontSize: 16),
                           ),
-                          subtitle: const Text('எழுத்து உச்சரிப்பு மற்றும் ஒலி'),
+                          subtitle: const Text('Letter pronunciation and sound effects'),
                           value: progress.soundEnabled,
                           activeThumbColor: AppColors.secondary,
                           onChanged: (val) {
@@ -359,7 +359,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 24),
 
                     // 2.5 Language Selection
-                    _buildSectionHeader('மொழித் தேர்வு / Language', Icons.translate_rounded),
+                    _buildSectionHeader('Language', Icons.translate_rounded),
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -394,7 +394,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                           ),
                           subtitle: const Text(
-                            'தேர்ந்தெடுக்கப்பட்ட மொழி • Selected Language',
+                            'Selected Language: English',
                             style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                           ),
                           trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.primary),
@@ -412,7 +412,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 24),
 
                     // 3. About AGARAM
-                    _buildSectionHeader('எங்களைப் பற்றி', Icons.info_outline_rounded),
+                    _buildSectionHeader('About App', Icons.info_outline_rounded),
                     Container(
                       padding: const EdgeInsets.all(22),
                       decoration: BoxDecoration(
@@ -442,9 +442,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('எழுத்துக்கள்', style: AppTextStyles.cardTitle.copyWith(fontSize: 18)),
+                                    Text('ALPHABETS', style: AppTextStyles.cardTitle.copyWith(fontSize: 18)),
                                     const SizedBox(height: 2),
-                                    Text('“அகரத்தில் தொடங்கி, தமிழில் சிறக்க!”', style: AppTextStyles.tagLine),
+                                    Text('“Learn English Alphabets from A to Z!”', style: AppTextStyles.tagLine),
                                   ],
                                 ),
                               ),
@@ -452,7 +452,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           const SizedBox(height: 14),
                           Text(
-                            'எழுத்துக்கள் என்பது மழலையர் பள்ளி மற்றும் தொடக்கப் பள்ளி குழந்தைகளுக்காக உருவாக்கப்பட்ட வண்ணமயமான தமிழ் மொழிக் கற்றல் செயலியாகும்.',
+                            'ALPHABETS is an engaging early learning app designed for kids to master the 26 English alphabets, phonics, writing, and vocabulary.',
                             style: AppTextStyles.bodyText.copyWith(color: AppColors.textMuted, fontSize: 14),
                           ),
                         ],
@@ -468,24 +468,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             context: context,
                             builder: (ctx) => AlertDialog(
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                              title: const Text('முன்னேற்றத்தை மீட்டமைக்கவா?'),
-                              content: const Text('நட்சத்திரங்கள் மற்றும் பாடங்கள் தொடக்க நிலைக்கு மாறும்.'),
+                              title: const Text('Reset Progress?'),
+                              content: const Text('Stars and lesson progress will be reset to start.'),
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(ctx),
-                                  child: const Text('வேண்டாம்'),
+                                  child: const Text('Cancel'),
                                 ),
                                 ElevatedButton(
                                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.playfulPink),
                                   onPressed: () {
                                     progress.resetProgress();
                                     setState(() {
-                                      _nameController.text = 'குட்டி';
-                                      _liveTamilPreview = 'குட்டி';
+                                      _nameController.text = 'Kid';
+                                      _liveTamilPreview = 'Kid';
                                     });
                                     Navigator.pop(ctx);
                                   },
-                                  child: const Text('ஆம், மீட்டமை'),
+                                  child: const Text('Yes, Reset'),
                                 ),
                               ],
                             ),
@@ -493,7 +493,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                         icon: const Icon(Icons.refresh_rounded, color: AppColors.playfulPink),
                         label: const Text(
-                          'முன்னேற்றத்தை மீட்டமை',
+                          'Reset Progress',
                           style: TextStyle(color: AppColors.playfulPink, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -502,7 +502,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     // 5. Account & Logout Section (If authenticated)
                     if (_authService.currentUser != null) ...[
-                      _buildSectionHeader('கணக்கு', Icons.lock_outline_rounded),
+                      _buildSectionHeader('Account', Icons.lock_outline_rounded),
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(20),
@@ -575,12 +575,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     context: context,
                                     builder: (ctx) => AlertDialog(
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                                      title: const Text('கணக்கிலிருந்து வெளியேறவா?'),
-                                      content: const Text('வெளியேறிய பின் மீண்டும் உள்நுழைய வேண்டும்.'),
+                                      title: const Text('Sign Out?'),
+                                      content: const Text('You will need to sign in again to access your account.'),
                                       actions: [
                                         TextButton(
                                           onPressed: () => Navigator.pop(ctx),
-                                          child: const Text('வேண்டாம்'),
+                                          child: const Text('Cancel'),
                                         ),
                                         ElevatedButton(
                                           style: ElevatedButton.styleFrom(backgroundColor: AppColors.playfulPink),
@@ -599,7 +599,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                               );
                                             }
                                           },
-                                          child: const Text('வெளியேறு'),
+                                          child: const Text('Sign Out'),
                                         ),
                                       ],
                                     ),
@@ -607,7 +607,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 },
                                 icon: const Icon(Icons.logout_rounded, size: 20),
                                 label: const Text(
-                                  'கணக்கிலிருந்து வெளியேறு (Logout)',
+                                  'Sign Out (Logout)',
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w800,

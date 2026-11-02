@@ -23,7 +23,7 @@ class VideoItem {
     return VideoItem(
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
-      category: json['category']?.toString() ?? 'பாடல்',
+      category: json['category']?.toString() ?? 'Phonics',
       duration: json['duration']?.toString() ?? '03:00',
       thumbnailEmoji: json['thumbnail_emoji']?.toString() ?? json['thumbnailEmoji']?.toString() ?? '🎬',
       videoUrl: json['video_url']?.toString() ?? json['videoUrl']?.toString() ?? '',

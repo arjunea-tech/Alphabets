@@ -1,11 +1,11 @@
 {
-    "name": "tamil",
-    "short_name": "tamil",
+    "name": "Alphabets",
+    "short_name": "Alphabets",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "ALPHABETS - Learn 26 Letters (A-Z)",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

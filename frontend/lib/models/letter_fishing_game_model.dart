@@ -4,8 +4,8 @@ import 'letter_model.dart';
 
 /// Game modes for the Letter Fishing Game
 enum FishingGameMode {
-  uyir('உயிர் எழுத்துகள்', '12 உயிர் எழுத்துகளை மீன்பிடித்துக் கற்கலாம்!'),
-  mei('மெய் எழுத்துகள்', '18 மெய் எழுத்துகளை மீன்பிடித்துக் கற்கலாம்!');
+  uyir('Vowels', 'Catch the vowels A, E, I, O, U with your hook!'),
+  mei('Consonants', 'Catch consonants B to Z with your hook!');
 
   final String title;
   final String description;

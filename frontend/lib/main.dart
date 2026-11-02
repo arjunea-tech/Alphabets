@@ -103,7 +103,7 @@ class _AgaramAppState extends State<AgaramApp> {
         }
 
         return MaterialApp(
-          title: 'எழுத்துக்கள்',
+          title: 'ALPHABETS - Learn 26 Letters',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.theme,
           home: homeWidget,

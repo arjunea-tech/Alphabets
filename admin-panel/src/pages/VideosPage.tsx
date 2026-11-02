@@ -5,12 +5,13 @@ import { Modal } from '../components/common/Modal';
 import { FileUpload } from '../components/common/FileUpload';
 import { useLanguage } from '../context/LanguageContext';
 import { Plus, Edit2, Trash2, Play, Eye, Loader2, Sparkles, Video as VideoIcon } from 'lucide-react';
-
 import { resolveMediaUrl } from '../api/client';
 
-
-const UYIR_LETTERS = ['அ', 'ஆ', 'இ', 'ஈ', 'உ', 'ஊ', 'எ', 'ஏ', 'ஐ', 'ஒ', 'ஓ', 'ஔ'];
-const MEI_LETTERS = ['க்', 'ங்', 'ச்', 'ஞ்', 'ட்', 'ண்', 'த்', 'ந்', 'ப்', 'ம்', 'ய்', 'ர்', 'ல்', 'வ்', 'ழ்', 'ள்', 'ற்', 'ன்'];
+const VOWEL_LETTERS = ['A', 'E', 'I', 'O', 'U'];
+const CONSONANT_LETTERS = [
+  'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M',
+  'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z'
+];
 
 export const VideosPage: React.FC = () => {
   const { t } = useLanguage();
@@ -40,7 +41,7 @@ export const VideosPage: React.FC = () => {
     }
   };
 
-  const handleOpenAdd = (defaultCat: string = 'உயிர் எழுத்துகள்') => {
+  const handleOpenAdd = (defaultCat: string = 'Alphabet Song') => {
     setCurrentVideo({
       title: '',
       description: '',
@@ -73,7 +74,7 @@ export const VideosPage: React.FC = () => {
     if (!currentVideo) return;
     setCurrentVideo({
       ...currentVideo,
-      title: letter,
+      title: `Letter ${letter} Phonics Video`,
       thumbnail_emoji: `🎬${letter}`,
       display_order: index + 1,
     });
@@ -82,11 +83,11 @@ export const VideosPage: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentVideo?.title) {
-      alert('காணொளி தலைப்பு அவசியம் (Title is required)');
+      alert('Title is required');
       return;
     }
     if (!currentVideo?.video_url) {
-      alert('தயவுசெய்து காணொளிக் கோப்பைத் தேர்ந்தெடுத்து பதிவேற்றவும் (Please upload a video file)');
+      alert('Please upload a video file or provide a video URL');
       return;
     }
 
@@ -106,19 +107,17 @@ export const VideosPage: React.FC = () => {
     }
   };
 
-  const uyirCount = videos.filter((v) => v.category === 'உயிர் எழுத்துகள்' || UYIR_LETTERS.includes(v.title)).length;
-  const meiCount = videos.filter((v) => v.category === 'மெய் எழுத்துகள்' || MEI_LETTERS.includes(v.title)).length;
-  const songsCount = videos.filter((v) => v.category === 'பாடல்').length;
-  const storiesCount = videos.filter((v) => v.category === 'கதை').length;
-  const lessonsCount = videos.filter((v) => v.category === 'பாடம்').length;
+  const vowelsCount = videos.filter((v) => v.category?.toLowerCase().includes('vowel') || VOWEL_LETTERS.some(l => v.title.includes(l))).length;
+  const consonantsCount = videos.filter((v) => v.category?.toLowerCase().includes('consonant')).length;
+  const songsCount = videos.filter((v) => v.category?.toLowerCase().includes('song')).length;
+  const phonicsCount = videos.filter((v) => v.category?.toLowerCase().includes('phonic')).length;
 
   const filteredVideos = videos.filter((vid) => {
     if (selectedFilter === 'all') return true;
-    if (selectedFilter === 'uyir') return vid.category === 'உயிர் எழுத்துகள்' || UYIR_LETTERS.includes(vid.title);
-    if (selectedFilter === 'mei') return vid.category === 'மெய் எழுத்துகள்' || MEI_LETTERS.includes(vid.title);
-    if (selectedFilter === 'song') return vid.category === 'பாடல்';
-    if (selectedFilter === 'story') return vid.category === 'கதை';
-    if (selectedFilter === 'lesson') return vid.category === 'பாடம்';
+    if (selectedFilter === 'vowels') return vid.category?.toLowerCase().includes('vowel') || VOWEL_LETTERS.some(l => vid.title.includes(l));
+    if (selectedFilter === 'consonants') return vid.category?.toLowerCase().includes('consonant');
+    if (selectedFilter === 'song') return vid.category?.toLowerCase().includes('song');
+    if (selectedFilter === 'phonics') return vid.category?.toLowerCase().includes('phonic');
     return true;
   });
 
@@ -127,24 +126,16 @@ export const VideosPage: React.FC = () => {
       <div className="page-header">
         <div className="page-title-group">
           <h2>{t('videos.pageTitle')}</h2>
-          <p>தமிழ் உயிர் எழுத்துகள் (12), மெய் எழுத்துகள் (18) மற்றும் கல்வி காணொளிகள் மேலாண்மை</p>
+          <p>Manage English 26 Alphabets (A-Z) phonics, songs, and animated learning videos</p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
-            onClick={() => handleOpenAdd('மெய் எழுத்துகள்')}
-            className="btn btn-secondary"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', borderColor: '#3B82F6', color: '#1D4ED8', background: '#EFF6FF' }}
-          >
-            <Plus size={16} />
-            <span>+ மெய் எழுத்து காணொளி</span>
-          </button>
-          <button
-            onClick={() => handleOpenAdd('உயிர் எழுத்துகள்')}
+            onClick={() => handleOpenAdd('Alphabet Song')}
             className="btn btn-primary"
             style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
             <Plus size={16} />
-            <span>{t('videos.addVideo')}</span>
+            <span>+ {t('videos.addVideo')}</span>
           </button>
         </div>
       </div>
@@ -155,44 +146,32 @@ export const VideosPage: React.FC = () => {
           className={`tab-btn ${selectedFilter === 'all' ? 'active' : ''}`}
           onClick={() => setSelectedFilter('all')}
         >
-          அனைத்தும் ({videos.length})
+          All Videos ({videos.length})
         </button>
         <button
-          className={`tab-btn ${selectedFilter === 'uyir' ? 'active' : ''}`}
-          onClick={() => setSelectedFilter('uyir')}
-          style={selectedFilter === 'uyir' ? { background: '#FDF2F8', borderColor: '#EC4899', color: '#BE185D' } : {}}
+          className={`tab-btn ${selectedFilter === 'song' ? 'active' : ''}`}
+          onClick={() => setSelectedFilter('song')}
         >
-          🅰️ உயிர் எழுத்துகள் ({uyirCount}/12)
+          🎵 Alphabet Songs ({songsCount})
         </button>
         <button
-          className={`tab-btn ${selectedFilter === 'mei' ? 'active' : ''}`}
-          onClick={() => setSelectedFilter('mei')}
-          style={selectedFilter === 'mei' ? { background: '#EFF6FF', borderColor: '#3B82F6', color: '#1D4ED8' } : {}}
+          className={`tab-btn ${selectedFilter === 'phonics' ? 'active' : ''}`}
+          onClick={() => setSelectedFilter('phonics')}
         >
-          ✍️ மெய் எழுத்துகள் ({meiCount}/18)
+          🔤 Phonics & Sounds ({phonicsCount})
         </button>
-        {songsCount > 0 && (
+        <button
+          className={`tab-btn ${selectedFilter === 'vowels' ? 'active' : ''}`}
+          onClick={() => setSelectedFilter('vowels')}
+        >
+          🅰️ Vowels (5) ({vowelsCount})
+        </button>
+        {consonantsCount > 0 && (
           <button
-            className={`tab-btn ${selectedFilter === 'song' ? 'active' : ''}`}
-            onClick={() => setSelectedFilter('song')}
+            className={`tab-btn ${selectedFilter === 'consonants' ? 'active' : ''}`}
+            onClick={() => setSelectedFilter('consonants')}
           >
-            🎵 பாடல்கள் ({songsCount})
-          </button>
-        )}
-        {storiesCount > 0 && (
-          <button
-            className={`tab-btn ${selectedFilter === 'story' ? 'active' : ''}`}
-            onClick={() => setSelectedFilter('story')}
-          >
-            📖 கதைகள் ({storiesCount})
-          </button>
-        )}
-        {lessonsCount > 0 && (
-          <button
-            className={`tab-btn ${selectedFilter === 'lesson' ? 'active' : ''}`}
-            onClick={() => setSelectedFilter('lesson')}
-          >
-            🎓 பாடங்கள் ({lessonsCount})
+            ✍️ Consonants ({consonantsCount})
           </button>
         )}
       </div>
@@ -206,7 +185,7 @@ export const VideosPage: React.FC = () => {
               <th>{t('videos.title')}</th>
               <th>{t('videos.category')}</th>
               <th>{t('videos.duration')}</th>
-              <th>காணொளி (Video)</th>
+              <th>Video</th>
               <th>{t('videos.status')}</th>
               <th style={{ textAlign: 'right' }}>{t('videos.actions')}</th>
             </tr>
@@ -222,166 +201,139 @@ export const VideosPage: React.FC = () => {
               <tr>
                 <td colSpan={8} style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--text-muted)' }}>
                   <div style={{ fontSize: '32px', marginBottom: '8px' }}>🎬</div>
-                  <div style={{ fontWeight: 600, fontSize: '15px' }}>காணொளிகள் எதுவும் இல்லை</div>
-                  {selectedFilter === 'mei' && (
-                    <div style={{ marginTop: '8px' }}>
-                      <button
-                        onClick={() => handleOpenAdd('மெய் எழுத்துகள்')}
-                        className="btn btn-primary btn-sm"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                      >
-                        <Plus size={14} />
-                        <span>மெய் எழுத்து காணொளியை சேர்க்கவும்</span>
-                      </button>
-                    </div>
-                  )}
+                  <div style={{ fontWeight: 600, fontSize: '15px' }}>No videos found in this category</div>
+                  <div style={{ marginTop: '8px' }}>
+                    <button
+                      onClick={() => handleOpenAdd('Alphabet Song')}
+                      className="btn btn-primary btn-sm"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      <Plus size={14} />
+                      <span>Add New Video</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ) : (
-              filteredVideos.map((vid) => {
-                const isUyir = vid.category === 'உயிர் எழுத்துகள்';
-                const isMei = vid.category === 'மெய் எழுத்துகள்';
-                const isSong = vid.category === 'பாடல்';
-                const isStory = vid.category === 'கதை';
-
-                const badgeBg = isUyir
-                  ? '#FDF2F8'
-                  : isMei
-                  ? '#EFF6FF'
-                  : isSong
-                  ? '#EDE9FE'
-                  : isStory
-                  ? '#FEF3C7'
-                  : '#E0F2FE';
-
-                const badgeColor = isUyir
-                  ? '#DB2777'
-                  : isMei
-                  ? '#2563EB'
-                  : isSong
-                  ? '#6D28D9'
-                  : isStory
-                  ? '#B45309'
-                  : '#0369A1';
-
-                return (
-                  <tr key={vid.id}>
-                    <td style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{vid.display_order}</td>
-                    <td>
+              filteredVideos.map((vid) => (
+                <tr key={vid.id}>
+                  <td style={{ fontWeight: 600, color: 'var(--text-muted)' }}>
+                    {vid.display_order}
+                  </td>
+                  <td>
+                    <div
+                      style={{
+                        width: '42px',
+                        height: '42px',
+                        borderRadius: '10px',
+                        background: 'linear-gradient(135deg, #EFF6FF, #DBEAFE)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '20px',
+                        border: '1px solid #BFDBFE',
+                      }}
+                    >
+                      {vid.thumbnail_emoji || '🎬'}
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 700, color: 'var(--text-dark, #1E293B)', fontSize: '14px' }}>
+                      {vid.title}
+                    </div>
+                    {vid.description && (
                       <div
                         style={{
-                          width: '38px',
-                          height: '38px',
-                          borderRadius: '10px',
-                          background: isUyir ? '#FFE4E6' : isMei ? '#DBEAFE' : '#F1F5F9',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: (isUyir || isMei) ? '18px' : '20px',
-                          fontWeight: 'bold',
-                          color: isUyir ? '#E11D48' : isMei ? '#2563EB' : 'inherit',
+                          fontSize: '12px',
+                          color: 'var(--text-muted)',
+                          maxWidth: '300px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          marginTop: '2px',
                         }}
                       >
-                        {vid.thumbnail_emoji || (isUyir || isMei ? vid.title : '🎬')}
+                        {vid.description}
                       </div>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 700, color: 'var(--text-dark, #1E293B)', fontSize: '15px' }}>
-                        {vid.title}
-                      </div>
-                      {vid.description && (
-                        <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{vid.description}</div>
-                      )}
-                    </td>
-                    <td>
-                      <span
-                        className="badge"
+                    )}
+                  </td>
+                  <td>
+                    <span className="badge badge-primary" style={{ fontSize: '11px' }}>
+                      {vid.category}
+                    </span>
+                  </td>
+                  <td>
+                    <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                      ⏱️ {vid.duration || '00:10'}
+                    </span>
+                  </td>
+                  <td>
+                    {vid.video_url ? (
+                      <button
+                        onClick={() => setPreviewingVideo(vid)}
+                        className="btn btn-sm btn-secondary"
                         style={{
-                          background: badgeBg,
-                          color: badgeColor,
-                          fontWeight: 700,
-                          border: `1px solid ${badgeColor}33`,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          padding: '4px 10px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: 'var(--primary)',
+                          borderColor: 'var(--primary)',
                         }}
+                        title="Play Preview"
                       >
-                        {vid.category}
-                      </span>
-                    </td>
-                    <td style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                      {vid.duration || '00:10'}
-                    </td>
-                    <td>
-                      {vid.video_url ? (
+                        <Play size={13} fill="currentColor" />
+                        <span>Play</span>
+                      </button>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>None</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className={`badge ${vid.is_published ? 'badge-success' : 'badge-secondary'}`}>
+                      {vid.is_published ? 'Published' : 'Draft'}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <div style={{ display: 'inline-flex', gap: '6px' }}>
+                      {vid.video_url && (
                         <button
-                          type="button"
                           onClick={() => setPreviewingVideo(vid)}
                           className="btn btn-secondary btn-sm"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            padding: '4px 10px',
-                            background: '#FAF5FF',
-                            borderColor: '#E9D5FF',
-                            color: '#7E22CE',
-                          }}
-                          title="காணொளி முன்னோட்டம் (Play Preview)"
-                        >
-                          <Play size={12} fill="#7E22CE" />
-                          <span>▶ Preview</span>
-                        </button>
-                      ) : (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>இல்லை</span>
-                      )}
-                    </td>
-                    <td>
-                      {vid.is_published ? (
-                        <span className="badge badge-success">
-                          <span className="badge-dot" />
-                          {t('common.active')}
-                        </span>
-                      ) : (
-                        <span className="badge badge-danger">
-                          <span className="badge-dot" />
-                          {t('common.inactive')}
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div className="action-btn-group">
-                        <button
-                          onClick={() => setPreviewingVideo(vid)}
-                          className="btn btn-secondary btn-icon"
-                          title="முன்னோட்டம் (Preview)"
+                          style={{ padding: '6px', color: 'var(--primary)' }}
+                          title="Preview Video"
                         >
                           <Eye size={14} />
                         </button>
-                        <button
-                          onClick={() => handleOpenEdit(vid)}
-                          className="btn btn-secondary btn-icon"
-                          title={t('common.edit')}
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(vid.id)}
-                          className="btn btn-danger btn-icon"
-                          title={t('common.delete')}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
+                      )}
+                      <button
+                        onClick={() => handleOpenEdit(vid)}
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '6px' }}
+                        title="Edit"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(vid.id)}
+                        className="btn btn-danger btn-sm"
+                        style={{ padding: '6px' }}
+                        title="Delete"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
       </div>
 
-      {/* Video Modal Form */}
+      {/* Add / Edit Video Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -396,14 +348,14 @@ export const VideosPage: React.FC = () => {
               </label>
               <select
                 className="form-control"
-                value={currentVideo?.category || 'உயிர் எழுத்துகள்'}
+                value={currentVideo?.category || 'Alphabet Song'}
                 onChange={(e) => setCurrentVideo({ ...currentVideo, category: e.target.value })}
               >
-                <option value="உயிர் எழுத்துகள்">🅰️ உயிர் எழுத்துகள் (Uyir Letters - அ, ஆ...)</option>
-                <option value="மெய் எழுத்துகள்">✍️ மெய் எழுத்துகள் (Mei Letters - க், ங்...)</option>
-                <option value="பாடல்">🎵 பாடல் (Song / Rhyme)</option>
-                <option value="கதை">📖 கதை (Story / Tale)</option>
-                <option value="பாடம்">🎓 பாடம் (Lesson / Educational)</option>
+                <option value="Alphabet Song">🎵 Alphabet Song</option>
+                <option value="Phonics & Rhymes">🔤 Phonics & Rhymes</option>
+                <option value="Stories & Phonics">📖 Stories & Phonics</option>
+                <option value="Vowels (A, E, I, O, U)">🅰️ Vowels (A, E, I, O, U)</option>
+                <option value="Consonants (B-Z)">✍️ Consonants (B-Z)</option>
               </select>
             </div>
 
@@ -419,22 +371,22 @@ export const VideosPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Letter Pickers */}
-          {currentVideo?.category === 'உயிர் எழுத்துகள்' && (
+          {/* Quick Letter Pickers for Vowels */}
+          {currentVideo?.category === 'Vowels (A, E, I, O, U)' && (
             <div className="form-group" style={{ background: '#FDF2F8', padding: '12px', borderRadius: '12px', border: '1px solid #FBCFE8' }}>
               <label className="form-label" style={{ color: '#BE185D', fontWeight: 700, fontSize: '12px', marginBottom: '8px', display: 'block' }}>
-                ⚡ விரைவு உயிர் எழுத்து தேர்வு (Click to auto-fill Uyir Letter):
+                ⚡ Quick Vowel Picker (Click to autofill):
               </label>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {UYIR_LETTERS.map((letter, idx) => (
+                {VOWEL_LETTERS.map((letter, idx) => (
                   <button
                     key={letter}
                     type="button"
                     onClick={() => handleQuickLetterPick(letter, idx)}
                     className="btn btn-sm"
                     style={{
-                      background: currentVideo?.title === letter ? '#DB2777' : 'white',
-                      color: currentVideo?.title === letter ? 'white' : '#BE185D',
+                      background: currentVideo?.title?.includes(letter) ? '#DB2777' : 'white',
+                      color: currentVideo?.title?.includes(letter) ? 'white' : '#BE185D',
                       borderColor: '#F472B6',
                       fontWeight: 700,
                       minWidth: '34px',
@@ -448,21 +400,22 @@ export const VideosPage: React.FC = () => {
             </div>
           )}
 
-          {currentVideo?.category === 'மெய் எழுத்துகள்' && (
+          {/* Quick Letter Pickers for Consonants */}
+          {currentVideo?.category === 'Consonants (B-Z)' && (
             <div className="form-group" style={{ background: '#EFF6FF', padding: '12px', borderRadius: '12px', border: '1px solid #BFDBFE' }}>
               <label className="form-label" style={{ color: '#1D4ED8', fontWeight: 700, fontSize: '12px', marginBottom: '8px', display: 'block' }}>
-                ⚡ விரைவு மெய் எழுத்து தேர்வு (Click to auto-fill Mei Letter):
+                ⚡ Quick Consonant Picker (Click to autofill):
               </label>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {MEI_LETTERS.map((letter, idx) => (
+                {CONSONANT_LETTERS.map((letter, idx) => (
                   <button
                     key={letter}
                     type="button"
                     onClick={() => handleQuickLetterPick(letter, idx)}
                     className="btn btn-sm"
                     style={{
-                      background: currentVideo?.title === letter ? '#2563EB' : 'white',
-                      color: currentVideo?.title === letter ? 'white' : '#1D4ED8',
+                      background: currentVideo?.title?.includes(letter) ? '#2563EB' : 'white',
+                      color: currentVideo?.title?.includes(letter) ? 'white' : '#1D4ED8',
                       borderColor: '#60A5FA',
                       fontWeight: 700,
                       minWidth: '34px',
@@ -483,7 +436,7 @@ export const VideosPage: React.FC = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="எ.கா. அ அல்லது க் அல்லது உயிர் எழுத்துகள் பாடல்"
+              placeholder="e.g. ABC Phonics Song or Letter A Fun"
               value={currentVideo?.title || ''}
               onChange={(e) => setCurrentVideo({ ...currentVideo, title: e.target.value })}
               required
@@ -495,7 +448,7 @@ export const VideosPage: React.FC = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="எ.கா. க் எழுத்து கற்பிக்கும் சிறப்பு காணொளி"
+              placeholder="e.g. Educational video song teaching 26 English Alphabets"
               value={currentVideo?.description || ''}
               onChange={(e) => setCurrentVideo({ ...currentVideo, description: e.target.value })}
             />
@@ -504,7 +457,7 @@ export const VideosPage: React.FC = () => {
           {/* Video File Upload */}
           <FileUpload
             type="video"
-            label="🎥 காணொளி கோப்பு பதிவேற்றுக (Video File - MP4, WebM, MOV)"
+            label="🎥 Video File (MP4, WebM, MOV)"
             currentValue={currentVideo?.video_url}
             onUploaded={(path) => setCurrentVideo((prev) => (prev ? { ...prev, video_url: path } : prev))}
             onClear={() => setCurrentVideo((prev) => (prev ? { ...prev, video_url: '' } : prev))}
@@ -522,7 +475,7 @@ export const VideosPage: React.FC = () => {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">வரிசை (Order)</label>
+              <label className="form-label">Order</label>
               <input
                 type="number"
                 className="form-control"
@@ -570,7 +523,7 @@ export const VideosPage: React.FC = () => {
                 src={resolveMediaUrl(previewingVideo.video_url)}
                 style={{ width: '100%', maxHeight: '360px', display: 'block' }}
               >
-                உங்கள் உலாவி காணொளியை ஆதரிக்கவில்லை (Your browser does not support HTML5 video).
+                Your browser does not support HTML5 video.
               </video>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
@@ -579,7 +532,7 @@ export const VideosPage: React.FC = () => {
                   {previewingVideo.category}
                 </span>
                 <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                  கால அளவு: {previewingVideo.duration || '00:10'}
+                  Duration: {previewingVideo.duration || '00:10'}
                 </span>
               </div>
               <span className="badge badge-success">Status: Published</span>
@@ -595,7 +548,7 @@ export const VideosPage: React.FC = () => {
                 onClick={() => setPreviewingVideo(null)}
                 className="btn btn-secondary"
               >
-                மூடுக (Close)
+                Close
               </button>
             </div>
           </div>

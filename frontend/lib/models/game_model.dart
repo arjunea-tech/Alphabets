@@ -14,6 +14,6 @@ class GameQuestion {
     this.clueImage,
     required this.options,
     required this.correctIndex,
-    this.successPraise = 'சூப்பர்!',
+    this.successPraise = 'Super!',
   });
 }

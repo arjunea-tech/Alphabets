@@ -6,7 +6,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ title }) => {
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
 
   const displayTitle = title || t('app_subtitle');
   return (
@@ -16,21 +16,9 @@ export const Header: React.FC<HeaderProps> = ({ title }) => {
       </div>
 
       <div className="header-right">
-        {/* Language Switcher Button */}
-        <div className="lang-switcher-container">
-          <button
-            onClick={() => setLanguage('ta')}
-            className={`lang-btn ${language === 'ta' ? 'active' : ''}`}
-          >
-            தமிழ்
-          </button>
-          <button
-            onClick={() => setLanguage('en')}
-            className={`lang-btn ${language === 'en' ? 'active' : ''}`}
-          >
-            English
-          </button>
-        </div>
+        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>
+          English Edition (A - Z)
+        </span>
       </div>
     </header>
   );

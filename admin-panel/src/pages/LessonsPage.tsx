@@ -37,7 +37,7 @@ export const LessonsPage: React.FC = () => {
       title: '',
       subtitle: '',
       count_text: '',
-      button_text: 'கற்கலாம்',
+      button_text: 'Start Learning',
       icon_emoji: '⭐',
       display_order: lessons.length + 1,
       is_active: true,
@@ -192,7 +192,7 @@ export const LessonsPage: React.FC = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. உயிர் எழுத்துகள்"
+              placeholder="e.g. English Alphabets"
               value={currentLesson?.title || ''}
               onChange={(e) => setCurrentLesson({ ...currentLesson, title: e.target.value })}
               required
@@ -204,7 +204,7 @@ export const LessonsPage: React.FC = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. அ முதல் ஔ வரை"
+              placeholder="e.g. Learn 26 Letters from A to Z"
               value={currentLesson?.subtitle || ''}
               onChange={(e) => setCurrentLesson({ ...currentLesson, subtitle: e.target.value })}
             />
@@ -226,7 +226,7 @@ export const LessonsPage: React.FC = () => {
               <input
                 type="text"
                 className="form-control"
-                placeholder="12 உயிர் எழுத்துகள்"
+                placeholder="26 Letters"
                 value={currentLesson?.count_text || ''}
                 onChange={(e) => setCurrentLesson({ ...currentLesson, count_text: e.target.value })}
               />

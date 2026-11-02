@@ -85,7 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 16),
                     const Center(
                       child: Text(
-                        'சுயவிவரத்தைத் திருத்து',
+                        'Edit Profile',
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
@@ -97,7 +97,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     // Avatar Selection (Character Mascot Avatars)
                     const Text(
-                      'அவதாரத்தைத் தேர்ந்தெடுங்கள்',
+                      'Choose Your Avatar',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -163,7 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     // Child's Name
                     const Text(
-                      'குழந்தையின் பெயர் (ஆங்கிலத்திலும் தட்டச்சு செய்யலாம்)',
+                      'Child\'s Name',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -180,7 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         });
                       },
                       decoration: InputDecoration(
-                        hintText: 'எ.கா: selva அல்லது செல்வா',
+                        hintText: 'e.g. Alex',
                         filled: true,
                         fillColor: const Color(0xFFF8FAFC),
                         border: OutlineInputBorder(
@@ -202,7 +202,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text('தமிழ் வடிவம்: ', style: TextStyle(fontSize: 12, color: Color(0xFF78350F))),
+                            const Text('Preview: ', style: TextStyle(fontSize: 12, color: Color(0xFF78350F))),
                             Text(
                               liveTamilPreview,
                               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFFB45309)),
@@ -215,7 +215,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     // Child's Age
                     const Text(
-                      'வயது',
+                      'Age',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -263,7 +263,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onPressed: () async {
                           final rawName = nameController.text.trim();
                           final convertedName = TamilTransliterationService.toTamil(
-                            rawName.isNotEmpty ? rawName : 'குட்டி',
+                            rawName.isNotEmpty ? rawName : 'Kid',
                           );
 
                           final updated = _profile.copyWith(
@@ -289,7 +289,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           }
                         },
                         child: const Text(
-                          'சேமிக்க',
+                          'Save',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w900,
@@ -313,7 +313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: const Color(0xFFFFFDF5),
       appBar: AppBar(
         title: const Text(
-          'என் சுயவிவரம்',
+          'My Profile',
           style: TextStyle(
             fontWeight: FontWeight.w900,
             fontSize: 22,
@@ -392,7 +392,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Text(
-                            'வயது: ${_profile.age}',
+                            'Age: ${_profile.age}',
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -407,7 +407,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onPressed: _showEditProfileDialog,
                           icon: const Icon(Icons.edit_rounded, size: 18),
                           label: const Text(
-                            'சுயவிவரத்தைத் திருத்து',
+                            'Edit Profile',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
@@ -432,7 +432,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Row(
                     children: [
                       const Text(
-                        'கற்றல் முன்னேற்றம்',
+                        'Learning Progress',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
@@ -450,7 +450,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: _buildStatCard(
                           icon: Icons.stars_rounded,
                           iconColor: const Color(0xFFFFD166),
-                          title: 'மொத்த நட்சத்திரங்கள்',
+                          title: 'Total Stars',
                           value: '${widget.progressService?.stars ?? _profile.totalStars}',
                           bgColor: const Color(0xFFFFFBEB),
                         ),
@@ -460,7 +460,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: _buildStatCard(
                           icon: Icons.menu_book_rounded,
                           iconColor: const Color(0xFF3A86FF),
-                          title: 'கற்ற எழுத்துகள்',
+                          title: 'Letters Learned',
                           value: '${widget.progressService?.completedLettersCount ?? 24}',
                           bgColor: const Color(0xFFEFF6FF),
                         ),
@@ -474,8 +474,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: _buildStatCard(
                           icon: Icons.edit_note_rounded,
                           iconColor: const Color(0xFF06D6A0),
-                          title: 'எழுதிப் பழகியது',
-                          value: '$_practicedLetters எழுத்துகள்',
+                          title: 'Writing Practiced',
+                          value: '$_practicedLetters Letters',
                           bgColor: const Color(0xFFECFDF5),
                         ),
                       ),
@@ -484,8 +484,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: _buildStatCard(
                           icon: Icons.history_rounded,
                           iconColor: const Color(0xFFFF6B6B),
-                          title: 'மொத்த பயிற்சிகள்',
-                          value: '$_totalPractices முறை',
+                          title: 'Total Practices',
+                          value: '$_totalPractices Times',
                           bgColor: const Color(0xFFFFF1F2),
                         ),
                       ),
@@ -540,7 +540,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'எழுத்துப் பயிற்சி பதிவுகள்',
+                                      'Writing Practice Records',
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w900,
@@ -549,7 +549,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                     SizedBox(height: 2),
                                     Text(
-                                      'பெற்றோருக்கான கையெழுத்துப் பதிவுகள்',
+                                      'Handwriting practice history for parents',
                                       style: TextStyle(
                                         fontSize: 13,
                                         color: Color(0xFFDBEAFE),

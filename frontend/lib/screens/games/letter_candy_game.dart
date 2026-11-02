@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../data/uyir_data.dart';
 import '../../data/mei_data.dart';
 import '../../data/uyirmei_data.dart';
+import '../../data/english_letters_data.dart';
 import '../../models/letter_candy_game_model.dart';
 import '../../models/letter_model.dart';
 import '../../services/audio_service.dart';
@@ -142,77 +143,77 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
 
   void _buildLevels() {
     // Level 1: Uyir Letters (Short & Long vowels)
-    final uyirPool = uyirLettersList.take(6).toList(); // அ, ஆ, இ, ஈ, உ, ஊ
+    final uyirPool = englishLettersList.take(6).toList();
 
     // Level 2: Mei Letters
-    final meiPool = meiLettersList.take(6).toList(); // க், ங், ச், ஞ், ட், ண்
+    final meiPool = englishLettersList.skip(6).take(6).toList();
 
     // Level 3: Uyirmei Letters (Ka series)
-    final kaRow = uyirmeiLettersMap['க்'] ?? [];
-    final uyirmeiPool = (kaRow.isNotEmpty ? kaRow.take(6).toList() : uyirPool);
+    final kaRow = englishLettersList;
+    final uyirmeiPool = englishLettersList.skip(12).take(6).toList();
 
     // Level 4: Mixed (Uyir + Mei)
     final mixedPool = [
-      uyirLettersList[0], // அ
-      uyirLettersList[1], // ஆ
-      meiLettersList[0],  // க்
-      meiLettersList[4],  // ட்
-      uyirLettersList[4], // உ
-      meiLettersList[11], // ம்
+      englishLettersList[0], //  
+      englishLettersList[1], //  
+      englishLettersList[5],  //  
+      englishLettersList[6],  //  
+      englishLettersList[4], //  
+      englishLettersList[7], //  
     ];
 
     // Level 5: Speed Challenge (60s countdown)
     final speedPool = [
-      uyirLettersList[0], // அ
-      uyirLettersList[1], // ஆ
-      uyirLettersList[2], // இ
-      meiLettersList[0],  // க்
-      meiLettersList[11], // ம்
-      if (kaRow.isNotEmpty) kaRow[0] else uyirLettersList[4],
+      englishLettersList[0], //  
+      englishLettersList[1], //  
+      englishLettersList[2], //  
+      englishLettersList[5],  //  
+      englishLettersList[7], //  
+      englishLettersList[8],
     ];
 
     _levels = [
       CandyGameLevel(
         levelNumber: 1,
-        title: 'உயிர் எழுத்துகள்',
-        subtitle: 'முதல் படி',
-        description: 'உயிர் எழுத்து மிட்டாய்களை 3 ஒன்றாக இணைக்கவும்!',
+        title: 'Vowel Candies',
+        subtitle: 'Level 1: Vowels',
+        description: 'Match 3 or more vowel candies to pop them!',
         letterPool: uyirPool,
         targetScore: 800,
         maxMoves: 22,
       ),
       CandyGameLevel(
         levelNumber: 2,
-        title: 'மெய் எழுத்துகள்',
-        subtitle: 'புள்ளி எழுத்துகள்',
-        description: 'மெய் எழுத்துகளை இணைத்து சுவையான மிட்டாய் வெடிப்புகளை உருவாக்குங்கள்!',
+        title: 'Consonant Candies',
+        subtitle: 'Level 2: Consonants',
+        description: 'Match consonant candies to create tasty candy blasts!',
         letterPool: meiPool,
         targetScore: 1200,
         maxMoves: 20,
       ),
       CandyGameLevel(
         levelNumber: 3,
-        title: 'உயிர்மெய் எழுத்துகள்',
-        subtitle: 'இனிமையான சேர்க்கை',
-        description: 'உயிர்மெய் எழுத்து மிட்டாய்களை இணைத்து அதிக புள்ளிகள் பெறுங்கள்!',
+        title: 'All Alphabets',
+        subtitle: 'Level 3: Full Set',
+        description: 'Match letters from A to Z for higher scores!',
         letterPool: uyirmeiPool,
         targetScore: 1600,
         maxMoves: 20,
       ),
       CandyGameLevel(
         levelNumber: 4,
-        title: 'கலவை எழுத்துகள்',
-        subtitle: 'மகா மிட்டாய் சவால்',
-        description: 'உயிர் மற்றும் மெய் எழுத்துகளின் வண்ணமயமான சேர்க்கை!',
+        title: 'Mixed Candies',
+        subtitle: 'Mega Candy Challenge',
+        description: 'A colorful mix of vowel and consonant candies!',
         letterPool: mixedPool,
         targetScore: 2000,
         maxMoves: 20,
       ),
       CandyGameLevel(
         levelNumber: 5,
-        title: 'வேக சவால் (60 நொடி)',
-        subtitle: 'மின்னல் வேகம்',
-        description: 'நேரம் முடிவதற்குள் 2500 புள்ளிகளைப் பெற்று வெற்றி பெறுங்கள்!',
+        title: 'Speed Challenge (60s)',
+        subtitle: 'Lightning Fast',
+        description: 'Score 2500 points before time runs out to win!',
         letterPool: speedPool,
         targetScore: 2500,
         maxMoves: 99,
@@ -433,7 +434,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
 
     if (matches.isEmpty) {
       // Gentle invalid swap feedback
-      _showEncouragement('மீண்டும் முயற்சி செய்! 😊');
+      _showEncouragement('Keep trying! 😊');
       await Future.delayed(const Duration(milliseconds: 260));
 
       // Swap back
@@ -591,11 +592,11 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
 
       // Show combo celebration banners
       if (_currentComboMultiplier == 2) {
-        _triggerComboBanner('✨ அருமை!');
+        _triggerComboBanner('✨ Awesome!');
       } else if (_currentComboMultiplier == 3) {
-        _triggerComboBanner('🔥 சூப்பர் காம்போ!');
+        _triggerComboBanner('🔥 Super Combo!');
       } else if (_currentComboMultiplier >= 4) {
-        _triggerComboBanner('🔥🔥 மெகா காம்போ!');
+        _triggerComboBanner('🔥🔥 Mega Combo!');
       }
 
       if (_currentComboMultiplier > _maxComboCount) {
@@ -992,7 +993,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
 
                 // Title
                 const Text(
-                  'தமிழ் எழுத்து மிட்டாய்',
+                  'Alphabet Candy Match',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 28,
@@ -1012,7 +1013,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
 
                 // Subtitle
                 const Text(
-                  '“3 அல்லது அதற்கு மேற்பட்ட ஒரே எழுத்துகளை இணைத்து வெல்லுங்கள்!”',
+                  '“Match 3 or more identical letters to pop candies and score!”',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -1040,7 +1041,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                           Icon(Icons.layers_rounded, color: Colors.amberAccent, size: 20),
                           SizedBox(width: 8),
                           Text(
-                            'நிலையைத் தேர்ந்தெடுக்கவும்:',
+                            'Select Level:',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 15,
@@ -1097,7 +1098,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'நிலை ${lvl.levelNumber}',
+                                      'Level ${lvl.levelNumber}',
                                       style: TextStyle(
                                         color: isSelected ? Colors.white : Colors.amberAccent,
                                         fontWeight: FontWeight.w900,
@@ -1155,7 +1156,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'விளையாடலாம் 🎮',
+                          'Play 🎮',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
@@ -1210,8 +1211,8 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                   ),
                   Text(
                     _currentLevel.isTimed
-                        ? '⏳ வினாடி: $_secondsLeft'
-                        : '🔄 நகர்வுகள்: $_movesLeft',
+                        ? '⏳ Seconds: $_secondsLeft'
+                        : '🔄 Moves: $_movesLeft',
                     style: TextStyle(
                       color: (_currentLevel.isTimed && _secondsLeft <= 10) || (!_currentLevel.isTimed && _movesLeft <= 5)
                           ? Colors.redAccent
@@ -1249,7 +1250,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                     },
                     icon: const Icon(Icons.arrow_back_rounded, color: Colors.white70, size: 18),
                     label: const Text(
-                      'வெளியேறு',
+                      'Exit',
                       style: TextStyle(color: Colors.white70, fontSize: 13),
                     ),
                   ),
@@ -1259,7 +1260,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                     onPressed: _startGame,
                     icon: const Icon(Icons.refresh_rounded, color: Colors.amberAccent, size: 18),
                     label: const Text(
-                      'மீண்டும்',
+                      'Restart',
                       style: TextStyle(color: Colors.amberAccent, fontSize: 13),
                     ),
                   ),
@@ -1303,7 +1304,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                 _buildHUDCard(
                   icon: Icons.star_rounded,
                   iconColor: Colors.amber,
-                  label: 'மதிப்பெண்',
+                  label: 'Score',
                   value: '$_score',
                 ),
                 const SizedBox(width: 24),
@@ -1312,7 +1313,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                 _buildHUDCard(
                   icon: Icons.track_changes_rounded,
                   iconColor: Colors.cyanAccent,
-                  label: 'இலக்கு',
+                  label: 'Target',
                   value: '${_currentLevel.targetScore}',
                 ),
                 const SizedBox(width: 24),
@@ -1321,7 +1322,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                 _buildHUDCard(
                   icon: _currentLevel.isTimed ? Icons.timer_rounded : Icons.favorite_rounded,
                   iconColor: Colors.pinkAccent,
-                  label: _currentLevel.isTimed ? 'நேரம்' : 'நகர்வு',
+                  label: _currentLevel.isTimed ? 'Time' : 'Moves',
                   value: _currentLevel.isTimed ? '${_secondsLeft}s' : '$_movesLeft',
                 ),
               ],
@@ -1586,7 +1587,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              '🎉 நிலை முடிந்தது! 🎉',
+              '🎉 Level Complete! 🎉',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white,
@@ -1596,7 +1597,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
             ),
             const SizedBox(height: 6),
             const Text(
-              'அருமையாக விளையாடினாய்!',
+              'Awesome play! You did it!',
               style: TextStyle(
                 color: Color(0xFFFFD54F),
                 fontSize: 15,
@@ -1629,11 +1630,11 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
               ),
               child: Column(
                 children: [
-                  _buildStatRow('🏆 இறுதி மதிப்பெண்', '$_score'),
+                  _buildStatRow('🏆 Final Score', '$_score'),
                   const SizedBox(height: 6),
-                  _buildStatRow('🍬 இணைப்புகள்', '$_matchesCount'),
+                  _buildStatRow('🍬 Matches', '$_matchesCount'),
                   const SizedBox(height: 6),
-                  _buildStatRow('🔥 சிறந்த காம்போ', 'x$_maxComboCount'),
+                  _buildStatRow('🔥 Best Combo', 'x$_maxComboCount'),
                 ],
               ),
             ),
@@ -1655,7 +1656,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: const Text(
-                      'மீண்டும் 🔄',
+                      'Replay 🔄',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -1673,7 +1674,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: const Text(
-                      'அடுத்த நிலை ➜',
+                      'Next Level ➜',
                       style: TextStyle(fontWeight: FontWeight.w900),
                     ),
                   ),
@@ -1710,7 +1711,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              'விளையாட்டு முடிந்தது',
+              'Game Over',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white,
@@ -1720,7 +1721,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
             ),
             const SizedBox(height: 8),
             const Text(
-              'சிறப்பாக முயற்சித்தாய்! மீண்டும் ஒருமுறை விளையாடு!',
+              'Good effort! Try once more!',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Color(0xFFFF80AB),
@@ -1731,7 +1732,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
             const SizedBox(height: 18),
 
             Text(
-              'மதிப்பெண்: $_score / ${_currentLevel.targetScore}',
+              'Score: $_score / ${_currentLevel.targetScore}',
               style: const TextStyle(
                 color: Colors.amberAccent,
                 fontSize: 18,
@@ -1758,7 +1759,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text('வெளியேறு'),
+                    child: const Text('Exit'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1774,7 +1775,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: const Text(
-                      'மீண்டும் விளையாடு 🔄',
+                      'Play Again 🔄',
                       style: TextStyle(fontWeight: FontWeight.w900),
                     ),
                   ),

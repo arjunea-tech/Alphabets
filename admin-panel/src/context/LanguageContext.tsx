@@ -12,8 +12,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
-    const saved = localStorage.getItem('agaram_admin_lang');
-    return saved === 'en' ? 'en' : 'ta';
+    return 'en';
   });
 
   useEffect(() => {
@@ -31,7 +30,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   /**
    * Translate key with optional parameter substitution and smart fallback resolution
-   * Example: t('lessons.pageTitle') -> "பாடப்பிரிவுகள்"
+   * Example: t('lessons.pageTitle') -> "Lessons"
    */
   const t = (key: string, params?: Record<string, string | number>): string => {
     const langDict = (translations[language] || {}) as Record<string, string>;

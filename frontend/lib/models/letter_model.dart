@@ -3,6 +3,9 @@ enum LetterType {
   mei,
   aytham,
   uyirmei,
+  english,
+  vowel,
+  consonant,
 }
 
 class LetterModel {

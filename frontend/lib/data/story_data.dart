@@ -2,91 +2,91 @@ import '../models/story_model.dart';
 
 const StoryModel hareAndTortoiseStory = StoryModel(
   id: 'story_tortoise_rabbit',
-  title: 'முயலும் ஆமையும்',
-  subtitle: 'முயற்சி திருவினையாக்கும்!',
+  title: 'The Hare and the Tortoise',
+  subtitle: 'Slow and steady wins the race!',
   coverEmoji: '🐰🐢',
   coverImage: 'assets/images/story_friends.jpg',
-  moral: 'பொறுமையும் தொடர் முயற்சியும் எப்போதும் வெற்றி தரும்!',
+  moral: 'Patience and steady effort always triumph in the end!',
   pages: [
-    // Page 1: Introduction (Only page with the 3 interactive keywords: காடு, முயல், ஆமை)
+    // Page 1
     StoryPageModel(
       pageNumber: 1,
-      characterName: 'காடு',
+      characterName: 'Forest Friends',
       emojiIllustration: '🌲🐰 🐢🌿',
       imagePath: 'assets/images/story_forest.jpg',
-      text: 'ஒரு காட்டில் முயலும் ஆமையும் வாழ்ந்தன.',
+      text: 'Once upon a time in a sunny green forest, a boastful Hare and a gentle Tortoise lived as neighbors.',
       interactiveWords: [
         StoryInteractiveWord(
-          word: 'காட்டில்',
-          displayLabel: 'காடு',
+          word: 'forest',
+          displayLabel: 'Forest',
           imagePath: 'assets/images/story_forest.jpg',
           emoji: '🌲',
-          meaning: 'அழகான காடு (Forest)',
+          meaning: 'A large area covered with trees and plants',
         ),
         StoryInteractiveWord(
-          word: 'முயலும்',
-          displayLabel: 'முயல்',
+          word: 'Hare',
+          displayLabel: 'Hare',
           imagePath: 'assets/images/story_rabbit.jpg',
           emoji: '🐰',
-          meaning: 'சுட்டி முயல் (Rabbit)',
+          meaning: 'A fast-running animal with long ears',
         ),
         StoryInteractiveWord(
-          word: 'ஆமையும்',
-          displayLabel: 'ஆமை',
+          word: 'Tortoise',
+          displayLabel: 'Tortoise',
           imagePath: 'assets/images/story_tortoise.jpg',
           emoji: '🐢',
-          meaning: 'அன்பான ஆமை (Tortoise)',
+          meaning: 'A slow-moving animal with a hard shell',
         ),
       ],
     ),
 
-    // Page 2: Rabbit runs fast, Tortoise walks slow (Clean text)
+    // Page 2
     StoryPageModel(
       pageNumber: 2,
-      characterName: 'முயலும் ஆமையும்',
+      characterName: 'The Boastful Hare',
       emojiIllustration: '🐰💨 🐢🐾',
       imagePath: 'assets/images/story_friends.jpg',
-      text: 'முயல் வேகமாக ஓடும்.\nஆமை மெதுவாக நடக்கும்.',
+      text: 'The Hare always bragged: "I am the fastest runner in the world!" The quiet Tortoise just smiled and kept walking.',
       interactiveWords: [],
     ),
 
-    // Page 3: Running race starts (Clean text)
+    // Page 3
     StoryPageModel(
       pageNumber: 3,
-      characterName: 'ஓட்டப்பந்தயம்',
+      characterName: 'The Great Race',
       emojiIllustration: '🏁🐰💨 ... 🐢',
       imagePath: 'assets/images/story_race.jpg',
-      text: 'இருவரும் ஓட்டப்பந்தயம் வைத்தனர்.\nமுயல் வேகமாக ஓடியது.',
+      text: 'They decided to have a big race to the tall oak tree! The Hare dashed forward like the wind.',
       interactiveWords: [],
     ),
 
-    // Page 4: Rabbit sleeps under tree (Clean text)
+    // Page 4
     StoryPageModel(
       pageNumber: 4,
-      characterName: 'தூங்கும் முயல்',
+      characterName: 'Sleeping Hare',
       emojiIllustration: '🌳😴🐰💤  🐢🐾',
       imagePath: 'assets/images/story_sleeping_rabbit.jpg',
-      text: 'முயல் மரத்தடியில் தூங்கிவிட்டது.\nஆமை தொடர்ந்து நடந்தது.',
+      text: 'Looking back and seeing the Tortoise far behind, the Hare thought: "I have plenty of time. Let me take a nice nap under this tree!"',
       interactiveWords: [],
     ),
 
-    // Page 5: Tortoise wins (Clean text)
+    // Page 5
     StoryPageModel(
       pageNumber: 5,
-      characterName: 'வெற்றி!',
+      characterName: 'Steady Walking',
       emojiIllustration: '🎉🏆🐢✨ 😲🐰',
       imagePath: 'assets/images/story_victory.jpg',
-      text: 'ஆமை முதலில் சென்றது.\nபோட்டியில் வெற்றி பெற்றது!',
+      text: 'The Tortoise never stopped walking. Step by step, plodding along with grit and patience.',
       interactiveWords: [],
     ),
 
-    // Page 6: Moral / Realization (Clean text)
+    // Page 6
     StoryPageModel(
       pageNumber: 6,
-      characterName: 'நீதி',
+      characterName: 'Victory!',
       emojiIllustration: '🌟🤝🐰🐢💖',
       imagePath: 'assets/images/story_friends.jpg',
-      text: 'முயல் தன் தவறை உணர்ந்தது.\nவிடாமுயற்சி வெற்றி தரும்!',
+      text: 'The Tortoise crossed the finish line first! When the Hare woke up, it was too late. Slow and steady wins the race!',
       interactiveWords: [],
     ),
   ],

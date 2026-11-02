@@ -64,10 +64,10 @@ class _ReadingScreenState extends State<ReadingScreen> {
       widget.progressService.completeStory();
       CelebrationDialog.show(
         context,
-        title: 'கதை முடிந்தது!',
-        message: '${_story.moral}\n\nமிக அருமையாகக் கதையை வாசித்து முடித்தாய்!',
+        title: 'Story Completed!',
+        message: '${_story.moral}\n\nAwesome reading! You completed the story!',
         starsEarned: 5,
-        buttonText: 'முகப்புக்குச் செல்',
+        buttonText: 'Back to Home',
         onContinue: () {
           Navigator.of(context).pop();
         },
@@ -144,7 +144,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                     IconButton(
                       onPressed: () => Navigator.of(ctx).pop(),
                       icon: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 26),
-                      tooltip: 'மூடு',
+                      tooltip: 'Close',
                     ),
                   ],
                 ),
@@ -219,7 +219,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                         const Icon(Icons.volume_up_rounded, color: AppColors.storyColor, size: 20),
                         const SizedBox(width: 8),
                         Text(
-                          'ஒலிப்பைக் கேட்க',
+                          'Listen to Word',
                           style: AppTextStyles.bodyTextBold.copyWith(
                             fontSize: 14,
                             color: AppColors.storyColor,
@@ -255,7 +255,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                           const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 18),
                           const SizedBox(width: 8),
                           Text(
-                            'கதைக்குத் திரும்பு',
+                            'Back to Story',
                             style: AppTextStyles.bodyTextBold.copyWith(
                               color: Colors.white,
                               fontSize: 15,
@@ -479,7 +479,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                               ],
                             ),
                             child: Text(
-                              'முயலும் ஆமையும் கதையை வாசிப்போம்!',
+                              'Let\'s read The Hare and The Tortoise!',
                               style: AppTextStyles.cardTitle.copyWith(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w800,
@@ -566,7 +566,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
 
                             // Audio narration button
                             CustomAudioButton(
-                              label: 'வாசிப்பைக் கேட்போம்',
+                              label: 'Listen to Story',
                               color: AppColors.storyColor,
                               onTap: _playNarrator,
                             ),
@@ -598,7 +598,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                                     children: [
                                       const Icon(Icons.arrow_back_ios_new_rounded, size: 15),
                                       const SizedBox(width: 6),
-                                      Text('முந்தையது', style: AppTextStyles.bodyTextBold.copyWith(fontSize: 14)),
+                                      Text('Previous', style: AppTextStyles.bodyTextBold.copyWith(fontSize: 14)),
                                     ],
                                   ),
                                 ),
@@ -610,7 +610,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 6.0),
                           child: Text(
-                            'பக்கம் ${_currentPage + 1} / ${_story.pages.length}',
+                            'Page ${_currentPage + 1} / ${_story.pages.length}',
                             style: AppTextStyles.bodyTextBold.copyWith(
                               color: AppColors.textMuted,
                               fontSize: 14,
@@ -641,7 +641,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      isLastPage ? 'முடித்தேன்' : 'அடுத்தது',
+                                      isLastPage ? 'Finish' : 'Next',
                                       style: AppTextStyles.bodyTextBold.copyWith(color: Colors.white, fontSize: 14),
                                     ),
                                     if (!isLastPage) ...[

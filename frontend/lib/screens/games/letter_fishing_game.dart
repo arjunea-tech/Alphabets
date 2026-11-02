@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import '../../data/uyir_data.dart';
 import '../../data/mei_data.dart';
+import '../../data/english_letters_data.dart';
 import '../../models/letter_model.dart';
 import '../../models/letter_fishing_game_model.dart';
 import '../../services/audio_service.dart';
@@ -148,9 +149,9 @@ class _LetterFishingGameState extends State<LetterFishingGame>
 
   void _setupGameData() {
     if (widget.mode == FishingGameMode.mei) {
-      _letterPool = List<LetterModel>.from(meiLettersList);
+      _letterPool = List<LetterModel>.from(englishVowelsList);
     } else {
-      _letterPool = List<LetterModel>.from(uyirLettersList);
+      _letterPool = List<LetterModel>.from(englishLettersList);
     }
 
     _roundQueue = List<LetterModel>.from(_letterPool);
@@ -406,7 +407,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
 
       // Mark letter learning progress
       widget.progressService.markLetterCompleted(fish.letterModel.id);
-      _showToast('அருமை! +10', const Color(0xFFFFD54F));
+      _showToast('Awesome! +10', const Color(0xFFFFD54F));
 
       // Remove caught fish from active pool
       _activeFish.removeWhere((f) => f.id == fish.id);
@@ -432,7 +433,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
         showIndicator: false,
       );
       _audioService.playRetryFeedback(context);
-      _showToast('இது "${fish.letter}" - இலக்கு: "${_currentTarget.letter}" 😊', const Color(0xFFFF8A65));
+      _showToast('This is "${fish.letter}" - Target: "${_currentTarget.letter}" 😊', const Color(0xFFFF8A65));
 
       // Release fish back to natural swimming at middle water
       fish.isCaught = false;
@@ -651,7 +652,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                   child: _buildGameHeader(context),
                 ),
 
-              // 6. Prominent Target Banner: 🎯 "அ எழுத்தைப் பிடி!"
+              // 6. Prominent Target Banner: 🎯 "  !"
               if (_isPlaying && !_isGameOver)
                 Positioned(
                   top: MediaQuery.of(context).padding.top + 76,
@@ -903,7 +904,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
               ),
               const SizedBox(width: 10),
               const Text(
-                'எழுத்தைத் தொடு!',
+                'Catch Letter!',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
@@ -977,7 +978,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                       children: [
                         const Text('🎣 ', style: TextStyle(fontSize: 26)),
                         Text(
-                          'எழுத்து மீன்பிடி',
+                          'Letter Fishing',
                           style: AppTextStyles.screenTitle.copyWith(
                             fontSize: 26,
                             fontWeight: FontWeight.w900,
@@ -1000,7 +1001,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                         border: Border.all(color: const Color(0xFF80DEEA), width: 1.5),
                       ),
                       child: const Text(
-                        'மீனைத் தொட்டு தூண்டிலால் பிடிப்போம்!',
+                        'Tap matching fish to catch them with your hook!',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
@@ -1039,7 +1040,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Text(
-                                'நிலை 1',
+                                'Level 1',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -1072,11 +1073,11 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                           ),
                         ),
                         const SizedBox(height: 10),
-                        // Preview Letters (அ, ஆ, இ, ஈ...)
+                        // Preview Letters (, , , ...)
                         Wrap(
                           spacing: 6,
                           runSpacing: 6,
-                          children: ['அ', 'ஆ', 'இ', 'ஈ', 'உ', 'ஊ'].map((l) {
+                          children: ['A', 'B', 'C', 'D', 'E', 'F'].map((l) {
                             return Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
@@ -1123,7 +1124,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                       ),
                       child: const Center(
                         child: Text(
-                          'விளையாடலாம் 🎮',
+                          'Play 🎮',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
@@ -1141,7 +1142,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.arrow_back_rounded, size: 18, color: Color(0xFF0277BD)),
                     label: const Text(
-                      'திரும்பிச் செல்',
+                      'Back',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -1190,7 +1191,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                   const Text('🎉', style: TextStyle(fontSize: 50)),
                   const SizedBox(height: 6),
                   Text(
-                    'அருமை!',
+                    'Awesome!',
                     style: AppTextStyles.screenTitle.copyWith(
                       fontSize: 32,
                       fontWeight: FontWeight.w900,
@@ -1199,7 +1200,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'அனைத்து எழுத்துகளையும் பிடித்துவிட்டீர்கள்!',
+                    'You caught all the requested letters!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 15,
@@ -1235,11 +1236,11 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                     ),
                     child: Column(
                       children: [
-                        _buildStatRow('மொத்த புள்ளிகள்', '$_score'),
+                        _buildStatRow('Total Score', '$_score'),
                         const Divider(height: 16),
-                        _buildStatRow('பிடித்த எழுத்துகள்', '$_caughtCount / ${_roundQueue.length}'),
+                        _buildStatRow('Caught Letters', '$_caughtCount / ${_roundQueue.length}'),
                         const Divider(height: 16),
-                        _buildStatRow('பெற்ற நட்சத்திரங்கள்', '+$_starsEarned'),
+                        _buildStatRow('Stars Earned', '+$_starsEarned'),
                       ],
                     ),
                   ),
@@ -1266,7 +1267,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                       ),
                       child: const Center(
                         child: Text(
-                          'மீண்டும் விளையாடு 🔄',
+                          'Fish Again 🔄',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w900,
@@ -1291,7 +1292,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                       ),
                       child: const Center(
                         child: Text(
-                          'விளையாட்டு அரங்கம் 🏠',
+                          'Game Arena 🏠',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -1835,7 +1836,7 @@ class _FishermanBoatWidget extends StatelessWidget {
         children: [
           Text('⛵ ', style: TextStyle(fontSize: 18)),
           Text(
-            'மீன்பிடி படகு',
+            'Fishing Boat',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w900,

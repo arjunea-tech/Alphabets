@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../data/mei_data.dart';
+import '../../data/english_letters_data.dart';
 import '../../models/letter_model.dart';
 import '../../services/data_service.dart';
 import '../../services/progress_service.dart';
@@ -19,15 +19,15 @@ class MeiScreen extends StatefulWidget {
 }
 
 class _MeiScreenState extends State<MeiScreen> {
-  List<LetterModel> _letters = meiLettersList;
+  List<LetterModel> _letters = englishConsonantsList;
 
   @override
   void initState() {
     super.initState();
-    _loadMeiLetters();
+    _loadConsonants();
   }
 
-  Future<void> _loadMeiLetters() async {
+  Future<void> _loadConsonants() async {
     try {
       DataService.instance.invalidateCache();
       final letters = await DataService.instance.getMeiLetters();
@@ -46,13 +46,13 @@ class _MeiScreenState extends State<MeiScreen> {
       builder: (context, _) {
         return Scaffold(
           appBar: KidAppBar(
-            title: 'மெய் எழுத்துகள் (18)',
+            title: 'Consonants (21 Letters)',
             starCount: widget.progressService.stars,
           ),
           body: KidScaffoldBackground(
             child: SafeArea(
               child: RefreshIndicator(
-                onRefresh: _loadMeiLetters,
+                onRefresh: _loadConsonants,
                 color: AppColors.meiColor,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
@@ -87,8 +87,7 @@ class _MeiScreenState extends State<MeiScreen> {
                                 ),
                               ),
                             ).then((_) {
-                              // Reload on return
-                              _loadMeiLetters();
+                              _loadConsonants();
                             });
                           },
                         );

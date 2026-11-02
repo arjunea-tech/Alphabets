@@ -89,7 +89,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                             Icon(Icons.translate_rounded, color: AppColors.primary, size: 18),
                             SizedBox(width: 6),
                             Text(
-                              'Language / மொழி',
+                              'Language Settings',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
@@ -115,7 +115,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
 
                   // Title & Subtitle
                   Text(
-                    'உங்கள் மொழியைத் தேர்வு செய்க',
+                    'Select Learning Language',
                     textAlign: TextAlign.center,
                     style: AppTextStyles.screenTitle.copyWith(
                       fontSize: 22,
@@ -265,7 +265,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                           Text(
                             _selectedCode == 'te'
                               ? 'ప్రారంభించండి (Continue) 🚀'
-                              : (_selectedCode == 'en' ? 'Continue 🚀' : 'தொடரவும் (Continue) 🚀'),
+                              : (_selectedCode == 'en' ? 'Continue 🚀' : 'Continue 🚀'),
                             style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w900,

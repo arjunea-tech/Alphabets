@@ -85,7 +85,7 @@ class AuthService extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return AuthResult.failure(
-        'சேவையகத்துடன் இணைக்க முடியவில்லை. இணைய இணைப்பை சரிபார்க்கவும்.',
+        'Could not connect to server. Please check internet connection.',
       );
     }
 
@@ -102,23 +102,23 @@ class AuthService extends ChangeNotifier {
         _isLoading = false;
         notifyListeners();
 
-        return AuthResult.success(user, 'பதிவு வெற்றிகரமாக முடிந்தது!');
+        return AuthResult.success(user, 'Registration successful!');
       } else if (response.statusCode == 409) {
         _isLoading = false;
         notifyListeners();
         return AuthResult.failure(
-          'இந்த மின்னஞ்சல் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது.',
+          'This email is already registered.',
         );
       } else {
         _isLoading = false;
         notifyListeners();
-        final msg = responseData['message']?.toString() ?? 'பதிவு செய்வதில் சிக்கல் ஏற்பட்டது';
+        final msg = responseData['message']?.toString() ?? 'Failed to register';
         return AuthResult.failure(_translateError(msg));
       }
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      return AuthResult.failure('சேவையில் தற்காலிக சிக்கல் ஏற்பட்டுள்ளது.');
+      return AuthResult.failure('Temporary service error. Please try again.');
     }
   }
 
@@ -161,7 +161,7 @@ class AuthService extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return AuthResult.failure(
-        'சேவையகத்துடன் இணைக்க முடியவில்லை. இணைய இணைப்பை சரிபார்க்கவும்.',
+        'Could not connect to server. Please check internet connection.',
       );
     }
 
@@ -178,21 +178,21 @@ class AuthService extends ChangeNotifier {
         _isLoading = false;
         notifyListeners();
 
-        return AuthResult.success(user, 'உள்நுழைவு வெற்றிகரமாக முடிந்தது!');
+        return AuthResult.success(user, 'Login successful!');
       } else if (response.statusCode == 401) {
         _isLoading = false;
         notifyListeners();
-        return AuthResult.failure('மின்னஞ்சல் அல்லது கடவுச்சொல் தவறாக உள்ளது.');
+        return AuthResult.failure('Invalid email or password.');
       } else {
         _isLoading = false;
         notifyListeners();
-        final msg = responseData['message']?.toString() ?? 'உள்நுழைவு தோல்வியடைந்தது';
+        final msg = responseData['message']?.toString() ?? 'Login failed';
         return AuthResult.failure(_translateError(msg));
       }
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      return AuthResult.failure('சேவையில் தற்காலிக சிக்கல் ஏற்பட்டுள்ளது.');
+      return AuthResult.failure('Temporary service error. Please try again.');
     }
   }
 
@@ -220,20 +220,20 @@ class AuthService extends ChangeNotifier {
   }
 
   String _translateError(String raw) {
-    if (raw.contains('already registered') || raw.contains('ஏற்கனவே பதிவு')) {
-      return 'இந்த மின்னஞ்சல் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது.';
+    if (raw.contains('already registered')) {
+      return 'This email is already registered.';
     }
-    if (raw.contains('Invalid credentials') || raw.contains('தவறாக உள்ளது')) {
-      return 'மின்னஞ்சல் அல்லது கடவுச்சொல் தவறாக உள்ளது.';
+    if (raw.contains('Invalid credentials')) {
+      return 'Invalid email or password.';
     }
     if (raw.contains('Email') && raw.contains('required')) {
-      return 'மின்னஞ்சல் முகவரி தேவை.';
+      return 'Email is required.';
     }
     if (raw.contains('Password') && raw.contains('required')) {
-      return 'கடவுச்சொல் தேவை.';
+      return 'Password is required.';
     }
     if (raw.contains('at least 6 characters')) {
-      return 'கடவுச்சொல் குறைந்தது 6 எழுத்துகள் இருக்க வேண்டும்.';
+      return 'Password must be at least 6 characters.';
     }
     return raw;
   }

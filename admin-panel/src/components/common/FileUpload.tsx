@@ -49,10 +49,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const displayLabel =
     label ||
     (type === 'image'
-      ? t('upload_label_image') || 'படம் (Image)'
+      ? t('upload_label_image') || 'Image'
       : type === 'audio'
-      ? t('upload_label_audio') || 'ஒலி (Audio)'
-      : 'காணொளி கோப்பு (Video File)');
+      ? t('upload_label_audio') || 'Audio'
+      : 'Video File');
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -61,7 +61,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     // Validate size (100MB max for video, 20MB for audio/image)
     const maxMb = type === 'video' ? 100 : 20;
     if (file.size > maxMb * 1024 * 1024) {
-      setError(`கோப்பு அளவு ${maxMb}MB க்குள் இருக்க வேண்டும் (File size exceeds ${maxMb}MB).`);
+      setError(`File size exceeds maximum allowed size of ${maxMb}MB.`);
       return;
     }
 
@@ -181,7 +181,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '10px 0' }}>
             <Loader2 size={32} className="spin" color="#8E24AA" />
             <div style={{ fontWeight: 700, color: '#6A1B9A', fontSize: '14px' }}>
-              {type === 'video' ? 'காணொளி பதிவேற்றப்படுகிறது... (Uploading Video...)' : 'பதிவேற்றப்படுகிறது... (Uploading...)'}
+              {type === 'video' ? 'Uploading Video...' : 'Uploading...'}
             </div>
             {selectedFile && (
               <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
@@ -210,9 +210,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 <span style={{ fontSize: '13px', fontWeight: 700 }}>
                   {uploadedPath
                     ? type === 'video'
-                      ? 'காணொளி வெற்றிகரமாக பதிவேற்றப்பட்டது (Uploaded)'
-                      : 'வெற்றிகரமாக பதிவேற்றப்பட்டது (Uploaded)'
-                    : 'கோப்பு தேர்ந்தெடுக்கப்பட்டது (Selected)'}
+                      ? 'Video uploaded successfully'
+                      : 'Uploaded successfully'
+                    : 'File selected'}
                 </span>
               </div>
               <button
@@ -220,10 +220,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 onClick={handleDelete}
                 className="btn btn-danger btn-sm"
                 style={{ padding: '4px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                title="நீக்குக (Delete)"
+                title="Delete"
               >
                 <Trash2 size={13} />
-                <span>நீக்குக (Delete)</span>
+                <span>Delete</span>
               </button>
             </div>
 
@@ -248,7 +248,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                   style={{ width: '100%', maxHeight: '200px', display: 'block', margin: '0 auto' }}
                   preload="metadata"
                 >
-                  உங்கள் உலாவி காணொளியை ஆதரிக்கவில்லை (Your browser does not support HTML5 video).
+                  Your browser does not support HTML5 video.
                 </video>
               </div>
             )}
@@ -284,7 +284,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontWeight: 700 }}
               >
                 <UploadCloud size={16} />
-                <span>காணொளியை பதிவேற்றுக (Upload Video)</span>
+                <span>Upload Video</span>
               </button>
             )}
 
@@ -302,7 +302,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 style={{ padding: '4px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600, marginLeft: 'auto' }}
               >
                 <RefreshCw size={13} />
-                <span>மாற்றுக (Choose Another)</span>
+                <span>Change File</span>
               </button>
             </div>
           </div>
@@ -313,17 +313,17 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           >
             <UploadCloud size={34} style={{ margin: '0 auto 6px', display: 'block', color: type === 'video' ? '#8E24AA' : 'var(--primary)' }} />
             <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-dark, #1E293B)' }}>
-              {type === 'video' ? '📁 காணொளியைத் தேர்ந்தெடுக்கவும் (Choose Video)' : t('upload_click')}
+              {type === 'video' ? '📁 Choose Video File' : t('upload_click')}
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              {type === 'video' ? 'ஆதரிக்கப்படும் வடிவங்கள்: MP4, MOV, WebM (அதிகபட்சம் 100MB)' : t('upload_limits', { type: type.toUpperCase() })}
+              {type === 'video' ? 'Supported formats: MP4, MOV, WebM (Max 100MB)' : t('upload_limits', { type: type.toUpperCase() })}
             </div>
             <button
               type="button"
               className="btn btn-secondary btn-sm"
               style={{ marginTop: '10px', pointerEvents: 'none', fontWeight: 700, background: '#F3E5F5', color: '#6A1B9A', border: '1px solid #CE93D8' }}
             >
-              {type === 'video' ? '📁 Choose Video File' : 'கோப்பு தேர்ந்தெடுக்கவும்'}
+              {type === 'video' ? '📁 Choose Video File' : 'Select File'}
             </button>
           </div>
         )}

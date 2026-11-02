@@ -66,8 +66,8 @@ export const DashboardPage: React.FC = () => {
 
   const s = stats?.summary;
   const locale = language === 'ta' ? 'ta-IN' : 'en-US';
-  const adminDisplayName = admin?.fullName || admin?.full_name || admin?.username || (language === 'ta' ? 'நிர்வாகி' : 'Administrator');
-  const welcomeGreeting = language === 'ta' ? `வணக்கம், ${adminDisplayName}! 👋` : `Welcome, ${adminDisplayName}! 👋`;
+  const adminDisplayName = admin?.fullName || admin?.full_name || admin?.username || ('Administrator');
+  const welcomeGreeting = `Welcome, ${adminDisplayName}! 👋`;
 
   return (
     <div>

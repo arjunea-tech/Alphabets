@@ -21,7 +21,7 @@ class UserProfile {
   factory UserProfile.defaultProfile() {
     return UserProfile(
       id: 'default_child',
-      name: 'குழந்தை',
+      name: 'Kid',
       age: 5,
       avatarAsset: 'assets/images/welcome.png',
       totalStars: 25,
@@ -56,7 +56,7 @@ class UserProfile {
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
         id: json['id'] as String? ?? 'child',
-        name: json['name'] as String? ?? 'குழந்தை',
+        name: json['name'] as String? ?? 'Kid',
         age: json['age'] as int? ?? 5,
         avatarAsset: json['avatarAsset'] as String? ?? 'assets/images/welcome.png',
         totalStars: json['totalStars'] as int? ?? 0,

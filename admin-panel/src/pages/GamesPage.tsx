@@ -8,14 +8,14 @@ import { Plus, Edit2, Trash2, CheckCircle2, XCircle, Loader2, Gamepad2, Image as
 import { resolveMediaUrl } from '../api/client';
 
 const GAME_TYPE_LABELS: Record<string, { label: string; shortLabel: string; color: string; bg: string }> = {
-  runner: { label: '🏃 அகரம் ஓட்டம் (2D Runner)', shortLabel: '🏃 அகரம் ஓட்டம்', color: '#16A34A', bg: '#DCFCE7' },
-  candy: { label: '🍬 எழுத்து மிட்டாய் (Match-3)', shortLabel: '🍬 மிட்டாய்', color: '#DB2777', bg: '#FCE7F3' },
-  fishing: { label: '🎣 எழுத்து மீன்பிடி (Fishing)', shortLabel: '🎣 மீன்பிடி', color: '#0284C7', bg: '#E0F2FE' },
-  basket: { label: '🧺 எழுத்துக் கூடை (Basket)', shortLabel: '🧺 கூடை', color: '#D97706', bg: '#FEF3C7' },
-  racing: { label: '🚗 கார் பந்தயம் (Car Racing)', shortLabel: '🚗 கார் பந்தயம்', color: '#2563EB', bg: '#DBEAFE' },
-  puzzle: { label: '🧩 சொல் புதிர் (Word Puzzle)', shortLabel: '🧩 சொல் புதிர்', color: '#7C3AED', bg: '#EDE9FE' },
-  balloon: { label: '🎈 பலூன் வெடிப்பு (Balloon Pop)', shortLabel: '🎈 பலூன்', color: '#DC2626', bg: '#FEE2E2' },
-  matching: { label: '🔄 பொருத்துதல் (Matching)', shortLabel: '🔄 பொருத்துதல்', color: '#4B5563', bg: '#F3F4F6' },
+  runner: { label: '🏃 Alphabet Runner (2D Runner)', shortLabel: '🏃 Runner', color: '#16A34A', bg: '#DCFCE7' },
+  candy: { label: '🍬 Candy Match (Match-3)', shortLabel: '🍬 Candy Match', color: '#DB2777', bg: '#FCE7F3' },
+  fishing: { label: '🎣 Letter Fishing', shortLabel: '🎣 Fishing', color: '#0284C7', bg: '#E0F2FE' },
+  basket: { label: '🧺 Letter Basket', shortLabel: '🧺 Basket', color: '#D97706', bg: '#FEF3C7' },
+  racing: { label: '🚗 Alphabet Car Racing', shortLabel: '🚗 Racing', color: '#2563EB', bg: '#DBEAFE' },
+  puzzle: { label: '🧩 Word Puzzle', shortLabel: '🧩 Puzzle', color: '#7C3AED', bg: '#EDE9FE' },
+  balloon: { label: '🎈 Balloon Pop', shortLabel: '🎈 Balloon', color: '#DC2626', bg: '#FEE2E2' },
+  matching: { label: '🔄 Letter Matching', shortLabel: '🔄 Matching', color: '#4B5563', bg: '#F3F4F6' },
 };
 
 export const GamesPage: React.FC = () => {
@@ -24,7 +24,7 @@ export const GamesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentGame, setCurrentGame] = useState<Partial<GameItem> | null>(null);
-  const [optionsStr, setOptionsStr] = useState('அ, ஆ, இ, ஈ');
+  const [optionsStr, setOptionsStr] = useState('A, B, C, D');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
 
@@ -54,13 +54,13 @@ export const GamesPage: React.FC = () => {
       clue: '',
       clue_image: '',
       correct_index: 0,
-      options: ['அ', 'ஆ', 'இ', 'ஈ'],
-      success_praise: 'சூப்பர்! ⭐',
+      options: ['A', 'B', 'C', 'D'],
+      success_praise: 'Awesome! ⭐',
       stars_reward: 3,
       display_order: games.length + 1,
       is_active: true,
     });
-    setOptionsStr('அ, ஆ, இ, ஈ');
+    setOptionsStr('A, B, C, D');
     setIsModalOpen(true);
   };
 
@@ -143,7 +143,7 @@ export const GamesPage: React.FC = () => {
           onClick={() => setSelectedFilter('all')}
           className={`btn btn-sm ${selectedFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
         >
-          அனைத்தும் ({games.length})
+          All Games ({games.length})
         </button>
         {Object.entries(GAME_TYPE_LABELS).map(([key, info]) => {
           const count = games.filter((g) => g.game_type === key).length;
@@ -169,7 +169,7 @@ export const GamesPage: React.FC = () => {
           <thead>
             <tr>
               <th style={{ width: '50px' }}>{t('games.order')}</th>
-              <th style={{ width: '60px' }}>படம் (Image)</th>
+              <th style={{ width: '60px' }}>Image</th>
               <th>{t('games.gameType')}</th>
               <th>{t('games.title')}</th>
               <th>{t('games.prompt')}</th>
@@ -333,14 +333,14 @@ export const GamesPage: React.FC = () => {
                 value={currentGame?.game_type || 'runner'}
                 onChange={(e) => setCurrentGame({ ...currentGame, game_type: e.target.value })}
               >
-                <option value="runner">🏃 அகரம் ஓட்டம் (2D Runner Game)</option>
-                <option value="candy">🍬 எழுத்து மிட்டாய் (Match-3 Candy)</option>
-                <option value="fishing">🎣 எழுத்து மீன்பிடி (Letter Fishing)</option>
-                <option value="basket">🧺 எழுத்துக் கூடை (Letter Basket)</option>
-                <option value="racing">🚗 சொல் கார் பந்தயம் (Car Racing)</option>
-                <option value="puzzle">🧩 சொல் புதிர் (Word Puzzle)</option>
-                <option value="balloon">🎈 பலூன் வெடிப்பு (Balloon Pop)</option>
-                <option value="matching">🔄 பொருத்துதல் (Matching)</option>
+                <option value="runner">🏃 Alphabet Runner (2D Runner Game)</option>
+                <option value="candy">🍬 Candy Match (Match-3 Candy)</option>
+                <option value="fishing">🎣 Letter Fishing</option>
+                <option value="basket">🧺 Letter Basket</option>
+                <option value="racing">🚗 Alphabet Car Racing</option>
+                <option value="puzzle">🧩 Word Puzzle</option>
+                <option value="balloon">🎈 Balloon Pop</option>
+                <option value="matching">🔄 Letter Matching</option>
               </select>
             </div>
             <div className="form-group">
@@ -348,7 +348,7 @@ export const GamesPage: React.FC = () => {
               <input
                 type="text"
                 className="form-control"
-                placeholder="e.g. அகரம் ஓட்டம்"
+                placeholder="e.g. Alphabet Runner"
                 value={currentGame?.title || ''}
                 onChange={(e) => setCurrentGame({ ...currentGame, title: e.target.value })}
                 required
@@ -361,7 +361,7 @@ export const GamesPage: React.FC = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. ஓடி விளையாடி தமிழ் எழுத்துகளை சேகரிக்கவும்!"
+              placeholder="e.g. Run and jump to collect letters!"
               value={currentGame?.prompt || ''}
               onChange={(e) => setCurrentGame({ ...currentGame, prompt: e.target.value })}
               required
@@ -370,11 +370,11 @@ export const GamesPage: React.FC = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div className="form-group">
-              <label className="form-label">விளையாட்டு குறிப்பு / விளக்கம் (Clue / Subtitle)</label>
+              <label className="form-label">Game Clue / Subtitle</label>
               <input
                 type="text"
                 className="form-control"
-                placeholder="e.g. 2D ஓட்டப் பந்தய விளையாட்டு"
+                placeholder="e.g. Fun 2D Alphabet Runner"
                 value={currentGame?.clue || ''}
                 onChange={(e) => setCurrentGame({ ...currentGame, clue: e.target.value })}
               />
@@ -394,7 +394,7 @@ export const GamesPage: React.FC = () => {
           <div className="form-group">
             <FileUpload
               type="image"
-              label="விளையாட்டு படம் / முன்னோட்டம் (Game Clue Image / Thumbnail)"
+              label="Game Image / Thumbnail"
               currentValue={currentGame?.clue_image}
               onUploaded={(path) => setCurrentGame({ ...currentGame, clue_image: path })}
             />
@@ -405,13 +405,13 @@ export const GamesPage: React.FC = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="அ, ஆ, இ, ஈ"
+              placeholder="A, B, C, D"
               value={optionsStr}
               onChange={(e) => setOptionsStr(e.target.value)}
               required
             />
             <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-              காற்புள்ளி (comma) மூலம் பிரித்து உள்ளிடவும். எ.கா: அ, ஆ, இ, ஈ
+              Separate choices with comma. E.g.: A, B, C, D
             </small>
           </div>
 
@@ -446,8 +446,8 @@ export const GamesPage: React.FC = () => {
               <input
                 type="text"
                 className="form-control"
-                placeholder="அற்புதம்! ⭐"
-                value={currentGame?.success_praise || 'சூப்பர்! ⭐'}
+                placeholder="Great Job! ⭐"
+                value={currentGame?.success_praise || 'Awesome! ⭐'}
                 onChange={(e) => setCurrentGame({ ...currentGame, success_praise: e.target.value })}
               />
             </div>

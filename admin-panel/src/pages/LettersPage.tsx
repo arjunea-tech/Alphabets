@@ -5,44 +5,19 @@ import { Modal } from '../components/common/Modal';
 import { FileUpload } from '../components/common/FileUpload';
 import { useLanguage } from '../context/LanguageContext';
 import { Edit2, Trash2, Plus, Search, Loader2, Volume2 } from 'lucide-react';
-
 import { resolveMediaUrl } from '../api/client';
-
-
-const MEI_VARISAIS = [
-  { mei: 'க்', title: 'க வரிசை (12)' },
-  { mei: 'ங்', title: 'ங வரிசை (12)' },
-  { mei: 'ச்', title: 'ச வரிசை (12)' },
-  { mei: 'ஞ்', title: 'ஞ வரிசை (12)' },
-  { mei: 'ட்', title: 'ட வரிசை (12)' },
-  { mei: 'ண்', title: 'ண வரிசை (12)' },
-  { mei: 'த்', title: 'த வரிசை (12)' },
-  { mei: 'ந்', title: 'ந வரிசை (12)' },
-  { mei: 'ப்', title: 'ப வரிசை (12)' },
-  { mei: 'ம்', title: 'ம வரிசை (12)' },
-  { mei: 'ய்', title: 'ய வரிசை (12)' },
-  { mei: 'ர்', title: 'ர வரிசை (12)' },
-  { mei: 'ல்', title: 'ல வரிசை (12)' },
-  { mei: 'வ்', title: 'வ வரிசை (12)' },
-  { mei: 'ழ்', title: 'ழ வரிசை (12)' },
-  { mei: 'ள்', title: 'ள வரிசை (12)' },
-  { mei: 'ற்', title: 'ற வரிசை (12)' },
-  { mei: 'ன்', title: 'ன வரிசை (12)' },
-];
 
 export const LettersPage: React.FC = () => {
   const { t } = useLanguage();
   const [letters, setLetters] = useState<Letter[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<string>('all');
-  const [selectedVarisai, setSelectedVarisai] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentLetter, setCurrentLetter] = useState<Partial<Letter> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    setSelectedVarisai('all');
     fetchLetters();
   }, [selectedType]);
 
@@ -68,18 +43,17 @@ export const LettersPage: React.FC = () => {
       l.meaning.toLowerCase().includes(searchQuery.toLowerCase()) ||
       l.phonetic.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesVarisai =
-      selectedType !== 'uyirmei' ||
-      selectedVarisai === 'all' ||
-      l.mei_base === selectedVarisai;
+    const matchesType =
+      selectedType === 'all' ||
+      l.type.toLowerCase() === selectedType.toLowerCase();
 
-    return matchesSearch && matchesVarisai;
+    return matchesSearch && matchesType;
   });
 
   const handleOpenAdd = () => {
     setCurrentLetter({
       letter: '',
-      type: (selectedType !== 'all' ? selectedType : 'uyir') as any,
+      type: (selectedType !== 'all' ? selectedType : 'consonant') as any,
       word: '',
       meaning: '',
       phonetic: '',
@@ -100,7 +74,7 @@ export const LettersPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm(t('common.confirmDelete'))) return;
+    if (!window.confirm('Are you sure you want to delete this alphabet letter?')) return;
     try {
       await lettersApi.delete(id);
       fetchLetters();
@@ -132,88 +106,59 @@ export const LettersPage: React.FC = () => {
     }
   };
 
+  const vowelCount = letters.filter((l) => l.type === 'vowel').length;
+  const consonantCount = letters.filter((l) => l.type === 'consonant').length;
+
   return (
     <div>
       {/* Header */}
-      {/* Header */}
       <div className="page-header">
         <div className="page-title-group">
-          <h2>{t('letters.pageTitle')}</h2>
-          <p>{t('letters.pageSubtitle')}</p>
+          <h2>English Alphabets</h2>
+          <p>Manage the 26 English Alphabet letters (A to Z), words, pronunciations and pictures</p>
         </div>
         <button onClick={handleOpenAdd} className="btn btn-primary">
           <Plus size={16} />
-          <span>{t('letters.addLetter')}</span>
+          <span>Add Letter</span>
         </button>
       </div>
 
-      {/* Type Filter Tabs */}
+      {/* Type Filter Tabs: All (26), Vowels (5), Consonants (21) */}
       <div className="tabs-header">
         <button
           className={`tab-btn ${selectedType === 'all' ? 'active' : ''}`}
           onClick={() => setSelectedType('all')}
         >
-          {t('letters.allLetters')}
+          All Alphabets ({letters.length || 26})
         </button>
         <button
-          className={`tab-btn ${selectedType === 'uyir' ? 'active' : ''}`}
-          onClick={() => setSelectedType('uyir')}
+          className={`tab-btn ${selectedType === 'vowel' ? 'active' : ''}`}
+          onClick={() => setSelectedType('vowel')}
         >
-          {t('letters.uyir')} (12)
+          Vowels ({vowelCount || 5})
         </button>
         <button
-          className={`tab-btn ${selectedType === 'mei' ? 'active' : ''}`}
-          onClick={() => setSelectedType('mei')}
+          className={`tab-btn ${selectedType === 'consonant' ? 'active' : ''}`}
+          onClick={() => setSelectedType('consonant')}
         >
-          {t('letters.mei')} (18)
-        </button>
-        <button
-          className={`tab-btn ${selectedType === 'aytham' ? 'active' : ''}`}
-          onClick={() => setSelectedType('aytham')}
-        >
-          {t('letters.aytham')} (1)
-        </button>
-        <button
-          className={`tab-btn ${selectedType === 'uyirmei' ? 'active' : ''}`}
-          onClick={() => setSelectedType('uyirmei')}
-        >
-          {t('letters.uyirmei')} (216)
+          Consonants ({consonantCount || 21})
         </button>
       </div>
 
-      {/* Toolbar with Search and Varisai Filter */}
+      {/* Toolbar with Search */}
       <div className="table-toolbar" style={{ background: 'white', borderRadius: 'var(--radius-lg)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-        <div className="search-input" style={{ flex: 1, minWidth: '220px' }}>
+        <div className="search-input" style={{ flex: 1, minWidth: '240px' }}>
           <Search size={16} color="#94A3B8" />
           <input
             type="text"
-            placeholder={t('letters.searchPlaceholder')}
+            placeholder="Search alphabet letter, word, or phonetic..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
-        {selectedType === 'uyirmei' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>வரிசை:</span>
-            <select
-              className="form-control"
-              style={{ width: '220px', fontWeight: 600 }}
-              value={selectedVarisai}
-              onChange={(e) => setSelectedVarisai(e.target.value)}
-            >
-              <option value="all">அனைத்து வரிசைகளும் (All 216)</option>
-              {MEI_VARISAIS.map((v) => (
-                <option key={v.mei} value={v.mei}>
-                  {v.title}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
         <div style={{ fontSize: '14px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-          {t('common.total')}: <strong>{filteredLetters.length}</strong>
+          Total Showing: <strong>{filteredLetters.length}</strong> of {letters.length}
         </div>
       </div>
 
@@ -222,14 +167,14 @@ export const LettersPage: React.FC = () => {
         <table>
           <thead>
             <tr>
-              <th style={{ width: '60px' }}>{t('letters.order')}</th>
-              <th>{t('letters.letter')}</th>
-              <th>{t('letters.type')}</th>
-              <th>{t('letters.word')}</th>
-              <th>{t('letters.meaning')}</th>
-              <th>{t('letters.phonetic')}</th>
-              <th>{t('letters.media')}</th>
-              <th style={{ textAlign: 'right' }}>{t('letters.actions')}</th>
+              <th style={{ width: '60px' }}>#</th>
+              <th>Letter</th>
+              <th>Type</th>
+              <th>Word</th>
+              <th>Meaning</th>
+              <th>Phonetic</th>
+              <th>Image / Media</th>
+              <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -242,7 +187,7 @@ export const LettersPage: React.FC = () => {
             ) : filteredLetters.length === 0 ? (
               <tr>
                 <td colSpan={8} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                  {t('common.noData')}
+                  No alphabet letters found.
                 </td>
               </tr>
             ) : (
@@ -253,16 +198,17 @@ export const LettersPage: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span
                         style={{
-                          fontSize: '24px',
+                          fontSize: '22px',
                           fontWeight: 800,
-                          width: '46px',
-                          height: '46px',
+                          width: '44px',
+                          height: '44px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          background: 'var(--bg-muted)',
+                          background: item.type === 'vowel' ? '#FFF1F2' : 'var(--bg-muted)',
                           borderRadius: 'var(--radius-md)',
-                          color: 'var(--primary)',
+                          color: item.type === 'vowel' ? '#E11D48' : 'var(--primary)',
+                          border: `1px solid ${item.type === 'vowel' ? '#FECDD3' : '#E2E8F0'}`,
                         }}
                       >
                         {item.letter}
@@ -271,13 +217,24 @@ export const LettersPage: React.FC = () => {
                     </div>
                   </td>
                   <td>
-                    <span className="badge badge-secondary">{item.type.toUpperCase()}</span>
+                    <span
+                      className="badge"
+                      style={{
+                        background: item.type === 'vowel' ? '#FFE4E6' : '#E0F2FE',
+                        color: item.type === 'vowel' ? '#BE123C' : '#0369A1',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                      }}
+                    >
+                      {item.type}
+                    </span>
                   </td>
-                  <td style={{ fontWeight: 700 }}>{item.word}</td>
+                  <td style={{ fontWeight: 700, fontSize: '15px' }}>{item.word}</td>
                   <td style={{ color: 'var(--text-muted)' }}>{item.meaning}</td>
                   <td>
-                    <code style={{ background: 'var(--bg-muted)', padding: '3px 8px', borderRadius: '4px', fontSize: '14px' }}>
-                      /{item.phonetic}/
+                    <code style={{ background: 'var(--bg-muted)', padding: '3px 8px', borderRadius: '4px', fontSize: '14px', color: '#475569' }}>
+                      {item.phonetic.startsWith('/') ? item.phonetic : `/${item.phonetic}/`}
                     </code>
                   </td>
                   <td>
@@ -285,15 +242,16 @@ export const LettersPage: React.FC = () => {
                       {item.image_path ? (
                         <div
                           style={{
-                            width: '38px',
-                            height: '38px',
+                            width: '40px',
+                            height: '40px',
                             borderRadius: '6px',
                             overflow: 'hidden',
                             border: '1px solid var(--border-color)',
-                            background: 'var(--bg-muted)',
+                            background: '#FFFFFF',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
+                            padding: '2px',
                           }}
                           title={item.image_path}
                         >
@@ -318,10 +276,10 @@ export const LettersPage: React.FC = () => {
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="action-btn-group">
-                      <button onClick={() => handleOpenEdit(item)} className="btn btn-secondary btn-icon" title={t('common.edit')}>
+                      <button onClick={() => handleOpenEdit(item)} className="btn btn-secondary btn-icon" title="Edit Letter">
                         <Edit2 size={14} />
                       </button>
-                      <button onClick={() => handleDelete(item.id)} className="btn btn-danger btn-icon" title={t('common.delete')}>
+                      <button onClick={() => handleDelete(item.id)} className="btn btn-danger btn-icon" title="Delete Letter">
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -337,55 +295,54 @@ export const LettersPage: React.FC = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={currentLetter?.id ? t('letters.editLetter') : t('letters.addLetter')}
+        title={currentLetter?.id ? `Edit Letter '${currentLetter?.letter || ''}'` : 'Add Alphabet Letter'}
         maxWidth="650px"
       >
         <form onSubmit={handleSave}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div className="form-group">
-              <label className="form-label">{t('letters.letter')}</label>
+              <label className="form-label">Letter (A-Z)</label>
               <input
                 type="text"
                 className="form-control"
-                placeholder="e.g. அ"
+                placeholder="e.g. A"
+                maxLength={2}
                 value={currentLetter?.letter || ''}
-                onChange={(e) => setCurrentLetter({ ...currentLetter, letter: e.target.value })}
+                onChange={(e) => setCurrentLetter({ ...currentLetter, letter: e.target.value.toUpperCase() })}
                 required
               />
             </div>
             <div className="form-group">
-              <label className="form-label">{t('letters.type')}</label>
+              <label className="form-label">Letter Type</label>
               <select
                 className="form-control"
-                value={currentLetter?.type || 'uyir'}
+                value={currentLetter?.type || 'consonant'}
                 onChange={(e) => setCurrentLetter({ ...currentLetter, type: e.target.value as any })}
               >
-                <option value="uyir">{t('letters.uyir')}</option>
-                <option value="mei">{t('letters.mei')}</option>
-                <option value="aytham">{t('letters.aytham')}</option>
-                <option value="uyirmei">{t('letters.uyirmei')}</option>
+                <option value="vowel">Vowel (A, E, I, O, U)</option>
+                <option value="consonant">Consonant</option>
               </select>
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div className="form-group">
-              <label className="form-label">{t('letters.word')}</label>
+              <label className="form-label">Sample Word</label>
               <input
                 type="text"
                 className="form-control"
-                placeholder="e.g. அம்மா"
+                placeholder="e.g. Apple"
                 value={currentLetter?.word || ''}
                 onChange={(e) => setCurrentLetter({ ...currentLetter, word: e.target.value })}
                 required
               />
             </div>
             <div className="form-group">
-              <label className="form-label">{t('letters.meaning')}</label>
+              <label className="form-label">Word Meaning</label>
               <input
                 type="text"
                 className="form-control"
-                placeholder="e.g. Mother"
+                placeholder="e.g. Sweet red fruit"
                 value={currentLetter?.meaning || ''}
                 onChange={(e) => setCurrentLetter({ ...currentLetter, meaning: e.target.value })}
                 required
@@ -395,22 +352,22 @@ export const LettersPage: React.FC = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div className="form-group">
-              <label className="form-label">{t('letters.phonetic')}</label>
+              <label className="form-label">Phonetic Pronunciation</label>
               <input
                 type="text"
                 className="form-control"
-                placeholder="e.g. a"
+                placeholder="e.g. /ˈæp.əl/"
                 value={currentLetter?.phonetic || ''}
                 onChange={(e) => setCurrentLetter({ ...currentLetter, phonetic: e.target.value })}
                 required
               />
             </div>
             <div className="form-group">
-              <label className="form-label">{t('letters.icon')}</label>
+              <label className="form-label">Icon Emoji</label>
               <input
                 type="text"
                 className="form-control"
-                placeholder="👩"
+                placeholder="🍎"
                 value={currentLetter?.icon_emoji || '⭐'}
                 onChange={(e) => setCurrentLetter({ ...currentLetter, icon_emoji: e.target.value })}
               />
@@ -418,11 +375,11 @@ export const LettersPage: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">{t('letters.explanation')}</label>
+            <label className="form-label">Child Explanation & Sentence</label>
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. அன்பான அம்மா"
+              placeholder="e.g. A is for Apple. Sweet and crunchy!"
               value={currentLetter?.explanation || ''}
               onChange={(e) => setCurrentLetter({ ...currentLetter, explanation: e.target.value })}
             />
@@ -432,7 +389,7 @@ export const LettersPage: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <FileUpload
               type="audio"
-              label={t('letters.audioFile')}
+              label="Audio Pronunciation"
               currentValue={currentLetter?.audio_path}
               onUploaded={(path) => setCurrentLetter((prev) => (prev ? { ...prev, audio_path: path } : prev))}
               onClear={() => setCurrentLetter((prev) => (prev ? { ...prev, audio_path: null } : prev))}
@@ -440,18 +397,18 @@ export const LettersPage: React.FC = () => {
             <div>
               <FileUpload
                 type="image"
-                label={t('letters.imageFile')}
+                label="Alphabet Illustration Image"
                 currentValue={currentLetter?.image_path}
                 onUploaded={(path) => setCurrentLetter((prev) => (prev ? { ...prev, image_path: path } : prev))}
                 onClear={() => setCurrentLetter((prev) => (prev ? { ...prev, image_path: null } : prev))}
               />
               <div className="form-group" style={{ marginTop: '8px' }}>
-                <label className="form-label" style={{ fontSize: '12px', fontWeight: 600 }}>Cloudinary / Image URL</label>
+                <label className="form-label" style={{ fontSize: '12px', fontWeight: 600 }}>Image Asset Path or Cloudinary URL</label>
                 <input
                   type="text"
                   className="form-control"
                   style={{ fontSize: '13px' }}
-                  placeholder="https://res.cloudinary.com/... or assets/images/..."
+                  placeholder="assets/images/alphabets/apple.png or https://..."
                   value={currentLetter?.image_path || ''}
                   onChange={(e) => setCurrentLetter((prev) => (prev ? { ...prev, image_path: e.target.value } : prev))}
                 />
@@ -459,10 +416,10 @@ export const LettersPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Optional Video File Upload for Letter */}
+          {/* Optional Video File Upload */}
           <FileUpload
             type="video"
-            label="🎥 எழுத்து கற்பிக்கும் காணொளி (Teaching Video - Optional)"
+            label="🎥 Letter Teaching Video (Optional)"
             currentValue={currentLetter?.video_url}
             onUploaded={(path) => setCurrentLetter((prev) => (prev ? { ...prev, video_url: path } : prev))}
             onClear={() => setCurrentLetter((prev) => (prev ? { ...prev, video_url: null } : prev))}
@@ -470,10 +427,10 @@ export const LettersPage: React.FC = () => {
 
           <div className="modal-footer" style={{ margin: '20px -24px -24px', padding: '16px 24px' }}>
             <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-secondary">
-              {t('common.cancel')}
+              Cancel
             </button>
             <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-              {isSubmitting ? t('common.saving') : t('common.save')}
+              {isSubmitting ? 'Saving...' : 'Save Letter'}
             </button>
           </div>
         </form>

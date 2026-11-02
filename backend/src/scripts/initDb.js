@@ -78,20 +78,8 @@ async function initDatabase() {
     );
     console.log(`👤 Super Admin verified. Username: 'superadmin', Default Password: '${superAdminPassword}'`);
 
-    // 5. Seed Cloudinary Letter Videos
-    try {
-      const seedVideosScript = path.join(__dirname, 'seedCloudinaryVideos.js');
-      if (fs.existsSync(seedVideosScript)) {
-        console.log('🎬 Seeding Cloudinary letter videos...');
-        const { execSync } = require('child_process');
-        execSync(`node "${seedVideosScript}"`, { stdio: 'inherit' });
-      }
-    } catch (vidErr) {
-      console.warn('⚠️ Video seeding notice:', vidErr.message);
-    }
-
-    console.log('====================================================');
-    console.log('🎉 AGARAM Database setup completed successfully!');
+    // 5. English Setup Complete
+    console.log("🎉 ALPHABETS Database setup completed successfully!");
     console.log('====================================================');
   } catch (error) {
     console.error('❌ Database initialization error:', error.message);

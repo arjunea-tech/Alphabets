@@ -23,7 +23,7 @@ class QuizScreen extends StatelessWidget {
       builder: (context, _) {
         return Scaffold(
           appBar: KidAppBar(
-            title: 'வினாடி வினா',
+            title: 'Alphabet Quizzes',
             starCount: progressService.stars,
             showBack: false,
           ),
@@ -69,7 +69,7 @@ class QuizScreen extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Text(
-                                      'அறிவு அரங்கம்',
+                                      'Quiz Arena',
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
@@ -79,7 +79,7 @@ class QuizScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    'நாம் கற்றதை சோதிப்போம்!',
+                                    'Test What You Have Learned!',
                                     style: AppTextStyles.cardTitle.copyWith(
                                       fontSize: 18,
                                       color: const Color(0xFF1A237E),
@@ -91,7 +91,7 @@ class QuizScreen extends StatelessWidget {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        'உயர் மதிப்பெண்: ${progressService.quizHighScore}',
+                                        'High Score: ${progressService.quizHighScore}',
                                         style: const TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w700,
@@ -244,7 +244,7 @@ class QuizScreen extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        '${category.questionCount} வினாக்கள் • +${category.questionCount}',
+                        '${category.questionCount} Questions • +${category.questionCount}',
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,

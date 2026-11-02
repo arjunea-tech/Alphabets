@@ -46,7 +46,7 @@ class LetterNavigator extends StatelessWidget {
             icon: Icons.arrow_back_rounded,
             enabled: hasPrev,
             onTap: onPrevious,
-            tooltip: 'முந்தைய எழுத்து',
+            tooltip: 'Previous letter',
           ),
           const SizedBox(width: 14),
 
@@ -81,7 +81,7 @@ class LetterNavigator extends StatelessWidget {
             icon: Icons.arrow_forward_rounded,
             enabled: hasNext,
             onTap: onNext,
-            tooltip: 'அடுத்த எழுத்து',
+            tooltip: 'Next letter',
           ),
         ],
       ),

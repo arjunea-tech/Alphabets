@@ -153,14 +153,14 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> with SingleTickerProvid
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'வினா ${_currentIndex + 1} / $total',
+                          'Question ${_currentIndex + 1} / $total',
                           style: AppTextStyles.bodyTextBold.copyWith(color: AppColors.textMuted, fontSize: 14),
                         ),
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'மதிப்பெண்: $_score',
+                              'Score: $_score',
                               style: AppTextStyles.bodyTextBold.copyWith(color: AppColors.primaryDark, fontSize: 14),
                             ),
                             const SizedBox(width: 4),
@@ -369,7 +369,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> with SingleTickerProvid
                           child: Column(
                             children: [
                               Text(
-                                isCorrect ? 'சரியான விடை! மிகச் சிறப்பு!' : 'மீண்டும் முயற்சி செய்யலாம்!',
+                                isCorrect ? 'Great Job! That\'s Correct!' : 'Keep Trying! You Can Do It!',
                                 style: AppTextStyles.bodyTextBold.copyWith(
                                   fontSize: 15,
                                   color: isCorrect ? const Color(0xFF2E7D32) : const Color(0xFFE65100),
@@ -406,7 +406,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> with SingleTickerProvid
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                _currentIndex == total - 1 ? 'மதிப்பெண் பார்க்க' : 'அடுத்த வினா',
+                                _currentIndex == total - 1 ? 'View Results' : 'Next Question',
                                 style: AppTextStyles.buttonText,
                                 textAlign: TextAlign.center,
                               ),

@@ -1,3 +1,4 @@
+import 'english_letter_outlines.dart';
 // GENERATED FILE - do not edit by hand.
 // Source: ai_model/scripts/generate_tamil_stroke_data.py (Noto Sans Tamil, OFL).
 // Coordinates are normalized to the writing guide square (see WritingEngine.guideRect).
@@ -48,30 +49,56 @@ class TamilLetterOutlines {
 
   static final Map<String, List<List<Offset>>> _cache = {};
 
-  static bool has(String letter) => _data.containsKey(letter);
+  static void clearCache() => _cache.clear();
+
+  static bool has(String letter) =>
+      EnglishLetterOutlines.contours.containsKey(letter) ||
+      EnglishLetterOutlines.contours.containsKey(letter.toUpperCase()) ||
+      _data.containsKey(letter);
+
+  static List<List<Offset>> _parseRaw(String raw) {
+    return raw.split('|').map((contour) {
+      return contour.split(' ').map((pair) {
+        final i = pair.indexOf(',');
+        return Offset(
+          int.parse(pair.substring(0, i)) / 1000.0,
+          int.parse(pair.substring(i + 1)) / 1000.0,
+        );
+      }).toList();
+    }).toList();
+  }
 
   /// Normalized contours (0..1) for [letter], or null if not available.
   static List<List<Offset>>? contours(String letter) {
+    if (_cache.containsKey(letter)) return _cache[letter];
+
+    // 1. Exact case match in English outlines (preserving lowercase 'a'-'z' vs uppercase 'A'-'Z')
+    if (EnglishLetterOutlines.contours.containsKey(letter)) {
+      final parsed = _parseRaw(EnglishLetterOutlines.contours[letter]!);
+      _cache[letter] = parsed;
+      return parsed;
+    }
+
+    // 2. Fallback to uppercase only if exact case is missing
+    final upper = letter.toUpperCase();
+    if (EnglishLetterOutlines.contours.containsKey(upper)) {
+      final parsed = _parseRaw(EnglishLetterOutlines.contours[upper]!);
+      _cache[upper] = parsed;
+      return parsed;
+    }
+
     final raw = _data[letter];
     if (raw == null) return null;
-    return _cache.putIfAbsent(letter, () {
-      return raw.split('|').map((contour) {
-        return contour.split(' ').map((pair) {
-          final i = pair.indexOf(',');
-          return Offset(
-            int.parse(pair.substring(0, i)) / 1000.0,
-            int.parse(pair.substring(i + 1)) / 1000.0,
-          );
-        }).toList();
-      }).toList();
-    });
+    final parsed = _parseRaw(raw);
+    _cache[letter] = parsed;
+    return parsed;
   }
 
   /// Outline path mapped into [frame] (the guide square on the canvas).
   static Path? pathFor(String letter, Rect frame) {
     final cs = contours(letter);
     if (cs == null) return null;
-    final path = Path();
+    final path = Path()..fillType = PathFillType.evenOdd;
     for (final c in cs) {
       if (c.isEmpty) continue;
       path.moveTo(frame.left + c[0].dx * frame.width, frame.top + c[0].dy * frame.height);

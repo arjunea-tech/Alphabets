@@ -24,25 +24,25 @@ class StrokeAttemptResult {
 
   bool get isCorrect => status == StrokeAttemptStatus.correct;
 
-  /// Short Tamil hint shown/spoken to the child.
+  /// Short English hint shown/spoken to the child.
   String get hint {
     switch (status) {
       case StrokeAttemptStatus.correct:
-        return 'அருமை!';
+        return 'Awesome!';
       case StrokeAttemptStatus.tooShort:
-        return 'விரலை எடுக்காமல் கோடு முழுவதும் எழுதவும்';
+        return 'Keep your finger on the screen and trace the whole line!';
       case StrokeAttemptStatus.wrongStart:
-        return 'பச்சை வட்டத்திலிருந்து தொடங்கவும்';
+        return 'Start at the green dot!';
       case StrokeAttemptStatus.wrongDirection:
-        return 'திசை தவறு! பச்சையில் தொடங்கி சிவப்பில் முடிக்கவும்';
+        return 'Wrong direction! Start at the green dot and slide to the red dot!';
       case StrokeAttemptStatus.offPath:
-        return 'எழுத்தின் கோட்டின் மேலேயே எழுதவும்';
+        return 'Stay right on the letter line!';
       case StrokeAttemptStatus.incomplete:
-        return 'சிவப்பு புள்ளி வரை முழுமையாக எழுதவும்';
+        return 'Trace all the way to the red dot!';
       case StrokeAttemptStatus.missedDot:
-        return 'பச்சை வட்டத்தின் மேல் புள்ளி வைக்கவும்';
+        return 'Tap on the green circle to make the dot!';
       case StrokeAttemptStatus.skippedCheckpoints:
-        return 'எல்லா நட்சத்திரங்களையும் தொட்டு முழுமையாக எழுதவும் ⭐';
+        return 'Collect all the stars along the track! ⭐';
     }
   }
 }

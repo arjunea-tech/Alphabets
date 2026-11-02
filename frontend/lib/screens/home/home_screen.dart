@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../services/language_service.dart';
 import '../../services/progress_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -7,7 +6,6 @@ import '../../widgets/bouncy_button.dart';
 import '../../widgets/kid_scaffold_background.dart';
 import '../../widgets/mascot_widget.dart';
 import '../../widgets/star_counter.dart';
-import '../language/language_selection_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
 import '../writing/writing_practice_screen.dart';
@@ -27,7 +25,9 @@ class HomeScreen extends StatelessWidget {
     return ListenableBuilder(
       listenable: progressService,
       builder: (context, _) {
-        final childName = progressService.childName;
+        final childName = progressService.childName.isEmpty || progressService.childName == 'Kid' || progressService.childName == 'Kid'
+            ? 'Little Learner'
+            : progressService.childName;
         final stars = progressService.stars;
         final completedLetters = progressService.completedLettersCount;
         final quizScore = progressService.quizHighScore;
@@ -44,19 +44,17 @@ class HomeScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Top App Bar: Brand Logo & Star Counter & Settings
+                        // Top App Bar: Brand Logo & Star Counter & Profile & Settings
                         _buildTopHeader(context, stars),
                         const SizedBox(height: 16),
 
-                        // Hero Welcome Card with AGARAM Mascot (welcome.png)
+                        // Hero Welcome Card with Mascot
                         _buildMascotHeroCard(childName),
                         const SizedBox(height: 22),
 
                         // Destinations Title
                         Text(
-                          LanguageService.instance.currentLanguageCode == 'te'
-                              ? 'నేర్చుకునే ప్రపంచాలు'
-                              : (LanguageService.instance.currentLanguageCode == 'en' ? 'Learning Worlds' : 'கற்றல் உலகங்கள்'),
+                          'Learning Worlds',
                           style: AppTextStyles.cardTitle.copyWith(
                             fontSize: 19,
                             fontWeight: FontWeight.w900,
@@ -65,17 +63,11 @@ class HomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
 
-                        // Destination 1: கற்றுக்கொள்வோம் (Features learn.png)
+                        // Destination 1: Learn Alphabets
                         _buildDestinationCard(
-                          title: LanguageService.instance.currentLanguageCode == 'te'
-                              ? 'అక్షరాలు నేర్చుకుందాం'
-                              : (LanguageService.instance.currentLanguageCode == 'en' ? 'Learn Letters' : 'கற்றுக்கொள்வோம்'),
-                          subtitle: LanguageService.instance.currentLanguageCode == 'te'
-                              ? 'సరదాగా అక్షరాలను నేర్చుకుందాం!'
-                              : (LanguageService.instance.currentLanguageCode == 'en' ? 'Learn letters with joy!' : 'தமிழை மகிழ்ச்சியாக கற்போம்!'),
-                          tag: LanguageService.instance.currentLanguageCode == 'te'
-                              ? '16 అచ్చులు • 36 హల్లులు'
-                              : (LanguageService.instance.currentLanguageCode == 'en' ? 'Vowels & Consonants' : '12 உயிர் • 18 மெய் • 216 உயிர்மெய்'),
+                          title: 'Learn Alphabets',
+                          subtitle: 'Explore all 26 letters A to Z with fun!',
+                          tag: '26 Letters • 5 Vowels • 21 Consonants',
                           imageAsset: 'assets/images/learn.png',
                           gradient: const [Color(0xFFFF9F1C), Color(0xFFFF6B6B)],
                           borderColor: const Color(0xFFFF9F1C),
@@ -83,11 +75,11 @@ class HomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 14),
 
-                        // Destination 2: விளையாடிக் கற்போம் (Features game.png)
+                        // Destination 2: Play & Learn
                         _buildDestinationCard(
-                          title: 'விளையாடிக் கற்போம்',
-                          subtitle: 'விளையாடி தமிழை கற்போம்!',
-                          tag: 'சொல் கார் பந்தயம் • எழுத்துக் கூடை',
+                          title: 'Play & Learn',
+                          subtitle: 'Fun educational alphabet games!',
+                          tag: 'Car Racing • Letter Basket • Runner',
                           imageAsset: 'assets/images/game.png',
                           gradient: const [Color(0xFF8338EC), Color(0xFF3A86FF)],
                           borderColor: const Color(0xFF8338EC),
@@ -95,11 +87,11 @@ class HomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 14),
 
-                        // Destination 3: காணொளிகள் (Features video.png)
+                        // Destination 3: Educational Videos
                         _buildDestinationCard(
-                          title: 'காணொளிகள்',
-                          subtitle: 'பார்த்து கற்றுக்கொள்வோம்!',
-                          tag: 'உயிர் • மெய் • ஆய்த எழுத்துகள்',
+                          title: 'Educational Videos',
+                          subtitle: 'Watch and sing along with ABC phonics!',
+                          tag: 'Alphabet Songs • Phonics • Stories',
                           imageAsset: 'assets/images/video.png',
                           gradient: const [Color(0xFF2EC4B6), Color(0xFF0F9F90)],
                           borderColor: const Color(0xFF2EC4B6),
@@ -107,11 +99,11 @@ class HomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 14),
 
-                        // Destination 4: வினாடி வினா (Features quiz.png)
+                        // Destination 4: Alphabet Quizzes
                         _buildDestinationCard(
-                          title: 'வினாடி வினா',
-                          subtitle: 'நாம் கற்றதை சோதிப்போம்!',
-                          tag: '5 வினாடி வினா பிரிவுகள் • பதக்கங்கள்',
+                          title: 'Alphabet Quizzes',
+                          subtitle: 'Test what you have learned!',
+                          tag: 'Letter Quizzes • Stars & Badges',
                           imageAsset: 'assets/images/quiz.png',
                           gradient: const [Color(0xFF4361EE), Color(0xFF4CC9F0)],
                           borderColor: const Color(0xFF4361EE),
@@ -119,11 +111,11 @@ class HomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 14),
 
-                        // Destination 5: எழுதிப் பழகு (Features writing.png)
+                        // Destination 5: Writing Practice
                         _buildDestinationCard(
-                          title: 'எழுதிப் பழகு',
-                          subtitle: 'விரலால் எழுதிப் பழகுவோம்!',
-                          tag: 'உயிர் • மெய் • உயிர்மெய் எழுத்துகள்',
+                          title: 'Writing Practice',
+                          subtitle: 'Trace letters A to Z with your finger!',
+                          tag: '26 English Alphabets',
                           imageAsset: 'assets/images/writing.png',
                           gradient: const [Color(0xFFFF006E), Color(0xFFFF70A6)],
                           borderColor: const Color(0xFFFF006E),
@@ -139,7 +131,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 22),
 
-                        // Today's Progress: "இன்றைய முன்னேற்றம்"
+                        // Today's Progress Section
                         _buildProgressSection(completedLetters, stars, quizScore),
                         const SizedBox(height: 20),
                       ],
@@ -155,8 +147,6 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildTopHeader(BuildContext context, int stars) {
-    final langService = LanguageService.instance;
-
     return Row(
       children: [
         // Brand logo
@@ -179,11 +169,12 @@ class HomeScreen extends StatelessWidget {
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                langService.brandTitle,
+                'ALPHABETS',
                 style: AppTextStyles.brandTitle.copyWith(
-                  fontSize: 22,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
                   color: Colors.white,
-                  letterSpacing: 1.0,
+                  letterSpacing: 1.2,
                 ),
               ),
             ),
@@ -191,56 +182,44 @@ class HomeScreen extends StatelessWidget {
         ),
         const SizedBox(width: 8),
 
-        // Language Switcher Chip: [ 🇮🇳 தமிழ் ▾ ]
-        BouncyButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const LanguageSelectionScreen(),
+        // Edition Tag
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFF3A86FF), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF3A86FF).withValues(alpha: 0.12),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
               ),
-            );
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFF3A86FF), width: 1.8),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF3A86FF).withValues(alpha: 0.15),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+            ],
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('🇬🇧', style: TextStyle(fontSize: 14)),
+              SizedBox(width: 4),
+              Text(
+                'English',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1D4ED8),
                 ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(langService.currentLanguage.flagEmoji, style: const TextStyle(fontSize: 14)),
-                const SizedBox(width: 4),
-                Text(
-                  langService.currentLanguage.nativeName,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1D4ED8),
-                  ),
-                ),
-                const SizedBox(width: 2),
-                const Icon(Icons.arrow_drop_down_rounded, size: 18, color: Color(0xFF1D4ED8)),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(width: 8),
+        const Spacer(),
 
         // Star Counter
         StarCounter(count: stars),
         const SizedBox(width: 8),
 
-        // Profile Button: "என் சுயவிவரம்"
+        // Profile Button
         BouncyButton(
           onPressed: () {
             Navigator.push(
@@ -251,7 +230,7 @@ class HomeScreen extends StatelessWidget {
             );
           },
           child: Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(9),
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
@@ -264,7 +243,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(Icons.person_rounded, color: Color(0xFFFF9F1C), size: 22),
+            child: const Icon(Icons.person_rounded, color: Color(0xFFFF9F1C), size: 20),
           ),
         ),
         const SizedBox(width: 8),
@@ -280,7 +259,7 @@ class HomeScreen extends StatelessWidget {
             );
           },
           child: Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(9),
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
@@ -293,7 +272,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(Icons.settings_rounded, color: AppColors.textDark, size: 22),
+            child: const Icon(Icons.settings_rounded, color: AppColors.textDark, size: 20),
           ),
         ),
       ],
@@ -338,7 +317,7 @@ class HomeScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Text(
-                    '${LanguageService.instance.greeting} $childName!',
+                    'Hello $childName! 👋',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
@@ -348,9 +327,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  LanguageService.instance.currentLanguageCode == 'te'
-                      ? 'తెలుగు సులభంగా నేర్చుకుందాం!'
-                      : (LanguageService.instance.currentLanguageCode == 'en' ? 'Let\'s learn together!' : 'தமிழை எளிதாகக் கற்கலாம் வா!'),
+                  "Let's learn English Alphabets!",
                   style: AppTextStyles.cardTitle.copyWith(
                     fontSize: 19,
                     fontWeight: FontWeight.w900,
@@ -360,11 +337,9 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  LanguageService.instance.currentLanguageCode == 'te'
-                      ? '“అక్షరాలతో మొదలు, జ్ఞానంతో ముందుకు!”'
-                      : (LanguageService.instance.currentLanguageCode == 'en' ? '“Start with letters, soar with knowledge!”' : '“அகரத்தில் தொடங்கி, தமிழில் சிறக்க!”'),
+                  '“From A to Z, learn with fun and joy!”',
                   style: AppTextStyles.tagLine.copyWith(
-                    fontSize: 12.5,
+                    fontSize: 13,
                     color: const Color(0xFF7A4400),
                   ),
                 ),
@@ -372,14 +347,14 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-          // AGARAM Mascot (welcome.png) placed prominently
-          Positioned(
+          // Mascot
+          const Positioned(
             right: 8,
             bottom: -6,
-            child: const MascotWidget(
+            child: MascotWidget(
               pose: MascotPose.welcome,
               size: MascotSize.medium,
-              customHeight: 150,
+              customHeight: 145,
               showGlow: true,
               animate: true,
             ),
@@ -553,7 +528,7 @@ class HomeScreen extends StatelessWidget {
               const Icon(Icons.insights_rounded, color: AppColors.primary, size: 22),
               const SizedBox(width: 8),
               Text(
-                'இன்றைய முன்னேற்றம்',
+                "Today's Progress",
                 style: AppTextStyles.cardTitle.copyWith(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -567,7 +542,7 @@ class HomeScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildProgressStat(
-                  'கற்ற பாடங்கள்',
+                  'Letters Learned',
                   '$lettersCount',
                   Icons.auto_stories_rounded,
                   AppColors.secondary,
@@ -575,7 +550,7 @@ class HomeScreen extends StatelessWidget {
               ),
               Expanded(
                 child: _buildProgressStat(
-                  'நட்சத்திரங்கள்',
+                  'Total Stars',
                   '$stars',
                   Icons.star_rounded,
                   AppColors.starGold,
@@ -583,7 +558,7 @@ class HomeScreen extends StatelessWidget {
               ),
               Expanded(
                 child: _buildProgressStat(
-                  'வினாடி வினா',
+                  'Quiz Score',
                   '$quizScore',
                   Icons.emoji_events_rounded,
                   AppColors.candyPurple,

@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../data/uyir_data.dart';
+import '../../data/english_letters_data.dart';
 import '../../models/agaram_run_game_model.dart';
 import '../../models/letter_model.dart';
 import '../../services/audio_service.dart';
@@ -127,7 +128,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
   // --------------------------------------------------------------------------
   void _buildLevels() {
     // Level 1: Uyir Letters (Short & Long vowels)
-    final uyirLetters = uyirLettersList;
+    final uyirLetters = englishLettersList;
 
     // Build Level 1 World Layout (Length: 3200 logical pixels)
     final level1Platforms = <PlatformTile>[
@@ -167,29 +168,29 @@ class _AgaramRunGameState extends State<AgaramRunGame>
 
     // Collectibles (Target Uyir Letters + Bonus Stars)
     final level1Collectibles = <CollectibleItem>[
-      // Uyir Letter 1: அ (Spaced for early collection)
+      // Uyir Letter 1:  (Spaced for early collection)
       CollectibleItem(id: 1, x: 200, y: 260, type: CollectibleType.targetLetter, letterModel: uyirLetters[0]),
       // Star (Clear space before first jump at x=420)
       CollectibleItem(id: 2, x: 290, y: 240, type: CollectibleType.bonusStar),
 
-      // Target: ஆ on floating platform 2 & Target: இ on platform 3
+      // Target:  on floating platform 2 & Target:  on platform 3
       CollectibleItem(id: 3, x: 540, y: 200, type: CollectibleType.targetLetter, letterModel: uyirLetters[1]),
-      CollectibleItem(id: 4, x: 745, y: 150, type: CollectibleType.targetLetter, letterModel: uyirLetters[2]), // இ
+      CollectibleItem(id: 4, x: 745, y: 150, type: CollectibleType.targetLetter, letterModel: uyirLetters[2]), //  
 
-      // Ground segment 2: Letter ஈ placed with generous approach
+      // Ground segment 2: Letter  placed with generous approach
       CollectibleItem(id: 5, x: 1080, y: 245, type: CollectibleType.targetLetter, letterModel: uyirLetters[3]),
       // Star in air arc
       CollectibleItem(id: 6, x: 1150, y: 220, type: CollectibleType.bonusStar),
 
-      // Moving ledge letter: உ
+      // Moving ledge letter: 
       CollectibleItem(id: 7, x: 1540, y: 175, type: CollectibleType.targetLetter, letterModel: uyirLetters[4]),
 
-      // Letters: ஊ, எ, ஏ, ஐ
+      // Letters: , , , 
       CollectibleItem(id: 8, x: 1860, y: 260, type: CollectibleType.targetLetter, letterModel: uyirLetters[5]),
       CollectibleItem(id: 9, x: 2125, y: 125, type: CollectibleType.targetLetter, letterModel: uyirLetters[6]),
       CollectibleItem(id: 10, x: 2335, y: 85, type: CollectibleType.targetLetter, letterModel: uyirLetters[7]),
       
-      // Final Stretch Letters: ஒ, ஓ, ஔ
+      // Final Stretch Letters: , , 
       CollectibleItem(id: 11, x: 2580, y: 260, type: CollectibleType.targetLetter, letterModel: uyirLetters[8]),
       CollectibleItem(id: 12, x: 2800, y: 260, type: CollectibleType.targetLetter, letterModel: uyirLetters[9]),
       CollectibleItem(id: 13, x: 2980, y: 260, type: CollectibleType.targetLetter, letterModel: uyirLetters[10]),
@@ -216,9 +217,9 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     _levels = [
       AgaramRunLevel(
         levelNumber: 1,
-        title: 'உயிர் எழுத்துகள்',
-        subtitle: 'கிராமத்து ஓட்டம்',
-        description: 'ஓடி விளையாடி 12 உயிர் எழுத்துகளையும் சேகரித்து அகரம் இலக்கை அடையுங்கள்!',
+        title: 'Alphabet Runner',
+        subtitle: 'Village Run',
+        description: 'Run, jump, and collect English letters to reach the goal line!',
         targetLetters: uyirLetters.take(12).toList(),
         worldWidth: 3200,
         platforms: level1Platforms,
@@ -458,7 +459,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
           // Bonus star collected!
           _score += 5;
           _starsCollected++;
-          _showToast('நட்சத்திரம்! +5', Colors.amberAccent);
+          _showToast('Star! +5', Colors.amberAccent);
           _emitSparkles(item.x, item.y, Colors.amberAccent);
         } else if (item.type == CollectibleType.targetLetter) {
           final letter = item.letter;
@@ -468,7 +469,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
             // Correct Target Letter Collected!
             _score += 10;
             _lettersCollected++;
-            _showToast('அருமை! "$letter" +10', const Color(0xFF00E676));
+            _showToast('Awesome! "$letter" +10', const Color(0xFF00E676));
             _emitSparkles(item.x, item.y, const Color(0xFF00E676), isLetterBurst: true);
 
             // Play authentic native Tamil letter pronunciation
@@ -492,7 +493,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
             });
           } else {
             // Wrong Letter Touched (Friendly gentle feedback + letter audio)
-            _showToast('இது "$letter" - இலக்கு: "$target" 😊', const Color(0xFFFF8A65));
+            _showToast('This is "$letter" - Target: "$target" 😊', const Color(0xFFFF8A65));
             _audioService.playLetterSound(
               context,
               letter: item.letter,
@@ -543,7 +544,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
       _playerVy = -240.0;
     }
 
-    _showToast('கவனம்! ❤️ -1', Colors.pinkAccent);
+    _showToast('Watch out! ❤️ -1', Colors.pinkAccent);
     _audioService.playRetryFeedback(context);
 
     if (_lives <= 0) {
@@ -798,7 +799,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
 
           const SizedBox(width: 8),
 
-          // Target Letter Prompt Capsule: 🎯 "அ எழுத்தை கண்டுபிடி!"
+          // Target Letter Prompt Capsule: 🎯 "  !"
           ScaleTransition(
             scale: _pulseAnim,
             child: GestureDetector(
@@ -832,7 +833,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                     ),
                     const SizedBox(width: 6),
                     const Text(
-                      'எழுத்தை சேகரி!',
+                      'Collect Letter!',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
@@ -1007,7 +1008,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
             children: [
               Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 32),
               Text(
-                'குதி ⬆',
+                'JUMP ⬆',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
@@ -1068,7 +1069,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
 
                 // Title
                 const Text(
-                  'அகரம் ஓட்டம்',
+                  'Alphabet Runner',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
@@ -1079,7 +1080,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
 
                 // Subtitle
                 const Text(
-                  '“ஓடி விளையாடி தமிழ் எழுத்துகளை கற்போம்!”',
+                  '“Run and learn English alphabet letters!”',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -1110,7 +1111,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                     ),
                     child: const Center(
                       child: Text(
-                        'விளையாடலாம் ▶',
+                        'Play Now ▶',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
@@ -1127,7 +1128,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                   onPressed: _showHowToPlayDialog,
                   icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF2E7D32), size: 18),
                   label: const Text(
-                    'எப்படி விளையாடுவது? 📖',
+                    'How to Play? 📖',
                     style: TextStyle(
                       color: Color(0xFF2E7D32),
                       fontWeight: FontWeight.bold,
@@ -1153,7 +1154,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
           children: [
             Text('📖 ', style: TextStyle(fontSize: 22)),
             Text(
-              'எப்படி விளையாடுவது?',
+              'How to Play',
               style: TextStyle(
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF1B5E20),
@@ -1166,17 +1167,17 @@ class _AgaramRunGameState extends State<AgaramRunGame>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHowToPlayItem('◀ ▶', 'இடது, வலது ஓடப் பயன்படுத்தவும்'),
-            _buildHowToPlayItem('⬆', 'குதித்து மேலே செல்ல அழுத்தவும்'),
-            _buildHowToPlayItem('🎯', 'கேட்கப்படும் சரியான தமிழ் எழுத்தை சேகரிக்கவும்'),
-            _buildHowToPlayItem('⚠️', 'தடைகளை குதித்து தவிர்க்கவும்'),
-            _buildHowToPlayItem('🏁', 'அகரம் முடிவு இலக்கை அடைந்து வெல்லுங்கள்!'),
+            _buildHowToPlayItem('◀ ▶', 'Use buttons to move left and right'),
+            _buildHowToPlayItem('⬆', 'Press to jump up onto platforms'),
+            _buildHowToPlayItem('🎯', 'Collect the target English alphabet letters'),
+            _buildHowToPlayItem('⚠️', 'Avoid obstacles to save hearts'),
+            _buildHowToPlayItem('🏁', 'Reach the finish line to win!'),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('புரிந்தது 👍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            child: const Text('Got it! 👍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ),
         ],
       ),
@@ -1222,7 +1223,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'விளையாட்டு இடைநிறுத்தப்பட்டது',
+                'Game Paused',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1B5E20)),
               ),
               const SizedBox(height: 20),
@@ -1233,7 +1234,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                   foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 48),
                 ),
-                child: const Text('தொடரவும் ▶', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text('Resume ▶', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 8),
               OutlinedButton(
@@ -1241,12 +1242,12 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 48),
                 ),
-                child: const Text('மீண்டும் தொடங்கு 🔄'),
+                child: const Text('Restart 🔄'),
               ),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('வெளியேறு 🏠'),
+                child: const Text('Exit 🏠'),
               ),
             ],
           ),
@@ -1272,17 +1273,17 @@ class _AgaramRunGameState extends State<AgaramRunGame>
             children: [
               const Text('🎉', style: TextStyle(fontSize: 48)),
               const Text(
-                'வாழ்த்துகள்!',
+                'Congratulations!',
                 style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Color(0xFFE65100)),
               ),
               const Text(
-                'நீங்கள் முதல் நிலையை முடித்துவிட்டீர்கள்!',
+                'You completed the level!',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF5D4037)),
               ),
               const SizedBox(height: 16),
-              Text('இறுதி மதிப்பெண்: $_score', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-              Text('சேகரித்த எழுத்துகள்: $_lettersCollected', style: const TextStyle(fontSize: 14)),
-              Text('சேகரித்த நட்சத்திரங்கள்: $_starsCollected', style: const TextStyle(fontSize: 14)),
+              Text('Final Score: $_score', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+              Text('Letters Collected: $_lettersCollected', style: const TextStyle(fontSize: 14)),
+              Text('Stars Collected: $_starsCollected', style: const TextStyle(fontSize: 14)),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _startGame,
@@ -1291,12 +1292,12 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                   foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 50),
                 ),
-                child: const Text('மீண்டும் விளையாடு', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text('Play Again', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('முகப்பு'),
+                child: const Text('Home'),
               ),
             ],
           ),
@@ -1322,11 +1323,11 @@ class _AgaramRunGameState extends State<AgaramRunGame>
             children: [
               const Text('❤️', style: TextStyle(fontSize: 48)),
               const Text(
-                'மீண்டும் முயற்சி செய்யலாம்!',
+                'Try Again!',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.pinkAccent),
               ),
               const SizedBox(height: 8),
-              Text('மதிப்பெண்: $_score', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text('Score: $_score', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _startGame,
@@ -1335,12 +1336,12 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                   foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 50),
                 ),
-                child: const Text('மீண்டும் விளையாடு 🔄', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text('Play Again 🔄', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('வெளியேறு 🏠'),
+                child: const Text('Exit 🏠'),
               ),
             ],
           ),
@@ -1413,7 +1414,7 @@ class _AgaramWorldPainter extends CustomPainter {
       _drawPlatform(canvas, p);
     }
 
-    // 5. Goal Finish Arch 🏁 "அகரம் முடிவு"
+    // 5. Goal Finish Arch 🏁 " "
     _drawGoalArch(canvas, goalX);
 
     // 6. Obstacles
@@ -1508,7 +1509,7 @@ class _AgaramWorldPainter extends CustomPainter {
 
     // Finish Text 🏁
     final textSpan = TextSpan(
-      text: 'அகரம் முடிவு 🏁',
+      text: 'Finish Line 🏁',
       style: GoogleFonts.catamaran(
         fontSize: 12,
         fontWeight: FontWeight.w900,

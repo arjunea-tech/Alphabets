@@ -559,15 +559,9 @@ class TamilAudioService {
   /// Clean and extract pure spoken Tamil text from a string, removing English glosses like (Forest)
   static String extractSpokenTamilText(String input) {
     var cleaned = input.trim();
-    // Remove bracketed content like (Forest), (Rabbit), etc.
     cleaned = cleaned.replaceAll(RegExp(r'\([^)]*\)'), '');
     cleaned = cleaned.replaceAll(RegExp(r'\[[^\]]*\]'), '');
-    // If mixed with English text, extract pure Tamil characters
-    final tamilOnly = cleaned.replaceAll(RegExp(r'[a-zA-Z0-9_\-\:\|\/\\]+'), ' ').trim();
-    if (tamilOnly.isNotEmpty) {
-      return tamilOnly.replaceAll(RegExp(r'\s+'), ' ').trim();
-    }
-    return cleaned;
+    return cleaned.trim();
   }
 
   /// Maps any Tamil text or key to its relative audio asset path
@@ -879,7 +873,7 @@ if (\$taVoice) {
       showAudioIndicator(
         context,
         text: '+',
-        subtext: 'கூட்டல்',
+        subtext: 'Plus',
       );
     }
 
@@ -895,7 +889,7 @@ if (\$taVoice) {
       }
     }
 
-    await playTamilAudio('கூட்டல்');
+    await playTamilAudio('Plus');
   }
 
   /// Convenience method for speaking any text

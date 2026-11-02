@@ -58,7 +58,7 @@ class AudioService {
     );
   }
 
-  /// Plays pronunciation for the '+' (கூட்டல்) operator symbol
+  /// Plays pronunciation for the '+' () operator symbol
   Future<void> playPlusSound(BuildContext context, {bool showIndicator = true}) async {
     await TamilAudioService.instance.playPlusSound(context, showIndicator: showIndicator);
   }

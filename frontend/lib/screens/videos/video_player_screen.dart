@@ -91,7 +91,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     if (resolvedUrl == null || resolvedUrl.isEmpty) {
       setState(() {
         _hasError = true;
-        _errorMessage = 'காணொளி முகவரி கிடைக்கவில்லை (Video URL not found).';
+        _errorMessage = 'Video URL not found.';
       });
       return;
     }
@@ -118,7 +118,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       if (mounted) {
         setState(() {
           _hasError = true;
-          _errorMessage = 'காணொளியை இயக்க முடியவில்லை: $e';
+          _errorMessage = 'Could not play video: $e';
         });
       }
     }
@@ -169,10 +169,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     widget.progressService.addStars(2);
     CelebrationDialog.show(
       context,
-      title: 'காணொளி முடிந்தது! 🎉',
-      message: 'காணொளியைப் பார்த்து மகிழ்ந்ததற்கு வாழ்த்துகள்! உங்களுக்கு 2 நட்சத்திரங்கள் கிடைத்துள்ளன!',
+      title: 'Video Completed! 🎉',
+      message: 'Congratulations on finishing the lesson! You earned 2 stars!',
       starsEarned: 2,
-      buttonText: 'தொடரலாம்',
+      buttonText: 'Continue',
       onContinue: () {
         Navigator.of(context).pop();
       },
@@ -249,13 +249,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                       const Icon(Icons.error_outline_rounded, size: 36, color: Colors.amberAccent),
                                       const SizedBox(height: 4),
                                       const Text(
-                                        'காணொளியை ஏற்ற முடியவில்லை',
+                                        'Could not load video',
                                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                                         textAlign: TextAlign.center,
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        _errorMessage ?? 'இணைய இணைப்பை சரிபார்க்கவும்.',
+                                        _errorMessage ?? 'Please check your internet connection.',
                                         style: const TextStyle(color: Colors.white70, fontSize: 10),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
@@ -265,7 +265,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                       ElevatedButton.icon(
                                         onPressed: _initializePlayer,
                                         icon: const Icon(Icons.refresh_rounded, size: 14),
-                                        label: const Text('மீண்டும் முயற்சிக்கவும்', style: TextStyle(fontSize: 11)),
+                                        label: const Text('Try Again', style: TextStyle(fontSize: 11)),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppColors.primary,
                                           foregroundColor: Colors.white,
@@ -286,7 +286,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                   const CircularProgressIndicator(color: AppColors.starGold),
                                   const SizedBox(height: 10),
                                   Text(
-                                    'காணொளி தயாராகிறது...',
+                                    'Preparing video...',
                                     style: TextStyle(
                                       color: AppColors.sunnyYellow,
                                       fontSize: 13,
@@ -462,8 +462,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                 const SizedBox(height: 2),
                                 Text(
                                   (v.videoUrl.contains('cloudinary') || v.videoUrl.startsWith('http'))
-                                      ? 'மூலம்: இணையதள காணொளி (Cloudinary)'
-                                      : 'மூலம்: ஆப் காணொளி',
+                                      ? 'Source: Cloud Video'
+                                      : 'Source: App Video',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: AppColors.secondary.withValues(alpha: 0.8),
@@ -512,7 +512,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                               children: [
                                 const Icon(Icons.star_rounded, color: Colors.white, size: 22),
                                 const SizedBox(width: 8),
-                                Text('பார்த்து முடித்தேன் (+2)', style: AppTextStyles.buttonText),
+                                Text('Finished Watching (+2)', style: AppTextStyles.buttonText),
                               ],
                             ),
                           ),

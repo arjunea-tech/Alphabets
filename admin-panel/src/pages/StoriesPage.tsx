@@ -280,7 +280,7 @@ export const StoriesPage: React.FC = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. முயலும் ஆமையும்"
+              placeholder="e.g. The Hare and the Tortoise"
               value={currentStory?.title || ''}
               onChange={(e) => setCurrentStory({ ...currentStory, title: e.target.value })}
               required
@@ -292,7 +292,7 @@ export const StoriesPage: React.FC = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. விடாமுயற்சி வெற்றி தரும்"
+              placeholder="e.g. Slow and steady wins the race"
               value={currentStory?.subtitle || ''}
               onChange={(e) => setCurrentStory({ ...currentStory, subtitle: e.target.value })}
             />
@@ -342,7 +342,7 @@ export const StoriesPage: React.FC = () => {
               style={{ lineHeight: 1.6, fontSize: '15px' }}
             />
             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              முழுக் கதையையும் பத்திகளாக இங்கே தட்டச்சு செய்யவும் (Enter the full story text in multiple paragraphs).
+              Enter the full story text in multiple paragraphs.
             </span>
           </div>
 
@@ -351,7 +351,7 @@ export const StoriesPage: React.FC = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. விடாமுயற்சியே வெற்றி தரும்!"
+              placeholder="e.g. Slow and steady wins the race!"
               value={currentStory?.moral || ''}
               onChange={(e) => setCurrentStory({ ...currentStory, moral: e.target.value })}
             />
@@ -411,7 +411,7 @@ export const StoriesPage: React.FC = () => {
                   <span style={{ fontWeight: 800, color: 'var(--primary)', minWidth: '24px' }}>#{p.pageNumber}</span>
                   <span style={{ fontSize: '20px' }}>{p.emojiIllustration}</span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: '14px' }}>{p.characterName || 'பாத்திரம்'}</div>
+                    <div style={{ fontWeight: 600, fontSize: '14px' }}>{p.characterName || 'Character'}</div>
                     <div style={{ fontSize: '14px', color: 'var(--text-main)', marginTop: '2px', lineHeight: 1.6 }}>{p.text}</div>
                   </div>
                   <button
@@ -451,7 +451,7 @@ export const StoriesPage: React.FC = () => {
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="e.g. முயல்"
+                    placeholder="e.g. Rabbit"
                     value={newPage.characterName || ''}
                     onChange={(e) => setNewPage({ ...newPage, characterName: e.target.value })}
                   />
@@ -473,7 +473,7 @@ export const StoriesPage: React.FC = () => {
                 <textarea
                   className="form-control"
                   rows={3}
-                  placeholder="இந்தப் பக்கத்திற்கான தமிழ் கதை வரிகளை உள்ளிடுக..."
+                  placeholder="Enter the story text for this page..."
                   value={newPage.text || ''}
                   onChange={(e) => setNewPage({ ...newPage, text: e.target.value })}
                   required

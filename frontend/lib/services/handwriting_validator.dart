@@ -19,8 +19,8 @@ class HandwritingValidator {
         precision: 0,
         stars: 0,
         isPass: false,
-        title: 'எழுதிப் பாருங்கள்!',
-        message: 'விரலால் எழுத்தின் முழு வடிவத்தையும் எழுதி சரிபார்க்கவும்.',
+        title: 'Try Tracing!',
+        message: 'Trace the full shape of the letter with your finger to check.',
         emoji: '',
         badgeColor: Color(0xFFFF9F1C),
       );
@@ -34,8 +34,8 @@ class HandwritingValidator {
         precision: 0.1,
         stars: 0,
         isPass: false,
-        title: 'முழுமையாக எழுதவில்லை!',
-        message: 'எழுத்தின் அனைத்துக் கோடுகளையும் விரலால் எழுதிப் பார்க்கவும்.',
+        title: 'Incomplete Trace!',
+        message: 'Please trace all strokes of the letter with your finger.',
         emoji: '',
         badgeColor: Color(0xFFFF5964),
       );
@@ -58,8 +58,8 @@ class HandwritingValidator {
         precision: 0.9,
         stars: 3,
         isPass: true,
-        title: 'மிகச் சரி! அற்புதம்!',
-        message: '"${targetLetter.letter}" எழுத்தை அழகாக எழுதிவிட்டீர்கள்!',
+        title: 'Awesome! Perfect!',
+        message: 'You traced letter "${targetLetter.letter}" beautifully!',
         emoji: '',
         badgeColor: const Color(0xFF10B981),
       );
@@ -208,8 +208,8 @@ class HandwritingValidator {
         precision: precision,
         stars: 0,
         isPass: false,
-        title: 'தவறாக உள்ளது!',
-        message: 'இது "${targetLetter.letter}" எழுத்தின் சரியான வடிவம் அல்ல. கவனமாக மீண்டும் எழுதிப் பார்க்கவும்!',
+        title: 'Needs More Practice!',
+        message: 'This is not the exact shape of letter "${targetLetter.letter}". Follow the glowing arrows and try again!',
         emoji: '',
         badgeColor: const Color(0xFFFF5964),
       );
@@ -218,15 +218,15 @@ class HandwritingValidator {
     final double finalPassScore = math.max(scaledScore, 65.0);
     final int stars = finalPassScore >= 85 ? 3 : (finalPassScore >= 72 ? 2 : 1);
 
-    String successTitle = 'மிகச் சரி! அற்புதம்!';
-    String successMsg = '"${targetLetter.letter}" எழுத்தை மிகச் சரியாக எழுதிவிட்டீர்கள்!';
+    String successTitle = 'Awesome! Perfect!';
+    String successMsg = 'You traced letter "${targetLetter.letter}" beautifully!';
 
     if (stars == 2) {
-      successTitle = 'நன்று! சிறப்பு!';
-      successMsg = '"${targetLetter.letter}" எழுத்தை நன்றாக எழுதியுள்ளீர்கள்!';
+      successTitle = 'Great Job!';
+      successMsg = 'You traced letter "${targetLetter.letter}" very well!';
     } else if (stars == 1) {
-      successTitle = 'வெற்றி! பரவாயில்லை!';
-      successMsg = 'சரியாக எழுதியுள்ளீர்கள், மேலும் பயிற்சி செய்து 3 நட்சத்திரங்கள் பெறுங்கள்!';
+      successTitle = 'Good Effort!';
+      successMsg = 'You traced it! Practice once more to earn all 3 stars!';
     }
 
     return HandwritingEvaluationResult(

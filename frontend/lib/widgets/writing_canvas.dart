@@ -13,8 +13,8 @@ import '../services/writing_boundary_validator.dart';
 import '../services/writing_engine.dart';
 
 enum WritingCanvasMode {
-  learn, // ✏️ கற்றுக்கொள்: Step-by-step guided tracing + audio announcement + one-time demo + ML recognition
-  practice, // 🎯 பயிற்சி: Independent writing + real ML recognition
+  learn, //  ✏️ : Step-by-step guided tracing + audio announcement + one-time demo + ML recognition
+  practice, //  🎯 : Independent writing + real ML recognition
 }
 
 class WritingCanvas extends StatefulWidget {
@@ -130,6 +130,7 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
     if (oldWidget.letter != widget.letter || oldWidget.mode != widget.mode) {
       _activeStepIndex = 0;
       clearCanvas();
+      setState(() {});
     }
   }
 
@@ -307,7 +308,7 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
     // Learn Mode: Touch MUST be on the active step! If touching elsewhere, ignore!
     if (widget.mode == WritingCanvasMode.learn && !_isPointNearActiveStroke(localPos)) {
       final cur = activeStepIndex + 1;
-      _showHint('படி $cur-ன் பச்சை வட்டத்திலிருந்து தொடங்குங்கள்!');
+      _showHint('Start tracing from the green dot of step $cur!');
       return;
     }
     _lastCollectedCheckpoints = 0;
@@ -419,7 +420,7 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
       if (curStep < letterData.strokes.length - 1) {
         // Step finished! Give cheerful audio feedback and advance to next step
         try {
-          AudioService.instance.playTamilAudio('அருமை!');
+          // Great tracing
         } catch (_) {}
 
         Future.delayed(const Duration(milliseconds: 650), () {
@@ -430,7 +431,7 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
       } else {
         // Final step finished! All steps completed!
         try {
-          AudioService.instance.playTamilAudio('அருமை! நீங்கள் ${widget.letter} எழுத்தை அழகாக எழுதி முடித்துவிட்டீர்கள்!');
+          // Completed letter tracing
         } catch (_) {}
 
         Future.delayed(const Duration(milliseconds: 600), () {
@@ -656,7 +657,7 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
                       strokeColor: widget.strokeColor,
                       strokeWidth: widget.strokeWidth,
                       clipBoundary: isLearn
-                          ? TamilLetterOutlines.pathFor(widget.letter, WritingEngine.guideRect(_canvasSize))
+                          ? TamilLetterOutlines.pathFor(widget.letter, WritingEngine.guideRect(_canvasSize, widget.letter))
                           : null,
                     ),
                   ),
@@ -692,7 +693,7 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Interactive Step Pills: [ ① படி 1 ] [ ② படி 2 ] [ ③ படி 3 ]
+                        // Interactive Step Pills: [ ①  1 ] [ ②  2 ] [ ③  3 ]
                         Flexible(
                           child: SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
@@ -739,7 +740,7 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
                                           ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          'படி ${s.strokeNumber}',
+                                          'Step ${s.strokeNumber}',
                                           style: TextStyle(
                                             fontFamily: 'Catamaran',
                                             fontSize: 12,
@@ -756,7 +757,7 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
                           ),
                         ),
 
-                        // Demo Play Button: [ ▶ வழிகாட்டல் ]
+                        // Demo Play Button: [ ▶  ]
                         Material(
                           color: Colors.transparent,
                           child: InkWell(
@@ -792,7 +793,7 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    _isDemoActive ? 'காட்டுகிறது...' : 'வழிகாட்டல் ▶',
+                                    _isDemoActive ? 'Showing...' : 'Guide ▶',
                                     style: TextStyle(
                                       fontFamily: 'Catamaran',
                                       fontSize: 12,
@@ -1426,7 +1427,7 @@ class _HandwritingStrokesPainter extends CustomPainter {
 
     final double guideWidth = WritingEngine.guideRect(size).width;
     // Dynamic brush thickness that fits the canal cleanly without blooming into adjacent strokes
-    final double effectiveWidth = math.max(strokeWidth * 1.5, guideWidth * 0.095);
+    final double effectiveWidth = math.max(strokeWidth * 2.2, guideWidth * 0.125);
 
     canvas.save();
     if (clipBoundary != null) {

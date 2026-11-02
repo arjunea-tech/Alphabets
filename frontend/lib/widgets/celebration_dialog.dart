@@ -13,19 +13,19 @@ class CelebrationDialog extends StatefulWidget {
 
   const CelebrationDialog({
     super.key,
-    this.title = 'வாழ்த்துகள்!',
-    this.message = 'மிக அருமையாக முடித்துவிட்டாய்!',
+    this.title = 'Congratulations!',
+    this.message = 'Awesome job! You did it!',
     this.starsEarned = 3,
-    this.buttonText = 'தொடரலாம்',
+    this.buttonText = 'Continue',
     required this.onContinue,
   });
 
   static Future<void> show(
     BuildContext context, {
-    String title = 'வாழ்த்துகள்!',
-    String message = 'மிக அருமையாக முடித்துவிட்டாய்!',
+    String title = 'Congratulations!',
+    String message = 'Awesome job! You did it!',
     int starsEarned = 3,
-    String buttonText = 'தொடரலாம்',
+    String buttonText = 'Continue',
     required VoidCallback onContinue,
   }) {
     return showDialog(
@@ -149,7 +149,7 @@ class _CelebrationDialogState extends State<CelebrationDialog> with SingleTicker
                       const Icon(Icons.stars_rounded, color: AppColors.primaryDark, size: 20),
                       const SizedBox(width: 8),
                       Text(
-                        '+${widget.starsEarned} நட்சத்திரங்கள்!',
+                        '+${widget.starsEarned} Stars!',
                         style: AppTextStyles.cardTitle.copyWith(
                           fontSize: 14,
                           color: AppColors.primaryDark,

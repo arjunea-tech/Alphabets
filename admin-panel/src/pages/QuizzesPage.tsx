@@ -279,7 +279,7 @@ export const QuizzesPage: React.FC = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. உயிர் எழுத்துகள் வினாடி வினா"
+              placeholder="e.g. English Alphabet Quiz"
               value={currentQuiz?.title || ''}
               onChange={(e) => setCurrentQuiz({ ...currentQuiz, title: e.target.value })}
               required
@@ -291,7 +291,7 @@ export const QuizzesPage: React.FC = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. அ முதல் ஔ வரையிலான எழுத்துகளை சோதிப்போம்"
+              placeholder="e.g. Test your knowledge on letters A through Z"
               value={currentQuiz?.subtitle || ''}
               onChange={(e) => setCurrentQuiz({ ...currentQuiz, subtitle: e.target.value })}
             />
@@ -305,11 +305,11 @@ export const QuizzesPage: React.FC = () => {
                 value={currentQuiz?.category || 'uyir'}
                 onChange={(e) => setCurrentQuiz({ ...currentQuiz, category: e.target.value })}
               >
-                <option value="uyir">உயிர் எழுத்துகள் (Uyir)</option>
-                <option value="mei">மெய் எழுத்துகள் (Mei)</option>
-                <option value="aytham">ஆய்த எழுத்து (Aytham)</option>
-                <option value="uyirmei">உயிர்மெய் (Uyirmei)</option>
-                <option value="general">பொது அறிவு (General)</option>
+                <option value="alphabets">English Alphabets (A - Z)</option>
+                <option value="vowels">Vowels (A, E, I, O, U)</option>
+                <option value="consonants">Consonants</option>
+                <option value="vocabulary">Vocabulary & Words</option>
+                <option value="general">General Knowledge</option>
               </select>
             </div>
             <div className="form-group">
@@ -450,7 +450,7 @@ export const QuizzesPage: React.FC = () => {
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="e.g. அம்மா என்ற சொல்லின் முதல் எழுத்து எது?"
+                  placeholder="e.g. Which letter comes first in Apple?"
                   value={newQuestionText}
                   onChange={(e) => setNewQuestionText(e.target.value)}
                   required
@@ -473,7 +473,7 @@ export const QuizzesPage: React.FC = () => {
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="e.g. அம்மா என்பதன் முதல் எழுத்து அ."
+                    placeholder="e.g. Apple starts with the letter A."
                     value={newExplanation}
                     onChange={(e) => setNewExplanation(e.target.value)}
                   />

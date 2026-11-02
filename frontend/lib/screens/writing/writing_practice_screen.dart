@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/writing_data.dart';
+import '../../data/tamil_letter_outlines.dart';
 import '../../models/handwriting_ml_model.dart';
 import '../../models/writing_practice_model.dart';
 import '../../services/audio_service.dart';
@@ -43,44 +44,40 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
 
 
   List<WritingLetterGuide> get _currentList {
-    final lang = LanguageService.instance.currentLanguageCode;
-    if (lang == 'te') {
-      return WritingData.teluguAchuluGuides;
-    }
-    if (_selectedCategoryIndex == 1) return WritingData.meiGuides;
-    if (_selectedCategoryIndex == 2) return WritingData.ayuthamGuides;
-    return WritingData.uyirGuides;
+    if (_selectedCategoryIndex == 1) return WritingData.smallLetterGuides;
+    if (_selectedCategoryIndex == 2) return WritingData.uyirGuides;
+    if (_selectedCategoryIndex == 3) return WritingData.meiGuides;
+    return WritingData.allGuides;
   }
 
   WritingLetterGuide get _currentGuide => _currentList[_letterIndex];
 
   String get _currentCategoryCode {
-    if (_selectedCategoryIndex == 1) return 'mei';
-    if (_selectedCategoryIndex == 2) return 'ayutham';
-    return 'uyir';
+    if (_selectedCategoryIndex == 1) return 'small';
+    if (_selectedCategoryIndex == 2) return 'vowels';
+    if (_selectedCategoryIndex == 3) return 'consonants';
+    return 'capital';
+
+
   }
 
   @override
   void initState() {
     super.initState();
     if (widget.initialLetter != null) {
-      final idx = WritingData.uyirGuides.indexWhere((g) => g.letter == widget.initialLetter);
-      if (idx >= 0) {
-        _selectedCategoryIndex = 0;
-        _letterIndex = idx;
+      final target = widget.initialLetter!;
+      final smallIdx = WritingData.smallLetterGuides.indexWhere((g) => g.letter == target);
+      if (smallIdx >= 0) {
+        _selectedCategoryIndex = 1;
+        _letterIndex = smallIdx;
       } else {
-        final meiIdx = WritingData.meiGuides.indexWhere((g) => g.letter == widget.initialLetter);
-        if (meiIdx >= 0) {
-          _selectedCategoryIndex = 1;
-          _letterIndex = meiIdx;
-        } else {
-          final ayuthaIdx = WritingData.ayuthamGuides.indexWhere((g) => g.letter == widget.initialLetter);
-          if (ayuthaIdx >= 0) {
-            _selectedCategoryIndex = 2;
-            _letterIndex = ayuthaIdx;
-          }
+        final allIdx = WritingData.allGuides.indexWhere((g) => g.letter.toUpperCase() == target.toUpperCase());
+        if (allIdx >= 0) {
+          _selectedCategoryIndex = 0;
+          _letterIndex = allIdx;
         }
       }
+
     }
   }
 
@@ -118,6 +115,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
       _selectedCategoryIndex = index;
       _letterIndex = 0;
     });
+    TamilLetterOutlines.clearCache();
     _canvasKey.currentState?.clearCanvas();
   }
 
@@ -137,7 +135,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     }
   }
 
-  /// Handles "சரிபார் / முடித்தேன்" using the AI Model recognition
+  /// Handles " / " using the AI Model recognition
   /// [guidedComplete] is true when Learn mode finished every step and each stroke
   /// already passed the start/direction/path/end check in the canvas.
   Future<void> _handleFinishWriting({bool guidedComplete = false}) async {
@@ -151,7 +149,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
           backgroundColor: const Color(0xFFFF9F1C),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           content: const Text(
-            'விரலால் எழுதிப் பாருங்கள்!',
+            'Trace the letter with your finger!',
             style: TextStyle(
               fontFamily: 'Catamaran',
               fontWeight: FontWeight.bold,
@@ -212,7 +210,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
-        final String badgeText = isSuccess ? 'சரியானது' : 'முயற்சி செய்க';
+        final String badgeText = isSuccess ? 'Correct!' : 'Try Again';
 
         return Dialog(
           backgroundColor: Colors.transparent,
@@ -383,7 +381,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                         ),
                         icon: const Icon(Icons.arrow_forward_rounded, size: 20),
                         label: const Text(
-                          'அடுத்த எழுத்து',
+                          'Next Letter',
                           style: TextStyle(
                             fontFamily: 'Catamaran',
                             fontSize: 16,
@@ -402,7 +400,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                     },
                     icon: const Icon(Icons.replay_rounded, color: Color(0xFF3A86FF), size: 18),
                     label: const Text(
-                      'மீண்டும் இதே எழுத்தை எழுத',
+                      'Rewrite this letter',
                       style: TextStyle(
                         fontFamily: 'Catamaran',
                         fontSize: 14,
@@ -430,7 +428,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                       ),
                       icon: const Icon(Icons.replay_rounded, size: 20),
                       label: const Text(
-                        'மீண்டும் எழுதவும்',
+                        'Rewrite',
                         style: TextStyle(
                           fontFamily: 'Catamaran',
                           fontSize: 16,
@@ -470,7 +468,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                     // Top Action Header
                     _buildTopHeader(context),
 
-                    // Category Switcher Pill Tabs: [உயிர் (12)] & [மெய் (18)]
+                    // Category Switcher Pill Tabs: [ (12)] & [ (18)]
                     _buildCategorySwitcher(),
 
                     // Writing Area and Controls
@@ -482,7 +480,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                         child: Column(
                           children: [
-                            // Letter Navigator Bar (< அ >)
+                            // Letter Navigator Bar (<  >)
                             LetterNavigator(
                               currentLetter: guide.letter,
                               currentIndex: _letterIndex,
@@ -492,7 +490,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                             ),
                             const SizedBox(height: 8),
 
-                            // Mode Header: [ கற்றுக்கொள் ]
+                            // Mode Header: [  ]
                             _buildModeSelector(),
                             const SizedBox(height: 12),
 
@@ -518,7 +516,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                             ),
                             const SizedBox(height: 14),
 
-                            // Bottom Control Buttons: [ மீண்டும் எழுது ] & [ சரிபார் / முடித்தேன் ]
+                            // Bottom Control Buttons: [   ] & [  /  ]
                             _buildBottomControls(),
                             const SizedBox(height: 14),
                           ],
@@ -583,7 +581,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                   const Icon(Icons.edit_note_rounded, color: AppColors.primary, size: 24),
                   const SizedBox(width: 6),
                   Text(
-                    'எழுதிப் பழகு',
+                    'Writing Practice',
                     style: AppTextStyles.screenTitle.copyWith(fontSize: 22),
                   ),
                 ],
@@ -651,10 +649,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
 
   /// Category Switcher
   Widget _buildCategorySwitcher() {
-    final lang = LanguageService.instance.currentLanguageCode;
-    final categories = lang == 'te'
-        ? ['అచ్చులు (Achulu)']
-        : ['உயிர் (12)', 'மெய் (18)', 'ஆய்தம் (1)'];
+    const categories = ['Capital (A-Z)', 'Small (a-z)', 'Vowels (5)', 'Consonants (21)'];
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
@@ -702,7 +697,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     );
   }
 
-  /// Mode Header: [ கற்றுக்கொள் ]
+  /// Mode Header: [  ]
   Widget _buildModeSelector() {
     return Center(
       child: Container(
@@ -724,7 +719,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
             Icon(Icons.edit_rounded, color: Colors.white, size: 16),
             SizedBox(width: 8),
             Text(
-              'கற்றுக்கொள்',
+              'Learn',
               style: TextStyle(
                 fontFamily: 'Catamaran',
                 fontSize: 14,
@@ -742,7 +737,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
   Widget _buildBottomControls() {
     return Row(
       children: [
-        // Clear / Reset Button: "மீண்டும் எழுது"
+        // Clear / Reset Button: " "
         Expanded(
           flex: 4,
           child: ElevatedButton.icon(
@@ -761,7 +756,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
             label: const FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                'மீண்டும் எழுது',
+                'Clear',
                 style: TextStyle(
                   fontFamily: 'Catamaran',
                   fontSize: 14,
@@ -773,7 +768,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
         ),
         const SizedBox(width: 10),
 
-        // Check & Submit Button: "சரிபார் (Check) ⭐"
+        // Check & Submit Button: " (Check) ⭐"
         Expanded(
           flex: 6,
           child: Container(
@@ -811,8 +806,8 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                 fit: BoxFit.scaleDown,
                 child: Text(
                   _activeMode == WritingCanvasMode.practice
-                      ? 'சரிபார் (Check)'
-                      : 'சரிபார் / முடித்தேன்',
+                      ? 'Check Letter'
+                      : 'Submit',
                   style: const TextStyle(
                     fontFamily: 'Catamaran',
                     fontSize: 15,

@@ -47,22 +47,7 @@ export const LoginPage: React.FC = () => {
         {/* Language Switcher in Login */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '14px' }}>
           <div style={{ display: 'inline-flex', background: 'var(--bg-muted)', padding: '3px', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-color)' }}>
-            <button
-              type="button"
-              onClick={() => setLanguage('ta')}
-              style={{
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-full)',
-                border: 'none',
-                background: language === 'ta' ? 'var(--primary)' : 'transparent',
-                color: language === 'ta' ? 'white' : 'var(--text-main)',
-                fontWeight: 700,
-                fontSize: '12px',
-                cursor: 'pointer',
-              }}
-            >
-              தமிழ்
-            </button>
+            
             <button
               type="button"
               onClick={() => setLanguage('en')}

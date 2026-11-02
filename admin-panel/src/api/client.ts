@@ -3,8 +3,8 @@
  */
 import axios from 'axios';
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://eluthukkal-api.macvelsoftware.com/api/v1';
-export const MEDIA_BASE_URL = import.meta.env.VITE_MEDIA_BASE_URL || 'https://eluthukkal-api.macvelsoftware.com';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+export const MEDIA_BASE_URL = import.meta.env.VITE_MEDIA_BASE_URL || 'http://localhost:5000';
 
 export const resolveMediaUrl = (path?: string | null) => {
   if (!path) return '';
@@ -38,12 +38,11 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Handle 401 Unauthorized
+// Response Interceptor: Handle Unauthorized (401)
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Clear token and redirect to login if not already there
       localStorage.removeItem('agaram_admin_token');
       localStorage.removeItem('agaram_admin_user');
       if (window.location.pathname !== '/login') {

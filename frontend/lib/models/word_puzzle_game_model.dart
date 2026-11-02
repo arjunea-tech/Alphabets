@@ -44,8 +44,8 @@ class WordPuzzleTile {
 /// Structured Tamil word puzzle definition
 class WordPuzzleModel {
   final String id;
-  final String word; // e.g. 'யானை'
-  final List<String> components; // e.g. ['ய', 'ா', 'ன', 'ை']
+  final String word; //  e.g. ''
+  final List<String> components; //  e.g. ['', '', '', '']
   final List<String> distractorPool;
   final int difficultyLevel; // 1, 2, 3, 4
   final String? meaning;

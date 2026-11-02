@@ -213,7 +213,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                           ],
                         ),
                         child: Text(
-                          'எழுத்து "${letter.letter}" ஐ உச்சரித்துப் பழகுவோம்!',
+                          'Let\'s pronounce and practice letter "${letter.letter}"!',
                           style: AppTextStyles.cardTitle.copyWith(
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
@@ -299,7 +299,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                           ),
                         ),
 
-                        // Example Word with target letter highlighted (e.g. ச[க்]கரம்) - Tappable to hear WORD sound
+                        // Example Word with target letter highlighted - Tappable to hear WORD sound
                         if (letter.word.isNotEmpty) ...[
                           const SizedBox(height: 14),
                           BouncyButton(
@@ -346,7 +346,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                   children: [
                     Flexible(
                       child: CustomAudioButton(
-                        label: 'கேட்போம்',
+                        label: 'Listen',
                         color: color,
                         onTap: _playAudio,
                       ),
@@ -354,7 +354,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                     const SizedBox(width: 10),
                     Flexible(
                       child: CustomAudioButton(
-                        label: 'மீண்டும்',
+                        label: 'Repeat',
                         color: color,
                         isSecondary: true,
                         onTap: _playAudio,
@@ -397,7 +397,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                         Icon(Icons.edit_rounded, color: Colors.white, size: 20),
                         SizedBox(width: 8),
                         Text(
-                          'எழுதிப் பழகுவோம்',
+                          'Practice Writing',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
@@ -417,9 +417,9 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                       final isMei = letter.type == LetterType.mei;
                       final videoItem = VideoItem(
                         id: 'letter_video_${letter.id}',
-                        title: '${letter.letter} - ${letter.word} காணொளி',
-                        description: '${letter.letter} எழுத்து கற்பிக்கும் சிறப்பு காணொளி பாடம்',
-                        category: isMei ? 'மெய் எழுத்துகள்' : 'உயிர் எழுத்துகள்',
+                        title: '${letter.letter} - ${letter.word} Video',
+                        description: 'Special video lesson for letter ${letter.letter}',
+                        category: isMei ? 'Consonants' : 'Vowels',
                         duration: '1:30',
                         thumbnailEmoji: '',
                         videoUrl: letter.videoUrl!,
@@ -456,7 +456,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                             Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 20),
                             SizedBox(width: 8),
                             Text(
-                              'காணொளி பாடம் (Watch Video)',
+                              'Watch Video Lesson',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w900,
@@ -493,7 +493,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                                 children: [
                                   const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
                                   const SizedBox(width: 6),
-                                  Text('முந்தையது', style: AppTextStyles.bodyTextBold.copyWith(fontSize: 15)),
+                                  Text('Previous', style: AppTextStyles.bodyTextBold.copyWith(fontSize: 15)),
                                 ],
                               ),
                             ),
@@ -537,7 +537,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    'அடுத்தது',
+                                    'Next',
                                     style: AppTextStyles.bodyTextBold.copyWith(color: Colors.white, fontSize: 15),
                                   ),
                                   const SizedBox(width: 6),

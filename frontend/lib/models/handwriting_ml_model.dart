@@ -69,28 +69,28 @@ class HandwritingRecognitionResult {
 
   String get feedbackTitle {
     if (modelStatus == MLModelStatus.modelFileRequired) {
-      return 'மாதிரி தயார்நிலை';
+      return 'Model Ready';
     }
     if (modelStatus == MLModelStatus.inferenceError) {
-      return 'மீண்டும் முயற்சி செய்க';
+      return 'Try Again';
     }
     if (isMatch) {
-      return 'சரியாக எழுதினீர்கள்!';
+      return 'Correctly Written!';
     }
-    return 'மீண்டும் முயற்சி செய்க!';
+    return 'Try Again!';
   }
 
   String get feedbackMessage {
     if (modelStatus == MLModelStatus.modelFileRequired) {
-      return 'கையெழுத்துப் பயிற்சி தயார் நிலையில் உள்ளது.';
+      return 'Handwriting practice is ready.';
     }
     if (modelStatus == MLModelStatus.inferenceError) {
-      return errorMessage ?? 'மீண்டும் ஒருமுறை எழுதிப் பாருங்கள்.';
+      return errorMessage ?? 'Please try writing again.';
     }
     if (isMatch) {
-      return 'மிகச் சிறப்பாக எழுதியுள்ளீர்கள்!';
+      return 'Excellent handwriting!';
     }
-    return 'எழுத்தை மீண்டும் ஒருமுறை கவனமாக எழுதிப் பாருங்கள்.';
+    return 'Trace the letter carefully once more.';
   }
 
   Color get badgeColor {

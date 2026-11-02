@@ -2,8 +2,8 @@ import 'dart:convert';
 
 /// Model representing an interactive, tappable vocabulary word within a story page.
 class StoryInteractiveWord {
-  final String word; // exact word or word form in the sentence, e.g. "காட்டில்" or "முயல்"
-  final String displayLabel; // Child friendly label in Tamil, e.g. "காடு"
+  final String word; //  exact word or word form in the sentence, e.g. "" or ""
+  final String displayLabel; //  Child friendly label in Tamil, e.g. ""
   final String? imagePath; // Asset path or network URL for the illustration
   final String? emoji; // Emoji representation, e.g. "🌲"
   final String? meaning; // Tamil and English meaning explanation

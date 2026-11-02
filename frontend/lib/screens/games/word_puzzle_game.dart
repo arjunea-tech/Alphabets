@@ -440,7 +440,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                     const Icon(Icons.stars_rounded, color: Colors.amberAccent, size: 18),
                     const SizedBox(width: 6),
                     Text(
-                      'நிலை $_currentLevel (${_puzzleIndex + 1}/${_levelPuzzles.length})',
+                      'Level $_currentLevel (${_puzzleIndex + 1}/${_levelPuzzles.length})',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
@@ -554,7 +554,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
-                        'சொல்லை உருவாக்கு!',
+                        'Build the Word!',
                         style: TextStyle(
                           color: Color(0xFFFFD54F),
                           fontSize: 11,
@@ -564,7 +564,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'மதிப்பெண்: $_score',
+                      'Score: $_score',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.7),
                         fontSize: 11,
@@ -650,7 +650,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'சொல் கட்டமைப்பு:',
+                'Word Progress:',
                 style: TextStyle(
                   color: Colors.white70,
                   fontSize: 11,
@@ -658,7 +658,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                 ),
               ),
               Text(
-                '$_currentStep / ${components.length} முடிந்தது',
+                '$_currentStep / ${components.length} Completed',
                 style: const TextStyle(
                   color: Colors.cyanAccent,
                   fontSize: 11,
@@ -993,7 +993,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'நிலை முடிந்தது!',
+                'Level Complete!',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
@@ -1003,7 +1003,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
               ),
               const SizedBox(height: 8),
               Text(
-                'அருமையாக அனைத்து ($_wordsCompletedInLevel) சொற்களையும் அமைத்தாய்!\nமதிப்பெண்: $_score',
+                'Great job! You formed all ($_wordsCompletedInLevel) words!\nScore: $_score',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Color(0xFFFFD54F),
@@ -1042,7 +1042,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                           ),
                         ),
                         child: const Text(
-                          'அடுத்த நிலை ➡️',
+                          'Next Level ➡️',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
@@ -1065,7 +1065,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                         ),
                       ),
                       child: const Text(
-                        'மீண்டும் ஆடு 🔄',
+                        'Play Again 🔄',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w900,

@@ -42,13 +42,13 @@ class ProgressService extends ChangeNotifier {
 
       // Sync with user profile repository if exists
       final userProfile = await LocalWritingPracticeRepository().getUserProfile();
-      if (userProfile.name.isNotEmpty && userProfile.name != 'குழந்தை') {
+      if (userProfile.name.isNotEmpty && userProfile.name != 'Kid' ) {
         _progress = _progress.copyWith(
           childName: userProfile.name,
           avatarIndex: AppAvatar.getIndex(userProfile.avatarAsset),
         );
         _childAge = userProfile.age;
-      } else if (_progress.childName.isNotEmpty && _progress.childName != 'குட்டி') {
+      } else if (_progress.childName.isNotEmpty && _progress.childName != 'Kid' ) {
         // Save back to repository
         await LocalWritingPracticeRepository().saveUserProfile(
           UserProfile(
@@ -136,7 +136,7 @@ class ProgressService extends ChangeNotifier {
     int? age,
   }) async {
     // Automatically transliterate English input to beautiful Tamil script
-    final tamilName = TamilTransliterationService.toTamil(name.trim().isNotEmpty ? name.trim() : 'குட்டி');
+    final tamilName = TamilTransliterationService.toTamil(name.trim().isNotEmpty ? name.trim() : 'Kid');
     if (age != null) {
       _childAge = age;
     }
@@ -169,14 +169,14 @@ class ProgressService extends ChangeNotifier {
   }
 
   Future<void> resetProgress() async {
-    _progress = const UserProgressModel(stars: 10, childName: 'குட்டி', avatarIndex: 0);
+    _progress = const UserProgressModel(stars: 10, childName: 'Kid', avatarIndex: 0);
     _childAge = 5;
     notifyListeners();
     await _saveProgress();
     await LocalWritingPracticeRepository().saveUserProfile(
       UserProfile(
         id: 'child',
-        name: 'குட்டி',
+        name: 'Kid',
         age: 5,
         avatarAsset: AppAvatar.getAssetPath(0),
         totalStars: 10,

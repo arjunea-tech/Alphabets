@@ -351,192 +351,157 @@ VALUES (
 
 -- Default Child User
 INSERT INTO users (id, child_name, age, avatar_asset, total_stars, is_active)
-VALUES ('default_child', 'குழந்தை', 5, 'assets/images/welcome.png', 25, TRUE)
-ON CONFLICT DO NOTHING;
+VALUES ('default_child', 'Kid Learner', 5, 'assets/images/welcome.png', 25, TRUE)
+;
 
 INSERT INTO user_stars (user_id, total_stars, current_streak, highest_streak)
 VALUES ('default_child', 25, 3, 5)
-ON CONFLICT DO NOTHING;
+;
 
 -- Lesson Categories
-INSERT INTO lessons (id, category_key, title, subtitle, count_text, button_text, icon_emoji, gradient_colors, route_name, display_order)
+INSERT INTO lessons (id, category_key, title, subtitle, count_text, button_text, icon_emoji, gradient_colors, route_name, display_order, is_active)
 VALUES
-('lesson_uyir', 'uyir', 'உயிர் எழுத்துகள்', 'அ முதல் ஔ வரை இனிமையாக கற்போம்', '12 உயிர் எழுத்துகள்', 'கற்கலாம்', '🍎', '["#FF6B8B", "#FF8E53"]', '/uyir', 1),
-('lesson_mei', 'mei', 'மெய் எழுத்துகள்', 'க் முதல் ன் வரை புள்ளியிட்ட எழுத்துகள்', '18 மெய் எழுத்துகள்', 'கற்கலாம்', '🎡', '["#4E65FF", "#92EFFD"]', '/mei', 2),
-('lesson_aytham', 'aytham', 'ஆய்த எழுத்து', 'முப்புள்ளி கொண்ட தனித்தமிழ் எழுத்து', 'ஆய்தம் – 1', 'கற்கலாம்', '🛡️', '["#A855F7", "#EC4899"]', '/aytham', 3),
-('lesson_uyirmei', 'uyirmei', 'உயிர்மெய் எழுத்துகள்', 'உயிரும் மெய்யும் கூடிப் பிறக்கும் எழுத்துகள்', '216 உயிர்மெய் எழுத்துகள்', 'கற்கலாம்', '🌱', '["#11998E", "#38EF7D"]', '/uyirmei', 4),
-('lesson_reading', 'reading', 'வாசிப்பு', 'படம் பார்த்து சிறுகதைகள் வாசிப்போம்', 'சிறு கதைகள்', 'வாசிக்கலாம்', '📚', '["#FF8008", "#FFC837"]', '/reading', 5)
-ON CONFLICT DO NOTHING;
+('lesson_alphabets', 'alphabets', 'English Alphabets', 'Learn 26 Letters from A to Z with Fun', '26 Letters', 'Start Learning', '🔤', '["#4E65FF", "#92EFFD"]', '/alphabets', 1, TRUE),
+('lesson_vowels', 'vowels', 'Vowels', 'A, E, I, O, U - The Foundation of English Words', '5 Vowels', 'Learn Vowels', '🍎', '["#FF6B8B", "#FF8E53"]', '/vowels', 2, TRUE),
+('lesson_consonants', 'consonants', 'Consonants', '21 Consonant Letters with Examples & Sounds', '21 Consonants', 'Learn Consonants', '🎡', '["#11998E", "#38EF7D"]', '/consonants', 3, TRUE),
+('lesson_reading', 'reading', 'Reading Stories', 'Fun illustrated short stories for beginners', 'Story Books', 'Read Now', '📚', '["#FF8008", "#FFC837"]', '/reading', 4, TRUE)
+;
 
 -- Letter Groups
 INSERT INTO letter_groups (id, name, display_title, letter_type, description, display_order)
 VALUES
-('group_uyir', 'Uyir Letters', 'உயிர் எழுத்துகள் (12)', 'uyir', 'தமிழ் மொழியின் உயிரான 12 எழுத்துகள்', 1),
-('group_mei', 'Mei Letters', 'மெய் எழுத்துகள் (18)', 'mei', 'புள்ளியிட்ட 18 மெய் எழுத்துகள்', 2),
-('group_aytham', 'Aytham Letter', 'ஆய்த எழுத்து (1)', 'aytham', 'தனித்தன்மை கொண்ட ஆய்த எழுத்து', 3),
-('group_uyirmei_ka', 'Ka Varisai', 'க வரிசை (12)', 'uyirmei', 'க் + உயிர் எழுத்துகள்', 4),
-('group_uyirmei_nga', 'Nga Varisai', 'ங வரிசை (12)', 'uyirmei', 'ங் + உயிர் எழுத்துகள்', 5),
-('group_uyirmei_sa', 'Sa Varisai', 'ச வரிசை (12)', 'uyirmei', 'ச் + உயிர் எழுத்துகள்', 6),
-('group_uyirmei_nya', 'Nya Varisai', 'ஞ வரிசை (12)', 'uyirmei', 'ஞ் + உயிர் எழுத்துகள்', 7),
-('group_uyirmei_ta', 'Ta Varisai', 'ட வரிசை (12)', 'uyirmei', 'ட் + உயிர் எழுத்துகள்', 8),
-('group_uyirmei_nna', 'Nna Varisai', 'ண வரிசை (12)', 'uyirmei', 'ண் + உயிர் எழுத்துகள்', 9),
-('group_uyirmei_tha', 'Tha Varisai', 'த வரிசை (12)', 'uyirmei', 'த் + உயிர் எழுத்துகள்', 10),
-('group_uyirmei_na', 'Na Varisai', 'ந வரிசை (12)', 'uyirmei', 'ந் + உயிர் எழுத்துகள்', 11),
-('group_uyirmei_pa', 'Pa Varisai', 'ப வரிசை (12)', 'uyirmei', 'ப் + உயிர் எழுத்துகள்', 12),
-('group_uyirmei_ma', 'Ma Varisai', 'ம வரிசை (12)', 'uyirmei', 'ம் + உயிர் எழுத்துகள்', 13),
-('group_uyirmei_ya', 'Ya Varisai', 'ய வரிசை (12)', 'uyirmei', 'ய் + உயிர் எழுத்துகள்', 14),
-('group_uyirmei_ra', 'Ra Varisai', 'ர வரிசை (12)', 'uyirmei', 'ர் + உயிர் எழுத்துகள்', 15),
-('group_uyirmei_la', 'La Varisai', 'ல வரிசை (12)', 'uyirmei', 'ல் + உயிர் எழுத்துகள்', 16),
-('group_uyirmei_va', 'Va Varisai', 'வ வரிசை (12)', 'uyirmei', 'வ் + உயிர் எழுத்துகள்', 17),
-('group_uyirmei_zha', 'Zha Varisai', 'ழ வரிசை (12)', 'uyirmei', 'ழ் + உயிர் எழுத்துகள்', 18),
-('group_uyirmei_lla', 'Lla Varisai', 'ள வரிசை (12)', 'uyirmei', 'ள் + உயிர் எழுத்துகள்', 19),
-('group_uyirmei_rra', 'Rra Varisai', 'ற வரிசை (12)', 'uyirmei', 'ற் + உயிர் எழுத்துகள்', 20),
-('group_uyirmei_nna2', 'Nna2 Varisai', 'ன வரிசை (12)', 'uyirmei', 'ன் + உயிர் எழுத்துகள்', 21)
-ON CONFLICT DO NOTHING;
+('group_english_all', 'All Alphabets', 'English Alphabets (A - Z)', 'english', 'Complete 26 English Alphabets', 1),
+('group_english_vowels', 'English Vowels', 'Vowels (A, E, I, O, U)', 'vowel', '5 English Vowel Letters', 2),
+('group_english_consonants', 'English Consonants', 'Consonants (21 Letters)', 'consonant', '21 English Consonants', 3)
+;
 
--- 12 Uyir Letters
-INSERT INTO letters (id, letter, type, group_id, word, meaning, phonetic, icon_emoji, image_path, explanation, display_order)
+-- 26 English Alphabet Letters (A to Z)
+INSERT INTO letters (id, letter, type, group_id, word, meaning, phonetic, icon_emoji, image_path, explanation, display_order, is_active)
 VALUES
-('uyir_a', 'அ', 'uyir', 'group_uyir', 'அம்மா', 'Mother', 'a', '👩‍👧', 'assets/images/amma.jpg', 'அன்பான அம்மா', 1),
-('uyir_aa', 'ஆ', 'uyir', 'group_uyir', 'ஆடு', 'Goat', 'aa', '🐐', 'assets/images/aadu.jpg', 'துள்ளி ஓடும் ஆடு', 2),
-('uyir_i', 'இ', 'uyir', 'group_uyir', 'இலை', 'Leaf', 'i', '🍃', 'assets/images/leaf.jpg', 'பச்சை இலை', 3),
-('uyir_ee', 'ஈ', 'uyir', 'group_uyir', 'ஈ', 'Fly', 'ee', '🪰', 'assets/images/jiv.jpg', 'சுறுசுறுப்பான ஈ', 4),
-('uyir_u', 'உ', 'uyir', 'group_uyir', 'உரல்', 'Mortar', 'u', '🥣', 'assets/images/ural.png', 'மர உரல்', 5),
-('uyir_oo', 'ஊ', 'uyir', 'group_uyir', 'ஊஞ்சல்', 'Swing', 'oo', '🎪', 'assets/images/swing (2).jpg', 'ஆடும் ஊஞ்சல்', 6),
-('uyir_e', 'எ', 'uyir', 'group_uyir', 'எலி', 'Rat', 'e', '🐭', 'assets/images/rat.jpg', 'சுட்டி எலி', 7),
-('uyir_ae', 'ஏ', 'uyir', 'group_uyir', 'ஏணி', 'Ladder', 'ae', '🪜', 'assets/images/lader.jpg', 'உயரமான ஏணி', 8),
-('uyir_ai', 'ஐ', 'uyir', 'group_uyir', 'ஐந்து', 'Five', 'ai', '🖐️', 'assets/images/number.jpg', 'ஐந்து விரல்கள்', 9),
-('uyir_o', 'ஒ', 'uyir', 'group_uyir', 'ஒட்டகம்', 'Camel', 'o', '🐪', 'assets/images/camel.jpg', 'பாலைவன ஒட்டகம்', 10),
-('uyir_oa', 'ஓ', 'uyir', 'group_uyir', 'ஓடம்', 'Boat', 'oa', '⛵', 'assets/images/river.jpg', 'மிதக்கும் ஓடம்', 11),
-('uyir_au', 'ஔ', 'uyir', 'group_uyir', 'ஔவையார்', 'Avvaiyar', 'au', '👵', 'assets/images/avaiyar.jpg', 'தமிழ் மூதாட்டி', 12)
-ON CONFLICT DO NOTHING;
+('eng_a', 'A', 'vowel', 'group_english_vowels', 'Apple', 'Sweet red fruit', '/ˈæp.əl/', '🍎', 'assets/images/alphabets/apple.png', 'A is for Apple. Sweet and crunchy!', 1, TRUE),
+('eng_b', 'B', 'consonant', 'group_english_consonants', 'Ball', 'Round toy for games', '/bɔːl/', '⚽', 'assets/images/alphabets/ball.png', 'B is for Ball. Bounce and play!', 2, TRUE),
+('eng_c', 'C', 'consonant', 'group_english_consonants', 'Camel', 'Desert animal', '/ˈkæm.əl/', '🐪', 'assets/images/alphabets/camel.png', 'C is for Camel. Walking through the desert sand.', 3, TRUE),
+('eng_d', 'D', 'consonant', 'group_english_consonants', 'Dog', 'Loyal and friendly pet', '/dɒɡ/', '🐶', 'assets/images/alphabets/dog.png', 'D is for Dog. Wagging its happy tail!', 4, TRUE),
+('eng_e', 'E', 'vowel', 'group_english_vowels', 'Eye', 'Organ of sight', '/aɪ/', '👁️', 'assets/images/alphabets/eye.png', 'E is for Eye. We see the world with our eyes.', 5, TRUE),
+('eng_f', 'F', 'consonant', 'group_english_consonants', 'Fish', 'Water creature', '/fɪʃ/', '🐟', 'assets/images/alphabets/fish.png', 'F is for Fish. Swimming smoothly in the sea.', 6, TRUE),
+('eng_g', 'G', 'consonant', 'group_english_consonants', 'Grapes', 'Juicy green or purple fruit', '/ɡreɪps/', '🍇', 'assets/images/alphabets/grapes.png', 'G is for Grapes. Growing in tasty bunches.', 7, TRUE),
+('eng_h', 'H', 'consonant', 'group_english_consonants', 'Hen', 'Bird that lays eggs', '/hɛn/', '🐔', 'assets/images/alphabets/hen.png', 'H is for Hen. Cluck, cluck, cluck!', 8, TRUE),
+('eng_i', 'I', 'vowel', 'group_english_vowels', 'Ice Cream', 'Sweet frozen dessert', '/ˈaɪs ˌkriːm/', '🍦', 'assets/images/alphabets/ice_cream.png', 'I is for Ice Cream. Cool and delicious on a warm day!', 9, TRUE),
+('eng_j', 'J', 'consonant', 'group_english_consonants', 'Jug', 'Container for liquids', '/dʒʌɡ/', '🏺', 'assets/images/alphabets/jug.png', 'J is for Jug. Pouring cool fresh water.', 10, TRUE),
+('eng_k', 'K', 'consonant', 'group_english_consonants', 'Kite', 'Toy flying high in the sky', '/kaɪt/', '🪁', 'assets/images/alphabets/kite.png', 'K is for Kite. Soaring high in the windy sky!', 11, TRUE),
+('eng_l', 'L', 'consonant', 'group_english_consonants', 'Leaf', 'Green part of a plant', '/liːf/', '🍃', 'assets/images/alphabets/leaf.png', 'L is for Leaf. Fluttering gently from the tall tree.', 12, TRUE),
+('eng_m', 'M', 'consonant', 'group_english_consonants', 'Mat', 'Floor rug', '/mæt/', '🧘', 'assets/images/alphabets/mat.png', 'M is for Mat. Let us sit together on the mat.', 13, TRUE),
+('eng_n', 'N', 'consonant', 'group_english_consonants', 'Number', 'Counting digits', '/ˈnʌm.bər/', '🔢', 'assets/images/alphabets/number.png', 'N is for Number. 1, 2, 3, let us count!', 14, TRUE),
+('eng_o', 'O', 'vowel', 'group_english_vowels', 'Orange', 'Round citrus fruit', '/ˈɒr.ɪndʒ/', '🍊', 'assets/images/alphabets/orange.png', 'O is for Orange. Bright, round, and rich in Vitamin C.', 15, TRUE),
+('eng_p', 'P', 'consonant', 'group_english_consonants', 'Parrot', 'Colorful talking bird', '/ˈpær.ət/', '🦜', 'assets/images/alphabets/parrot.png', 'P is for Parrot. Chirping with bright green feathers.', 16, TRUE),
+('eng_q', 'Q', 'consonant', 'group_english_consonants', 'Queen', 'Royal kingdom ruler', '/kwiːn/', '👑', 'assets/images/alphabets/queen.png', 'Q is for Queen. Wearing a sparkling crown.', 17, TRUE),
+('eng_r', 'R', 'consonant', 'group_english_consonants', 'Rabbit', 'Cute hopping animal', '/ˈræb.ɪt/', '🐰', 'assets/images/alphabets/rabbit.png', 'R is for Rabbit. Hop, hop, hop across the meadow!', 18, TRUE),
+('eng_s', 'S', 'consonant', 'group_english_consonants', 'Ship', 'Large boat on sea', '/ʃɪp/', '🚢', 'assets/images/alphabets/ship.png', 'S is for Ship. Sailing across the vast blue ocean.', 19, TRUE),
+('eng_t', 'T', 'consonant', 'group_english_consonants', 'Tree', 'Tall woody plant with leaves', '/triː/', '🌳', 'assets/images/alphabets/tree.png', 'T is for Tree. Giving us fresh air and cooling shade.', 20, TRUE),
+('eng_u', 'U', 'vowel', 'group_english_vowels', 'Umbrella', 'Protection from rain', '/ʌmˈbrel.ə/', '☂️', 'assets/images/alphabets/umbrella.png', 'U is for Umbrella. Opening up when the rain pours down.', 21, TRUE),
+('eng_v', 'V', 'consonant', 'group_english_consonants', 'Van', 'Vehicle for transport', '/væn/', '🚐', 'assets/images/alphabets/van.png', 'V is for Van. Beep beep, let us ride together!', 22, TRUE),
+('eng_w', 'W', 'consonant', 'group_english_consonants', 'Wheel', 'Round rolling ring', '/wiːl/', '🛞', 'assets/images/alphabets/wheel.png', 'W is for Wheel. The wheels on the bus go round and round.', 23, TRUE),
+('eng_x', 'X', 'consonant', 'group_english_consonants', 'Xylophone', 'Colorful musical instrument', '/ˈzaɪ.lə.fəʊn/', '🎼', 'assets/images/alphabets/xylophone.png', 'X is for Xylophone. Tap the colorful bars for music!', 24, TRUE),
+('eng_y', 'Y', 'consonant', 'group_english_consonants', 'Yo-yo', 'Spinning string toy', '/ˈjəʊ.jəʊ/', '🪀', 'assets/images/alphabets/yoyo.png', 'Y is for Yo-yo. Roll it down and bring it right back up!', 25, TRUE),
+('eng_z', 'Z', 'consonant', 'group_english_consonants', 'Zebra', 'Striped wild animal', '/ˈzeb.rə/', '🦓', 'assets/images/alphabets/zebra.png', 'Z is for Zebra. Running free with black and white stripes.', 26, TRUE)
+;
 
--- Aytham Letter
-INSERT INTO letters (id, letter, type, group_id, word, meaning, phonetic, icon_emoji, image_path, explanation, display_order)
-VALUES
-('aytham_ak', 'ஃ', 'aytham', 'group_aytham', 'எஃகு', 'Steel', 'ak', '⚔️', 'assets/images/sward.jpg', 'உறுதியான எஃகு வாள்', 1)
-ON CONFLICT DO NOTHING;
-
--- 18 Mei Letters (Key samples)
-INSERT INTO letters (id, letter, type, group_id, word, meaning, phonetic, icon_emoji, image_path, explanation, display_order)
-VALUES
-('mei_ik', 'க்', 'mei', 'group_mei', 'சக்கரம்', 'Wheel', 'ik', '🎡', 'assets/images/wheel.jpg', 'சுழலும் சக்கரம்', 1),
-('mei_ing', 'ங்', 'mei', 'group_mei', 'சங்கு', 'Conch', 'ing', '🐚', 'assets/images/sangu.png', 'கடல் சங்கு', 2),
-('mei_ich', 'ச்', 'mei', 'group_mei', 'எலுமிச்சை', 'புளிப்பான எலுமிச்சை', 'ich', '🍋', NULL, 'மெய் எழுத்து "ச்". (எலுமிச்சை)', 3),
-('mei_inj', 'ஞ்', 'mei', 'group_mei', 'ஊஞ்சல்', 'Swing', 'inj', '🎪', 'assets/images/swing (2).jpg', 'ஆடும் ஊஞ்சல்', 4),
-('mei_it', 'ட்', 'mei', 'group_mei', 'பட்டம்', 'Kite', 'iT', '🪁', 'assets/images/skite.jpg', 'பறக்கும் பட்டம்', 5),
-('mei_inn', 'ண்', 'mei', 'group_mei', 'கண்', 'Eye', 'iN', '👁️', 'assets/images/eye.jpg', 'அழகிய கண்', 6),
-('mei_ith', 'த்', 'mei', 'group_mei', 'நத்தை', 'Snail', 'ith', '🐌', 'assets/images/snail.jpg', 'மெல்ல நகரும் நத்தை', 7),
-('mei_indh', 'ந்', 'mei', 'group_mei', 'பந்து', 'Ball', 'indh', '⚽', 'assets/images/ball.jpg', 'விளையாடும் பந்து', 8),
-('mei_ip', 'ப்', 'mei', 'group_mei', 'கப்பல்', 'Ship', 'ip', '🚢', 'assets/images/ship.jpg', 'பெரிய கப்பல்', 9),
-('mei_im', 'ம்', 'mei', 'group_mei', 'மரம்', 'Tree', 'im', '🌳', 'assets/images/tree.jpg', 'நிழல் தரும் மரம்', 10),
-('mei_iy', 'ய்', 'mei', 'group_mei', 'பாய்', 'Mat', 'iy', '🧺', 'assets/images/mat.jpg', 'படுக்க உதவும் பாய்', 11),
-('mei_ir', 'ர்', 'mei', 'group_mei', 'தேர்', 'கோவில் தேர்', 'ir', '🛕', NULL, 'மெய் எழுத்து "ர்". (தேர்)', 12),
-('mei_il', 'ல்', 'mei', 'group_mei', 'சேவல்', 'Rooster', 'il', '🐓', 'assets/images/hen.jpg', 'கூவும் சேவல்', 13),
-('mei_iv', 'வ்', 'mei', 'group_mei', 'செவ்வானம்', 'மாலைச் செவ்வானம்', 'iv', '🌅', 'https://res.cloudinary.com/dy8bu8suk/image/upload/v1791177499/agaram_media/images/backend_pic__tura_de_ap___s__n__toas___1789718909825_30607.jpg', 'மெய் எழுத்து "வ்". (செவ்வானம்)', 14),
-('mei_izh', 'ழ்', 'mei', 'group_mei', 'யாழ்', 'Harp', 'izh', '🪕', 'assets/images/Harp.jpg', 'இசைக்கும் யாழ்', 15),
-('mei_ill', 'ள்', 'mei', 'group_mei', 'வாள்', 'Sword', 'ill', '🗡️', 'assets/images/sward.jpg', 'வீர வாள்', 16),
-('mei_irr', 'ற்', 'mei', 'group_mei', 'வெற்றிலை', 'பச்சை வெற்றிலை', 'irr', '🍃', 'https://res.cloudinary.com/dy8bu8suk/image/upload/v1791177419/agaram_media/images/frontend_leaf.jpg', 'மெய் எழுத்து "ற்". (வெற்றிலை)', 17),
-('mei_in', 'ன்', 'mei', 'group_mei', 'மீன்', 'Fish', 'in', '🐟', 'assets/images/fish.jpg', 'நீந்தும் மீன்', 18)
-ON CONFLICT DO NOTHING;
-
--- Reading Story: முயலும் ஆமையும்
+-- Reading Stories
 INSERT INTO reading_stories (id, title, subtitle, cover_emoji, cover_image, moral, display_order, is_published)
 VALUES
-('story_tortoise_rabbit', 'முயலும் ஆமையும்', 'முயற்சி திருவினையாக்கும்!', '🐰🐢', 'assets/images/story_friends.jpg', 'பொறுமையும் தொடர் முயற்சியும் எப்போதும் வெற்றி தரும்!', 1, TRUE)
-ON CONFLICT DO NOTHING;
+('story_hare_tortoise', 'The Hare and the Tortoise', 'A classic fable of speed and patience', '🐰🐢', 'assets/images/story_friends.jpg', 'Slow and steady wins the race!', 1, TRUE),
+('story_lion_mouse', 'The Lion and the Mouse', 'A tiny act of kindness can save a life', '🦁🐭', 'assets/images/story_victory.jpg', 'Even the smallest friend can be of great help!', 2, TRUE)
+;
 
 INSERT INTO reading_story_pages (story_id, page_number, text, emoji_illustration, character_name, image_path, interactive_words)
 VALUES
-('story_tortoise_rabbit', 1, 'ஒரு காட்டில் முயலும் ஆமையும் வாழ்ந்தன.', '🌲🐰 🐢🌿', 'காடு', 'assets/images/story_forest.jpg', '[{"word":"காட்டில்","displayLabel":"காடு","imagePath":"assets/images/story_forest.jpg","emoji":"🌲","meaning":"அழகான காடு (Forest)"},{"word":"முயலும்","displayLabel":"முயல்","imagePath":"assets/images/story_rabbit.jpg","emoji":"🐰","meaning":"சுட்டி முயல் (Rabbit)"},{"word":"ஆமையும்","displayLabel":"ஆமை","imagePath":"assets/images/story_tortoise.jpg","emoji":"🐢","meaning":"அன்பான ஆமை (Tortoise)"}]'),
-('story_tortoise_rabbit', 2, 'முயல் வேகமாக ஓடும்.\nஆமை மெதுவாக நடக்கும்.', '🐰💨 🐢🐾', 'முயலும் ஆமையும்', 'assets/images/story_friends.jpg', NULL),
-('story_tortoise_rabbit', 3, 'இருவரும் ஓட்டப்பந்தயம் வைத்தனர்.\nமுயல் வேகமாக ஓடியது.', '🏁🐰💨 ... 🐢', 'ஓட்டப்பந்தயம்', 'assets/images/story_race.jpg', NULL),
-('story_tortoise_rabbit', 4, 'முயல் மரத்தடியில் தூங்கிவிட்டது.\nஆமை தொடர்ந்து நடந்தது.', '🌳😴🐰💤  🐢🐾', 'தூங்கும் முயல்', 'assets/images/story_sleeping_rabbit.jpg', NULL),
-('story_tortoise_rabbit', 5, 'ஆமை முதலில் சென்றது.\nபோட்டியில் வெற்றி பெற்றது!', '🎉🏆🐢✨ 😲🐰', 'வெற்றி!', 'assets/images/story_victory.jpg', NULL),
-('story_tortoise_rabbit', 6, 'முயல் தன் தவறை உணர்ந்தது.\nவிடாமுயற்சி வெற்றி தரும்!', '🌟🤝🐰🐢💖', 'நீதி', 'assets/images/story_friends.jpg', NULL)
-ON CONFLICT DO NOTHING;
+('story_hare_tortoise', 1, 'Once upon a time in a sunny forest, a Hare and a Tortoise lived as neighbors.', '🌲🐰 🐢🌿', 'Forest Friends', 'assets/images/story_forest.jpg', '[{"word":"forest","displayLabel":"Forest","emoji":"🌲","meaning":"A place with many green trees"},{"word":"Hare","displayLabel":"Hare","emoji":"🐰","meaning":"A swift rabbit"},{"word":"Tortoise","displayLabel":"Tortoise","emoji":"🐢","meaning":"A gentle friend who moves steadily"}]'),
+('story_hare_tortoise', 2, 'The Hare loved to boast: "I am the fastest animal in the whole forest!" The Tortoise just smiled.', '🐰💨 🐢🐾', 'The Boastful Hare', 'assets/images/story_friends.jpg', NULL),
+('story_hare_tortoise', 3, 'They decided to hold a great running race to the tall oak tree!', '🏁🐰💨 ... 🐢', 'The Great Race', 'assets/images/story_race.jpg', NULL),
+('story_hare_tortoise', 4, 'The Hare ran super fast, looked back, and thought: "I have plenty of time. Let me take a quick nap!"', '🌳😴🐰💤  🐢🐾', 'Sleeping Hare', 'assets/images/story_sleeping_rabbit.jpg', NULL),
+('story_hare_tortoise', 5, 'The Tortoise never stopped. Step by step, walking forward with determination.', '🎉🏆🐢✨ 😲🐰', 'Steady Walking', 'assets/images/story_victory.jpg', NULL),
+('story_hare_tortoise', 6, 'The Tortoise crossed the finish line first! Slow and steady wins the race!', '🌟🤝🐰🐢💖', 'Victory & Moral', 'assets/images/story_friends.jpg', NULL)
+;
 
--- Videos (12 Uyir + 18 Mei letters from Cloudinary)
+-- Videos
 INSERT INTO videos (id, title, description, category, duration, thumbnail_emoji, video_url, display_order, is_published)
 VALUES
-('vid_uyir_1', 'அ', 'உயிர் எழுத்து அ (அம்மா)', 'உயிர் எழுத்துகள்', '00:15', '🎬அ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790841742/agaram_media/videos/lyai8f00wea5mpvknty5.mp4', 1, TRUE),
-('vid_uyir_2', 'ஆ', 'உயிர் எழுத்து ஆ (ஆடு)', 'உயிர் எழுத்துகள்', '00:15', '🎬ஆ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790849387/agaram_media/videos/yileko0mif4cuduhy3ty.mp4', 2, TRUE),
-('vid_uyir_3', 'இ', 'உயிர் எழுத்து இ (இலை)', 'உயிர் எழுத்துகள்', '00:15', '🎬இ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790849484/agaram_media/videos/pskdcrc7xqmdsqbgh9no.mp4', 3, TRUE),
-('vid_uyir_4', 'ஈ', 'உயிர் எழுத்து ஈ (ஈ)', 'உயிர் எழுத்துகள்', '00:15', '🎬ஈ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790849525/agaram_media/videos/lhylws8eq0iijt9azfhp.mp4', 4, TRUE),
-('vid_uyir_5', 'உ', 'உயிர் எழுத்து உ (உரல்)', 'உயிர் எழுத்துகள்', '00:15', '🎬உ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790849570/agaram_media/videos/srteaw6jwtppkt0e6esl.mp4', 5, TRUE),
-('vid_uyir_6', 'ஊ', 'உயிர் எழுத்து ஊ (ஊஞ்சல்)', 'உயிர் எழுத்துகள்', '00:15', '🎬ஊ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790849604/agaram_media/videos/mvtffw845vapnhrhokcu.mp4', 6, TRUE),
-('vid_uyir_7', 'எ', 'உயிர் எழுத்து எ (எலி)', 'உயிர் எழுத்துகள்', '00:15', '🎬எ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790849714/agaram_media/videos/losz1xmdpogdsyb3kfkb.mp4', 7, TRUE),
-('vid_uyir_8', 'ஏ', 'உயிர் எழுத்து ஏ (ஏணி)', 'உயிர் எழுத்துகள்', '00:15', '🎬ஏ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790849774/agaram_media/videos/ctcqwju9p8xcdppwxogk.mp4', 8, TRUE),
-('vid_uyir_9', 'ஐ', 'உயிர் எழுத்து ஐ (ஐந்து)', 'உயிர் எழுத்துகள்', '00:15', '🎬ஐ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790849825/agaram_media/videos/abyi5xu4ffymff9ioosy.mp4', 9, TRUE),
-('vid_uyir_10', 'ஒ', 'உயிர் எழுத்து ஒ (ஒட்டகம்)', 'உயிர் எழுத்துகள்', '00:15', '🎬ஒ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790854598/agaram_media/videos/ranfb0lwkaspm4mffrqp.mp4', 10, TRUE),
-('vid_uyir_11', 'ஓ', 'உயிர் எழுத்து ஓ (ஓடம்)', 'உயிர் எழுத்துகள்', '00:15', '🎬ஓ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790854646/agaram_media/videos/gv3wggfnpbus8n2fol4c.mp4', 11, TRUE),
-('vid_uyir_12', 'ஔ', 'உயிர் எழுத்து ஔ (ஔவையார்)', 'உயிர் எழுத்துகள்', '00:15', '🎬ஔ', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1790855080/agaram_media/videos/btefhsc3k9n0kgfhmcrn.mp4', 12, TRUE),
-('vid_mei_1', 'க்', 'மெய் எழுத்து க் (சக்கரம்)', 'மெய் எழுத்துகள்', '00:15', '✍️க்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791006753/agaram_media/videos/fg18xjxo2q4p9wsyfvpo.mp4', 1, TRUE),
-('vid_mei_2', 'ங்', 'மெய் எழுத்து ங் (சங்கு)', 'மெய் எழுத்துகள்', '00:15', '✍️ங்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791007508/agaram_media/videos/zjmzubpswzwhlkvl5ojn.mp4', 2, TRUE),
-('vid_mei_3', 'ச்', 'மெய் எழுத்துச் (தச்சர்)', 'மெய் எழுத்துகள்', '00:15', '✍️ச்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791007812/agaram_media/videos/fsagxkudps6vh6lybuno.mp4', 3, TRUE),
-('vid_mei_4', 'ஞ்', 'மெய் எழுத்து ஞ் (ஊஞ்சல்)', 'மெய் எழுத்துகள்', '00:15', '✍️ஞ்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791007916/agaram_media/videos/ykprwmafp4al32alrsa6.mp4', 4, TRUE),
-('vid_mei_5', 'ட்', 'மெய் எழுத்து ட் (பட்டம்)', 'மெய் எழுத்துகள்', '00:15', '✍️ட்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791008045/agaram_media/videos/sd0kk4jfqz572vowz63j.mp4', 5, TRUE),
-('vid_mei_6', 'ண்', 'மெய் எழுத்து ண் (கண்)', 'மெய் எழுத்துகள்', '00:15', '✍️ண்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791011858/agaram_media/videos/mrj9929eyumtpsvwvk49.mp4', 6, TRUE),
-('vid_mei_7', 'த்', 'மெய் எழுத்து த் (நத்தை)', 'மெய் எழுத்துகள்', '00:15', '✍️த்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791012537/agaram_media/videos/xayiuz964o3qwkbtpjkr.mp4', 7, TRUE),
-('vid_mei_8', 'ந்', 'மெய் எழுத்து ந் (பந்து)', 'மெய் எழுத்துகள்', '00:15', '✍️ந்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791012754/agaram_media/videos/jb0av76qcjimjylof1oh.mp4', 8, TRUE),
-('vid_mei_9', 'ப்', 'மெய் எழுத்து ப் (கப்பல்)', 'மெய் எழுத்துகள்', '00:15', '✍️ப்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791013206/agaram_media/videos/hgdp4p7sjj4zuemigges.mp4', 9, TRUE),
-('vid_mei_10', 'ம்', 'மெய் எழுத்து ம் (மரம்)', 'மெய் எழுத்துகள்', '00:15', '✍️ம்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791178025/agaram_media/videos/rvu5tcop5a4inyy2myty.mp4', 10, TRUE),
-('vid_mei_11', 'ய்', 'மெய் எழுத்து ய் (பாய்)', 'மெய் எழுத்துகள்', '00:15', '✍️ய்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791178322/agaram_media/videos/pzjgq9yxjcf3xcyaxbbh.mp4', 11, TRUE),
-('vid_mei_12', 'ர்', 'மெய் எழுத்து ர் (ஏர்)', 'மெய் எழுத்துகள்', '00:15', '✍️ர்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791178852/agaram_media/videos/k4tqtli6kuwysaqx7muw.mp4', 12, TRUE),
-('vid_mei_13', 'ல்', 'மெய் எழுத்து ல் (சேவல்)', 'மெய் எழுத்துகள்', '00:15', '✍️ல்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179035/agaram_media/videos/p8fcozkulcpzcpvdcsgd.mp4', 13, TRUE),
-('vid_mei_14', 'வ்', 'மெய் எழுத்து வ் (செவ்வந்தி)', 'மெய் எழுத்துகள்', '00:15', '✍️வ்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179306/agaram_media/videos/jkhfxzw7ksobhb7hawpv.mp4', 14, TRUE),
-('vid_mei_15', 'ழ்', 'மெய் எழுத்து ழ் (யாழ்)', 'மெய் எழுத்துகள்', '00:15', '✍️ழ்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179352/agaram_media/videos/iinovuxh3dnlsajorpsp.mp4', 15, TRUE),
-('vid_mei_16', 'ள்', 'மெய் எழுத்து ள் (வாள்)', 'மெய் எழுத்துகள்', '00:15', '✍️ள்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179466/agaram_media/videos/ibjoez182v1nsagtyedb.mp4', 16, TRUE),
-('vid_mei_17', 'ற்', 'மெய் எழுத்து ற் (புற்று)', 'மெய் எழுத்துகள்', '00:15', '✍️ற்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179595/agaram_media/videos/umbutwkkjznope99qwnw.mp4', 17, TRUE),
-('vid_mei_18', 'ன்', 'மெய் எழுத்து ன் (மீன்)', 'மெய் எழுத்துகள்', '00:15', '✍️ன்', 'https://res.cloudinary.com/dy8bu8suk/video/upload/v1791179910/agaram_media/videos/asrp5x7m9ynstmklzx40.mp4', 18, TRUE)
-ON CONFLICT (id) DO UPDATE SET 
-  title = EXCLUDED.title,
-  description = EXCLUDED.description,
-  category = EXCLUDED.category,
-  thumbnail_emoji = EXCLUDED.thumbnail_emoji,
-  video_url = EXCLUDED.video_url,
-  display_order = EXCLUDED.display_order,
-  is_published = EXCLUDED.is_published;
+('vid_abc_song', 'ABC Phonics Song (A to Z)', 'Sing along with the 26 English letters and phonics sounds', 'Alphabet Song', '03:15', '🎵', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', 1, TRUE),
+('vid_vowels_song', 'The Five Vowels (A, E, I, O, U)', 'Learn all about English vowels with upbeat melodies', 'Phonics & Rhymes', '02:45', '🍎', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', 2, TRUE),
+('vid_phonics_fun', 'Letter Sounds and Words for Kids', 'Phonics practice for children with cartoon animations', 'Stories & Phonics', '04:10', '🎬', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', 3, TRUE)
+;
 
 -- Quizzes
 INSERT INTO quizzes (id, title, subtitle, icon_emoji, category, question_count, pass_marks, stars_reward, is_active, display_order)
 VALUES
-('quiz_uyir', 'உயிர் எழுத்துகள் வினாடி வினா', 'அ முதல் ஔ வரையிலான எழுத்துகளை சோதிப்போம்', '🍎', 'uyir', 3, 2, 5, TRUE, 1)
-ON CONFLICT DO NOTHING;
+('quiz_alphabet_basics', 'Alphabet Basics Quiz', 'Test your knowledge on letters A through Z', '🔤', 'alphabets', 5, 3, 5, TRUE, 1),
+('quiz_vowels_fun', 'Vowels Challenge', 'Identify the 5 Vowels: A, E, I, O, U', '🍎', 'vowels', 3, 2, 5, TRUE, 2)
+;
 
 -- Quiz Questions
 INSERT INTO quiz_questions (id, quiz_id, question_text, visual_hint, explanation, marks, display_order, is_active)
 VALUES
-('q_uyir_1', 'quiz_uyir', 'அம்மா என்ற சொல்லின் முதல் எழுத்து எது?', '👩', 'அம்மா என்பதன் முதல் எழுத்து அ.', 1, 1, TRUE),
-('q_uyir_2', 'quiz_uyir', 'ஆடு என்ற சொல்லின் முதல் எழுத்து எது?', '🐐', 'ஆடு என்பதன் முதல் எழுத்து ஆ.', 1, 2, TRUE),
-('q_uyir_3', 'quiz_uyir', 'இலை என்ற சொல்லின் முதல் எழுத்து எது?', '🍃', 'இலை என்பதன் முதல் எழுத்து இ.', 1, 3, TRUE)
-ON CONFLICT DO NOTHING;
+('q_alpha_1', 'quiz_alphabet_basics', 'Which letter comes immediately after letter "A"?', '🔤', 'B comes right after A.', 1, 1, TRUE),
+('q_alpha_2', 'quiz_alphabet_basics', 'What is the starting letter of the word "Apple"?', '🍎', 'Apple starts with the letter A.', 1, 2, TRUE),
+('q_alpha_3', 'quiz_alphabet_basics', 'Which of the following letters is a VOWEL?', '⭐', 'E is one of the five vowels (A, E, I, O, U).', 1, 3, TRUE),
+('q_alpha_4', 'quiz_alphabet_basics', 'What is the last letter of the English Alphabet?', '🏁', 'Z is the 26th and final letter of the alphabet.', 1, 4, TRUE),
+('q_alpha_5', 'quiz_alphabet_basics', 'How many letters are in the English Alphabet?', '🔢', 'There are exactly 26 letters in the English Alphabet.', 1, 5, TRUE),
+('q_vowel_1', 'quiz_vowels_fun', 'Which letter is NOT a vowel?', '❓', 'B is a consonant, not a vowel.', 1, 1, TRUE),
+('q_vowel_2', 'quiz_vowels_fun', 'Which word starts with the vowel letter "O"?', '🍊', 'Orange starts with the vowel O.', 1, 2, TRUE),
+('q_vowel_3', 'quiz_vowels_fun', 'How many vowels are in the English language?', '🖐️', 'There are 5 vowels: A, E, I, O, and U.', 1, 3, TRUE)
+;
 
 -- Quiz Options
 INSERT INTO quiz_options (question_id, option_text, is_correct, display_order)
 VALUES
-('q_uyir_1', 'அ', TRUE, 1),
-('q_uyir_1', 'ஆ', FALSE, 2),
-('q_uyir_1', 'இ', FALSE, 3),
-('q_uyir_1', 'ஈ', FALSE, 4),
-('q_uyir_2', 'அ', FALSE, 1),
-('q_uyir_2', 'ஆ', TRUE, 2),
-('q_uyir_2', 'ஊ', FALSE, 3),
-('q_uyir_2', 'எ', FALSE, 4),
-('q_uyir_3', 'இ', TRUE, 1),
-('q_uyir_3', 'ஈ', FALSE, 2),
-('q_uyir_3', 'உ', FALSE, 3),
-('q_uyir_3', 'ஐ', FALSE, 4);
+('q_alpha_1', 'B', TRUE, 1),
+('q_alpha_1', 'C', FALSE, 2),
+('q_alpha_1', 'D', FALSE, 3),
+('q_alpha_1', 'Z', FALSE, 4),
+
+('q_alpha_2', 'A', TRUE, 1),
+('q_alpha_2', 'P', FALSE, 2),
+('q_alpha_2', 'L', FALSE, 3),
+('q_alpha_2', 'E', FALSE, 4),
+
+('q_alpha_3', 'E', TRUE, 1),
+('q_alpha_3', 'B', FALSE, 2),
+('q_alpha_3', 'K', FALSE, 3),
+('q_alpha_3', 'M', FALSE, 4),
+
+('q_alpha_4', 'Z', TRUE, 1),
+('q_alpha_4', 'X', FALSE, 2),
+('q_alpha_4', 'Y', FALSE, 3),
+('q_alpha_4', 'W', FALSE, 4),
+
+('q_alpha_5', '26', TRUE, 1),
+('q_alpha_5', '20', FALSE, 2),
+('q_alpha_5', '24', FALSE, 3),
+('q_alpha_5', '30', FALSE, 4),
+
+('q_vowel_1', 'B', TRUE, 1),
+('q_vowel_1', 'A', FALSE, 2),
+('q_vowel_1', 'E', FALSE, 3),
+('q_vowel_1', 'I', FALSE, 4),
+
+('q_vowel_2', 'Orange', TRUE, 1),
+('q_vowel_2', 'Banana', FALSE, 2),
+('q_vowel_2', 'Mango', FALSE, 3),
+('q_vowel_2', 'Grape', FALSE, 4),
+
+('q_vowel_3', '5', TRUE, 1),
+('q_vowel_3', '3', FALSE, 2),
+('q_vowel_3', '7', FALSE, 3),
+('q_vowel_3', '10', FALSE, 4);
 
 -- Educational Games
 INSERT INTO games (id, game_type, title, prompt, clue, clue_image, correct_index, options_json, success_praise, stars_reward, is_active, display_order)
 VALUES
-('game_runner_1', 'runner', 'அகரம் ஓட்டம் (2D Runner)', 'ஓடி விளையாடி தமிழ் எழுத்துகளை சேகரிக்கவும்!', '2D ஓட்டப் பந்தயம் - அ, ஆ, இ, ஈ', 'assets/images/welcome.png', 0, '["அ", "ஆ", "இ", "ஈ"]', 'அருமை! இலக்கை அடைந்துவிட்டீர்கள்! 🏃⭐', 3, TRUE, 1),
-('game_candy_1', 'candy', 'தமிழ் எழுத்து மிட்டாய் (Match-3)', 'ஒரே மாதிரி உள்ள தமிழ் எழுத்து மிட்டாய்களை இணைத்து மகிழுங்கள்!', 'Match-3 மிட்டாய் விளையாட்டு', 'assets/images/welcome.png', 0, '["அ", "ஆ", "இ", "ஈ"]', 'மிட்டாய் வெடித்தது! சூப்பர்! 🍬✨', 3, TRUE, 2),
-('game_racing_1', 'racing', 'உயிர் எழுத்து கார் பந்தயம் (Car Racing)', 'ஒலியைக் கேட்டு காரை ஓட்டி சரியான உயிர் எழுத்துகளை சேகரியுங்கள்!', 'கார் பந்தயம் - உயிர் எழுத்துகள்', 'assets/images/welcome.png', 0, '["அ", "ஆ", "இ", "ஈ"]', 'வெற்றிப் பாதை! வேகம் சூப்பர்! 🚗🏁', 3, TRUE, 3),
-('game_fishing_1', 'fishing', 'எழுத்து மீன்பிடி (Letter Fishing)', 'நீந்தும் வண்ண மீன்களில் சரியான உயிர் எழுத்துகளைப் பிடித்து மகிழுங்கள்!', 'மீன்பிடி விளையாட்டு', 'assets/images/welcome.png', 1, '["அ", "ஆ", "இ", "ஈ"]', 'மீன் சிக்கியது! அருமை! 🎣🐟', 3, TRUE, 4),
-('game_basket_1', 'basket', 'எழுத்துக் கூடை (Basket - உயிர் எழுத்துகள்)', 'வானிலிருந்து விழும் சரியான உயிர் எழுத்துகளைக் கூடையில் பிடியுங்கள்!', 'கூடை விளையாட்டு - உயிர் எழுத்துகள்', 'assets/images/welcome.png', 0, '["அ", "ஆ", "இ", "ஈ"]', 'கூடையில் விழுந்தது! அற்புதம்! 🧺🍎', 3, TRUE, 5),
-('game_basket_2', 'basket', 'எழுத்துக் கூடை (Basket - மெய் எழுத்துகள்)', 'வானிலிருந்து விழும் புள்ளியிட்ட மெய் எழுத்துகளைக் கூடையில் பிடியுங்கள்!', 'கூடை விளையாட்டு - மெய் எழுத்துகள்', 'assets/images/welcome.png', 0, '["க்", "ங்", "ச்", "ஞ்"]', 'மெய் எழுத்து பிடித்தாச்சு! 🧺⭐', 3, TRUE, 6),
-('game_puzzle_1', 'puzzle', 'சொல் புதிர் (Word Puzzle)', 'அம்மா சொல்லின் முதல் எழுத்தைத் தொடுக!', 'அ - ம்மா', 'assets/images/welcome.png', 0, '["அ", "ஆ", "இ", "ஈ"]', 'அற்புதம்! அ என்பது சரி! ⭐', 3, TRUE, 7),
-('game_balloon_1', 'balloon', 'பலூன் வெடிப்பு (Balloon Pop)', 'ஆ எழுத்துள்ள பலூனைத் தொடு!', 'ஆடு', 'assets/images/welcome.png', 1, '["அ", "ஆ", "இ", "ஈ"]', 'அருமை! பலூன் வெடித்தது! 🎈', 3, TRUE, 8)
-ON CONFLICT DO NOTHING;
+('game_runner_1', 'runner', 'Alphabet Runner (2D Runner)', 'Run and jump to collect the correct letters!', 'Collect letter A', 'assets/images/welcome.png', 0, '["A", "B", "C", "D"]', 'Awesome! Goal reached! 🏃⭐', 3, TRUE, 1),
+('game_candy_1', 'candy', 'Alphabet Candy Match (Match-3)', 'Match 3 colorful letter candies together!', 'Match 3 Letter Candies', 'assets/images/welcome.png', 0, '["A", "B", "C", "D"]', 'Candy burst! Super! 🍬✨', 3, TRUE, 2),
+('game_racing_1', 'racing', 'Alphabet Car Racing', 'Steer your car and drive through the correct letter!', 'Car Racing - Letter A', 'assets/images/welcome.png', 0, '["A", "B", "C", "D"]', 'Speed champion! Great driving! 🚗🏁', 3, TRUE, 3),
+('game_fishing_1', 'fishing', 'Letter Fishing', 'Catch the swimming fish with the letter B!', 'Letter Fishing', 'assets/images/welcome.png', 1, '["A", "B", "C", "D"]', 'You caught the fish! Splendid! 🎣🐟', 3, TRUE, 4),
+('game_basket_1', 'basket', 'Letter Basket', 'Catch the falling letter C into your basket!', 'Basket Game', 'assets/images/welcome.png', 2, '["A", "B", "C", "D"]', 'Caught right in the basket! 🧺🍎', 3, TRUE, 5),
+('game_puzzle_1', 'puzzle', 'Word Puzzle', 'Touch the starting letter of the word Apple!', 'A - pple', 'assets/images/welcome.png', 0, '["A", "B", "C", "D"]', 'Brilliant! A is for Apple! ⭐', 3, TRUE, 6),
+('game_balloon_1', 'balloon', 'Balloon Pop', 'Pop the balloon that has the letter D!', 'Dog', 'assets/images/welcome.png', 3, '["A", "B", "C", "D"]', 'POP! Wonderful job! 🎈', 3, TRUE, 7)
+;

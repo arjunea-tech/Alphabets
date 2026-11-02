@@ -4,10 +4,7 @@ import '../models/game_model.dart';
 import '../models/video_model.dart';
 import '../models/quiz_model.dart';
 
-import '../data/uyir_data.dart';
-import '../data/mei_data.dart';
-import '../data/aytham_data.dart';
-import '../data/uyirmei_data.dart';
+import '../data/english_letters_data.dart';
 import '../data/story_data.dart';
 import '../data/game_data.dart';
 import '../data/video_data.dart';
@@ -17,12 +14,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'api_config.dart';
 
-import '../data/telugu_letters_data.dart';
-import 'language_service.dart';
-
 abstract class IDataRepository {
-  Future<List<LetterModel>> getUyirLetters();
-  Future<List<LetterModel>> getMeiLetters();
+  Future<List<LetterModel>> getAllAlphabets();
+  Future<List<LetterModel>> getUyirLetters(); // Vowels (A, E, I, O, U)
+  Future<List<LetterModel>> getMeiLetters(); // Consonants (21 Letters)
   Future<LetterModel> getAythamLetter();
   Future<List<LetterModel>> getUyirmeiByGroup(String meiBase);
   Future<List<String>> getMeiGroupBases();
@@ -35,34 +30,33 @@ abstract class IDataRepository {
 
 class LocalDataRepository implements IDataRepository {
   @override
+  Future<List<LetterModel>> getAllAlphabets() async {
+    return englishLettersList;
+  }
+
+  @override
   Future<List<LetterModel>> getUyirLetters() async {
-    if (LanguageService.instance.currentLanguageCode == 'te') {
-      return teluguAchuluList;
-    }
-    return uyirLettersList;
+    return englishVowelsList;
   }
 
   @override
   Future<List<LetterModel>> getMeiLetters() async {
-    if (LanguageService.instance.currentLanguageCode == 'te') {
-      return teluguHalluluList;
-    }
-    return meiLettersList;
+    return englishConsonantsList;
   }
 
   @override
   Future<LetterModel> getAythamLetter() async {
-    return aythamLetterData;
+    return englishLettersList.first;
   }
 
   @override
   Future<List<LetterModel>> getUyirmeiByGroup(String meiBase) async {
-    return uyirmeiLettersMap[meiBase] ?? [];
+    return [];
   }
 
   @override
   Future<List<String>> getMeiGroupBases() async {
-    return uyirmeiGroupBases;
+    return [];
   }
 
   @override
@@ -87,46 +81,32 @@ class LocalDataRepository implements IDataRepository {
 
   @override
   Future<List<QuizQuestion>> getQuizQuestions(String categoryId) async {
-    return tamilQuizQuestionsMap[categoryId] ?? [];
+    return tamilQuizQuestionsMap[categoryId] ?? tamilQuizQuestionsMap['quiz_alphabets'] ?? [];
   }
 }
 
 class ApiDataRepository implements IDataRepository {
   final LocalDataRepository _fallback = LocalDataRepository();
-  Map<String, List<LetterModel>>? _cachedUyirmeiMap;
-  List<LetterModel>? _cachedUyir;
-  List<LetterModel>? _cachedMei;
-  String? _cachedLang;
-
-  void _checkLanguageCache() {
-    final curLang = LanguageService.instance.currentLanguageCode;
-    if (_cachedLang != curLang) {
-      _cachedUyir = null;
-      _cachedMei = null;
-      _cachedUyirmeiMap = null;
-      _cachedLang = curLang;
-    }
-  }
+  List<LetterModel>? _cachedAll;
+  List<LetterModel>? _cachedVowels;
+  List<LetterModel>? _cachedConsonants;
+  List<VideoItem>? _cachedVideos;
 
   LetterModel _enrichWithLocalAssets(LetterModel letter) {
     if (letter.imagePath == null ||
         letter.imagePath!.isEmpty ||
         letter.imagePath == 'assets/images/welcome.png') {
-      final List<LetterModel> sourceList = letter.type == LetterType.uyir
-          ? (LanguageService.instance.currentLanguageCode == 'te' ? teluguAchuluList : uyirLettersList)
-          : (letter.type == LetterType.mei ? (LanguageService.instance.currentLanguageCode == 'te' ? teluguHalluluList : meiLettersList) : []);
-      
-      final localMatch = sourceList.firstWhere(
-        (l) => (l.letter == letter.letter || l.id == letter.id) && l.word == letter.word,
+      final localMatch = englishLettersList.firstWhere(
+        (l) => l.letter.toUpperCase() == letter.letter.toUpperCase(),
         orElse: () => letter,
       );
 
-      if (localMatch != letter && localMatch.imagePath != null && localMatch.imagePath != 'assets/images/welcome.png') {
+      if (localMatch != letter && localMatch.imagePath != null) {
         return LetterModel(
           id: letter.id,
           letter: letter.letter,
           type: letter.type,
-          word: letter.word,
+          word: letter.word.isNotEmpty ? letter.word : localMatch.word,
           meaning: letter.meaning.isNotEmpty ? letter.meaning : localMatch.meaning,
           phonetic: letter.phonetic.isNotEmpty ? letter.phonetic : localMatch.phonetic,
           iconEmoji: letter.iconEmoji.isNotEmpty && letter.iconEmoji != '⭐'
@@ -136,8 +116,6 @@ class ApiDataRepository implements IDataRepository {
           audioPath: letter.audioPath ?? localMatch.audioPath,
           videoUrl: letter.videoUrl,
           explanation: letter.explanation ?? localMatch.explanation,
-          meiBase: letter.meiBase,
-          uyirBase: letter.uyirBase,
         );
       }
     }
@@ -145,14 +123,12 @@ class ApiDataRepository implements IDataRepository {
   }
 
   @override
-  Future<List<LetterModel>> getUyirLetters() async {
-    _checkLanguageCache();
-    if (_cachedUyir != null && _cachedUyir!.isNotEmpty) {
-      return _cachedUyir!;
+  Future<List<LetterModel>> getAllAlphabets() async {
+    if (_cachedAll != null && _cachedAll!.isNotEmpty) {
+      return _cachedAll!;
     }
-    final lang = LanguageService.instance.currentLanguageCode;
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/letters?type=uyir&lang=$lang&all=true');
+      final uri = Uri.parse('${ApiConfig.baseUrl}/letters?all=true');
       final res = await http.get(uri).timeout(const Duration(seconds: 4));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
@@ -162,26 +138,47 @@ class ApiDataRepository implements IDataRepository {
               .map((item) => _enrichWithLocalAssets(LetterModel.fromJson(item as Map<String, dynamic>)))
               .toList();
           if (letters.isNotEmpty) {
-            _cachedUyir = letters;
+            _cachedAll = letters;
             return letters;
           }
         }
       }
-    } catch (_) {
-      // Fall back to local data repository
+    } catch (_) {}
+    return _fallback.getAllAlphabets();
+  }
+
+  @override
+  Future<List<LetterModel>> getUyirLetters() async {
+    if (_cachedVowels != null && _cachedVowels!.isNotEmpty) {
+      return _cachedVowels!;
     }
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}/letters?type=vowel&all=true');
+      final res = await http.get(uri).timeout(const Duration(seconds: 4));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['success'] == true && data['data'] is List) {
+          final List list = data['data'];
+          final letters = list
+              .map((item) => _enrichWithLocalAssets(LetterModel.fromJson(item as Map<String, dynamic>)))
+              .toList();
+          if (letters.isNotEmpty) {
+            _cachedVowels = letters;
+            return letters;
+          }
+        }
+      }
+    } catch (_) {}
     return _fallback.getUyirLetters();
   }
 
   @override
   Future<List<LetterModel>> getMeiLetters() async {
-    _checkLanguageCache();
-    if (_cachedMei != null && _cachedMei!.isNotEmpty) {
-      return _cachedMei!;
+    if (_cachedConsonants != null && _cachedConsonants!.isNotEmpty) {
+      return _cachedConsonants!;
     }
-    final lang = LanguageService.instance.currentLanguageCode;
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/letters?type=mei&lang=$lang&all=true');
+      final uri = Uri.parse('${ApiConfig.baseUrl}/letters?type=consonant&all=true');
       final res = await http.get(uri).timeout(const Duration(seconds: 4));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
@@ -191,97 +188,54 @@ class ApiDataRepository implements IDataRepository {
               .map((item) => _enrichWithLocalAssets(LetterModel.fromJson(item as Map<String, dynamic>)))
               .toList();
           if (letters.isNotEmpty) {
-            _cachedMei = letters;
+            _cachedConsonants = letters;
             return letters;
           }
         }
       }
-    } catch (_) {
-      // Fall back to local data repository
-    }
+    } catch (_) {}
     return _fallback.getMeiLetters();
   }
 
   @override
   Future<LetterModel> getAythamLetter() async {
-    try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/letters?type=aytham&all=true');
-      final res = await http.get(uri).timeout(const Duration(seconds: 4));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        if (data['success'] == true && data['data'] is List && (data['data'] as List).isNotEmpty) {
-          return LetterModel.fromJson((data['data'] as List).first as Map<String, dynamic>);
-        }
-      }
-    } catch (_) {
-      // Fall back to local data repository
-    }
-    return _fallback.getAythamLetter();
+    final all = await getAllAlphabets();
+    return all.isNotEmpty ? all.first : englishLettersList.first;
   }
 
   @override
-  Future<List<String>> getMeiGroupBases() => _fallback.getMeiGroupBases();
+  Future<List<LetterModel>> getUyirmeiByGroup(String meiBase) async => [];
 
-  StoryModel _enrichStoryWithInteractiveData(StoryModel story) {
-    final fallbackPages = hareAndTortoiseStory.pages;
-    final enrichedPages = <StoryPageModel>[];
-
-    for (int i = 0; i < story.pages.length; i++) {
-      final page = story.pages[i];
-      final fallbackPage = i < fallbackPages.length ? fallbackPages[i] : null;
-
-      final interactiveWords = (page.interactiveWords.isNotEmpty)
-          ? page.interactiveWords
-          : (fallbackPage?.interactiveWords ?? const <StoryInteractiveWord>[]);
-
-      final imagePath = (page.imagePath != null && page.imagePath!.isNotEmpty)
-          ? page.imagePath
-          : fallbackPage?.imagePath;
-
-      enrichedPages.add(StoryPageModel(
-        pageNumber: page.pageNumber,
-        text: page.text.isNotEmpty ? page.text : (fallbackPage?.text ?? ''),
-        emojiIllustration: page.emojiIllustration.isNotEmpty ? page.emojiIllustration : (fallbackPage?.emojiIllustration ?? '📖'),
-        characterName: page.characterName.isNotEmpty ? page.characterName : (fallbackPage?.characterName ?? ''),
-        narratorAudio: page.narratorAudio ?? fallbackPage?.narratorAudio,
-        imagePath: imagePath,
-        interactiveWords: interactiveWords,
-      ));
-    }
-
-    return StoryModel(
-      id: story.id,
-      title: story.title,
-      subtitle: story.subtitle,
-      coverEmoji: story.coverEmoji,
-      coverImage: story.coverImage ?? hareAndTortoiseStory.coverImage,
-      moral: story.moral.isNotEmpty ? story.moral : hareAndTortoiseStory.moral,
-      pages: enrichedPages.isNotEmpty ? enrichedPages : hareAndTortoiseStory.pages,
-    );
-  }
+  @override
+  Future<List<String>> getMeiGroupBases() async => [];
 
   @override
   Future<StoryModel> getFeaturedStory() async {
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/stories/story_tortoise_rabbit');
+      final uri = Uri.parse('${ApiConfig.baseUrl}/stories');
       final res = await http.get(uri).timeout(const Duration(seconds: 4));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        if (data['success'] == true && data['data'] != null) {
-          final story = StoryModel.fromJson(data['data'] as Map<String, dynamic>);
-          return _enrichStoryWithInteractiveData(story);
+        if (data['success'] == true && data['data'] is List && (data['data'] as List).isNotEmpty) {
+          final storyJson = (data['data'] as List).first as Map<String, dynamic>;
+          // Fetch full story details with pages
+          final storyId = storyJson['id'];
+          final detailUri = Uri.parse('${ApiConfig.baseUrl}/stories/$storyId');
+          final detailRes = await http.get(detailUri).timeout(const Duration(seconds: 4));
+          if (detailRes.statusCode == 200) {
+            final detailData = jsonDecode(detailRes.body);
+            if (detailData['success'] == true && detailData['data'] != null) {
+              return StoryModel.fromJson(detailData['data'] as Map<String, dynamic>);
+            }
+          }
         }
       }
-    } catch (_) {
-      // Fall back to local data repository
-    }
+    } catch (_) {}
     return _fallback.getFeaturedStory();
   }
 
   @override
   Future<List<GameQuestion>> getGameQuestions() => _fallback.getGameQuestions();
-
-  List<VideoItem>? _cachedVideos;
 
   void clearVideoCache() {
     _cachedVideos = null;
@@ -300,14 +254,14 @@ class ApiDataRepository implements IDataRepository {
         if (data['success'] == true && data['data'] is List) {
           final List list = data['data'];
           final videos = list.map((item) => VideoItem.fromJson(item as Map<String, dynamic>)).toList();
-          _cachedVideos = videos;
-          return videos;
+          if (videos.isNotEmpty) {
+            _cachedVideos = videos;
+            return videos;
+          }
         }
       }
-    } catch (_) {
-      // Fall back to local data repository
-    }
-    return _cachedVideos ?? _fallback.getVideoLessons();
+    } catch (_) {}
+    return _fallback.getVideoLessons();
   }
 
   @override
@@ -316,50 +270,10 @@ class ApiDataRepository implements IDataRepository {
   @override
   Future<List<QuizQuestion>> getQuizQuestions(String categoryId) => _fallback.getQuizQuestions(categoryId);
 
-
-  @override
-  Future<List<LetterModel>> getUyirmeiByGroup(String meiBase) async {
-    if (_cachedUyirmeiMap != null && _cachedUyirmeiMap!.containsKey(meiBase)) {
-      return _cachedUyirmeiMap![meiBase]!;
-    }
-
-    try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/letters?type=uyirmei&all=true');
-      final res = await http.get(uri).timeout(const Duration(seconds: 4));
-
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        if (data['success'] == true && data['data'] is List) {
-          final List list = data['data'];
-          final map = <String, List<LetterModel>>{};
-
-          for (final item in list) {
-            final model = LetterModel.fromJson(item as Map<String, dynamic>);
-            final base = model.meiBase ?? '';
-            if (base.isNotEmpty) {
-              map.putIfAbsent(base, () => []).add(model);
-            }
-          }
-
-          if (map.isNotEmpty) {
-            _cachedUyirmeiMap = map;
-            if (map.containsKey(meiBase)) {
-              return map[meiBase]!;
-            }
-          }
-        }
-      }
-    } catch (_) {
-      // Gracefully fall back to local data repository
-    }
-
-    return _fallback.getUyirmeiByGroup(meiBase);
-  }
-
   void invalidateCache() {
-    _cachedUyirmeiMap = null;
-    _cachedUyir = null;
-    _cachedMei = null;
+    _cachedAll = null;
+    _cachedVowels = null;
+    _cachedConsonants = null;
     _cachedVideos = null;
   }
 }
@@ -376,6 +290,7 @@ class DataService {
     _repo = customRepo;
   }
 
+  Future<List<LetterModel>> getAllAlphabets() => _repo.getAllAlphabets();
   Future<List<LetterModel>> getUyirLetters() => _repo.getUyirLetters();
   Future<List<LetterModel>> getMeiLetters() => _repo.getMeiLetters();
   Future<LetterModel> getAythamLetter() => _repo.getAythamLetter();

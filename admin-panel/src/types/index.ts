@@ -63,7 +63,7 @@ export interface LetterGroup {
   id: string;
   name: string;
   display_title: string;
-  letter_type: 'uyir' | 'mei' | 'aytham' | 'uyirmei';
+  letter_type: 'vowel' | 'consonant' | 'english' | 'uyir' | 'mei' | 'aytham' | 'uyirmei';
   description?: string;
   display_order: number;
 }
@@ -71,7 +71,7 @@ export interface LetterGroup {
 export interface Letter {
   id: string;
   letter: string;
-  type: 'uyir' | 'mei' | 'aytham' | 'uyirmei';
+  type: 'vowel' | 'consonant' | 'english' | 'uyir' | 'mei' | 'aytham' | 'uyirmei';
   group_id: string | null;
   group_title?: string;
   word: string;

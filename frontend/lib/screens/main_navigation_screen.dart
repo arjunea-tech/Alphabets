@@ -8,8 +8,6 @@ import 'learning/learning_screen.dart';
 import 'quiz/quiz_screen.dart';
 import 'videos/videos_screen.dart';
 
-import '../services/language_service.dart';
-
 class MainNavigationScreen extends StatefulWidget {
   final ProgressService progressService;
 
@@ -41,35 +39,23 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       QuizScreen(progressService: widget.progressService),
     ];
 
-    return ListenableBuilder(
-      listenable: LanguageService.instance,
-      builder: (context, _) {
-        return Scaffold(
-          extendBody: true,
-          body: IndexedStack(
-            index: _selectedIndex,
-            children: screens,
-          ),
-          bottomNavigationBar: _buildCustomNavBar(),
-        );
-      },
+    return Scaffold(
+      extendBody: true,
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: screens,
+      ),
+      bottomNavigationBar: _buildCustomNavBar(),
     );
   }
 
   Widget _buildCustomNavBar() {
-    final lang = LanguageService.instance.currentLanguageCode;
-    final labels = lang == 'te'
-        ? ['హోమ్', 'నేర్చుకో', 'ఆటలు', 'వీడియోలు', 'క్విజ్']
-        : (lang == 'en'
-            ? ['Home', 'Learn', 'Games', 'Videos', 'Quiz']
-            : ['முகப்பு', 'கற்றல்', 'விளையாட்டு', 'காணொளி', 'வினாடி வினா']);
-
-    final items = [
-      _NavItem(icon: Icons.home_rounded, label: labels[0], color: AppColors.primary),
-      _NavItem(icon: Icons.menu_book_rounded, label: labels[1], color: AppColors.secondary),
-      _NavItem(icon: Icons.sports_esports_rounded, label: labels[2], color: AppColors.candyPurple),
-      _NavItem(icon: Icons.play_circle_filled_rounded, label: labels[3], color: AppColors.playfulPink),
-      _NavItem(icon: Icons.quiz_rounded, label: labels[4], color: AppColors.meiColor),
+    final items = const [
+      _NavItem(icon: Icons.home_rounded, label: 'Home', color: AppColors.primary),
+      _NavItem(icon: Icons.menu_book_rounded, label: 'Learn', color: AppColors.secondary),
+      _NavItem(icon: Icons.sports_esports_rounded, label: 'Games', color: AppColors.candyPurple),
+      _NavItem(icon: Icons.play_circle_filled_rounded, label: 'Videos', color: AppColors.playfulPink),
+      _NavItem(icon: Icons.quiz_rounded, label: 'Quiz', color: AppColors.meiColor),
     ];
 
     return SafeArea(
@@ -99,54 +85,42 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: List.generate(items.length, (index) {
-            final item = items[index];
             final isSelected = _selectedIndex == index;
+            final item = items[index];
 
-            return Expanded(
-              child: BouncyButton(
-                onPressed: () => _onTabSelected(index),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isSelected ? 10 : 6,
-                          vertical: isSelected ? 4 : 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? item.color.withValues(alpha: 0.18)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Icon(
-                          item.icon,
-                          color: isSelected ? item.color : AppColors.textMuted.withValues(alpha: 0.7),
-                          size: isSelected ? 24 : 20,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                          child: Text(
-                            item.label,
-                            style: TextStyle(
-                              fontSize: isSelected ? 10.5 : 9.5,
-                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                              color: isSelected ? item.color : AppColors.textMuted,
-                            ),
-                            maxLines: 1,
-                            textAlign: TextAlign.center,
-                          ),
+            return BouncyButton(
+              onPressed: () => _onTabSelected(index),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSelected ? 14 : 10,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected ? item.color.withValues(alpha: 0.15) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      item.icon,
+                      color: isSelected ? item.color : AppColors.textMuted,
+                      size: isSelected ? 26 : 24,
+                    ),
+                    if (isSelected) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        item.label,
+                        style: TextStyle(
+                          color: item.color,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
                         ),
                       ),
                     ],
-                  ),
+                  ],
                 ),
               ),
             );

@@ -2,8 +2,8 @@ import 'dart:ui';
 import '../models/letter_model.dart';
 
 enum BasketGameMode {
-  uyir('உயிர் எழுத்துகள்'),
-  mei('மெய் எழுத்துகள்');
+  uyir('English Alphabets (A - Z)'),
+  mei('English Vowels (A, E, I, O, U)');
 
   final String title;
   const BasketGameMode(this.title);

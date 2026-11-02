@@ -53,7 +53,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (password != confirmPassword) {
       setState(() {
-        _errorMessage = 'கடவுச்சொற்கள் பொருந்தவில்லை';
+        _errorMessage = 'Passwords do not match';
       });
       return;
     }
@@ -84,7 +84,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'பதிவு வெற்றிகரமாக முடிந்தது! 🎉',
+                  'Registration successful! 🎉',
                   style: GoogleFonts.catamaran(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -145,7 +145,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(20),
                           child: Image.asset(
-                            'assets/images/app_logo.png',
+                            'assets/images/app_logo_english.png',
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -154,7 +154,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 14),
 
                     Text(
-                      'எழுத்துக்கள்',
+                      'ALPHABETS',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.catamaran(
                         fontSize: 26,
@@ -166,7 +166,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 4),
 
                     Text(
-                      'புதிய கணக்கு தொடங்குங்கள்',
+                      'Create an Account',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.catamaran(
                         fontSize: 20,
@@ -177,7 +177,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 4),
 
                     Text(
-                      'தமிழோடு இனிமையாய் வளர்வோம்!',
+                      'Learn English Alphabets with fun and joy!',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.catamaran(
                         fontSize: 14,
@@ -233,8 +233,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 1. பெயர் (Name)
-                          _buildFieldLabel('பெயர்', Icons.person_rounded),
+                          // 1.  (Name)
+                          _buildFieldLabel('Name', Icons.person_rounded),
                           const SizedBox(height: 6),
                           TextFormField(
                             controller: _nameController,
@@ -245,20 +245,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               color: AppColors.textDark,
                             ),
                             decoration: _buildInputDecoration(
-                              hintText: 'உங்கள் முழுப் பெயர்',
+                              hintText: 'Enter your name',
                               prefixIcon: Icons.badge_outlined,
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'உங்கள் பெயரை உள்ளிடவும்';
+                                return 'Please enter your name';
                               }
                               return null;
                             },
                           ),
                           const SizedBox(height: 18),
 
-                          // 2. மின்னஞ்சல் (Email)
-                          _buildFieldLabel('மின்னஞ்சல்', Icons.email_rounded),
+                          // 2.  (Email)
+                          _buildFieldLabel('Email Address', Icons.email_rounded),
                           const SizedBox(height: 6),
                           TextFormField(
                             controller: _emailController,
@@ -275,19 +275,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'மின்னஞ்சல் முகவரி தேவை';
+                                return 'Email address is required';
                               }
                               final trimmed = value.trim();
                               if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(trimmed)) {
-                                return 'சரியான மின்னஞ்சல் முகவரியை உள்ளிடவும்';
+                                return 'Please enter a valid email address';
                               }
                               return null;
                             },
                           ),
                           const SizedBox(height: 18),
 
-                          // 3. கடவுச்சொல் (Password)
-                          _buildFieldLabel('கடவுச்சொல்', Icons.lock_rounded),
+                          // 3.  (Password)
+                          _buildFieldLabel('Password', Icons.lock_rounded),
                           const SizedBox(height: 6),
                           TextFormField(
                             controller: _passwordController,
@@ -298,7 +298,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               color: AppColors.textDark,
                             ),
                             decoration: _buildInputDecoration(
-                              hintText: 'குறைந்தது 6 எழுத்துகள்',
+                              hintText: 'At least 6 characters',
                               prefixIcon: Icons.lock_outline_rounded,
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -315,18 +315,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'கடவுச்சொல் தேவை';
+                                return 'Password is required';
                               }
                               if (value.length < 6) {
-                                return 'கடவுச்சொல் குறைந்தது 6 எழுத்துகள் இருக்க வேண்டும்';
+                                return 'Password must be at least 6 characters';
                               }
                               return null;
                             },
                           ),
                           const SizedBox(height: 18),
 
-                          // 4. கடவுச்சொல்லை உறுதிப்படுத்தவும் (Confirm Password)
-                          _buildFieldLabel('கடவுச்சொல்லை உறுதிப்படுத்தவும்', Icons.lock_clock_rounded),
+                          // 4.   (Confirm Password)
+                          _buildFieldLabel('Confirm Password', Icons.lock_clock_rounded),
                           const SizedBox(height: 6),
                           TextFormField(
                             controller: _confirmPasswordController,
@@ -337,7 +337,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               color: AppColors.textDark,
                             ),
                             decoration: _buildInputDecoration(
-                              hintText: 'கடவுச்சொல்லை மீண்டும் உள்ளிடவும்',
+                              hintText: 'Re-enter your password',
                               prefixIcon: Icons.verified_user_outlined,
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -354,10 +354,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'கடவுச்சொல்லை உறுதிப்படுத்தவும்';
+                                return 'Please confirm your password';
                               }
                               if (value != _passwordController.text) {
-                                return 'கடவுச்சொற்கள் பொருந்தவில்லை';
+                                return 'Passwords do not match';
                               }
                               return null;
                             },
@@ -367,7 +367,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Primary Button: பதிவு செய்யவும் (Register)
+                    // Primary Button:   (Register)
                     BouncyButton(
                       onPressed: _isLoading ? () {} : _handleRegister,
                       child: Container(
@@ -398,7 +398,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 )
                               : Text(
-                                  'பதிவு செய்யவும்',
+                                  'Sign Up',
                                   style: GoogleFonts.catamaran(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w800,
@@ -411,7 +411,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 18),
 
-                    // Secondary Link: ஏற்கனவே கணக்கு உள்ளதா? உள்நுழையவும்
+                    // Secondary Link:   ? 
                     Center(
                       child: TextButton(
                         onPressed: _isLoading
@@ -425,7 +425,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: RichText(
                           textAlign: TextAlign.center,
                           text: TextSpan(
-                            text: 'ஏற்கனவே கணக்கு உள்ளதா? ',
+                            text: 'Already have an account? ',
                             style: GoogleFonts.catamaran(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -433,7 +433,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             children: [
                               TextSpan(
-                                text: 'உள்நுழையவும்',
+                                text: 'Sign In',
                                 style: GoogleFonts.catamaran(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,

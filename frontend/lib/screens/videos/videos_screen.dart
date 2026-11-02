@@ -11,12 +11,12 @@ import '../../widgets/mascot_widget.dart';
 import 'video_player_screen.dart';
 
 const List<String> kUyirLetters = [
-  'அ', 'ஆ', 'இ', 'ஈ', 'உ', 'ஊ', 'எ', 'ஏ', 'ஐ', 'ஒ', 'ஓ', 'ஔ'
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'
 ];
 
 const List<String> kMeiLetters = [
-  'க்', 'ங்', 'ச்', 'ஞ்', 'ட்', 'ண்', 'த்', 'ந்', 'ப்', 'ம்',
-  'ய்', 'ர்', 'ல்', 'வ்', 'ழ்', 'ள்', 'ற்', 'ன்'
+  'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
+  'W', 'X', 'Y', 'Z'
 ];
 
 class VideosScreen extends StatefulWidget {
@@ -45,7 +45,7 @@ class _VideosScreenState extends State<VideosScreen> {
       final list = await DataService.instance.getVideoLessons();
       if (mounted) {
         setState(() {
-          _videos = list.where((v) => v.title.trim() != 'ஃ' && v.category != 'ஆய்த எழுத்து').toList();
+          _videos = list;
           _isLoading = false;
         });
       }
@@ -60,7 +60,7 @@ class _VideosScreenState extends State<VideosScreen> {
 
   bool _isUyirVideo(VideoItem v) {
     final cat = v.category.trim();
-    if (cat == 'உயிர் எழுத்துகள்' || cat == 'உயிர் எழுத்துக்கள்' || cat.toLowerCase() == 'uyir') {
+    if (cat == 'Vowels' || cat == 'Vowels' || cat.toLowerCase() == 'uyir') {
       return true;
     }
     return kUyirLetters.any((l) => v.title.trim() == l || v.title.trim().startsWith('$l '));
@@ -68,7 +68,7 @@ class _VideosScreenState extends State<VideosScreen> {
 
   bool _isMeiVideo(VideoItem v) {
     final cat = v.category.trim();
-    if (cat == 'மெய் எழுத்துகள்' || cat == 'மெய் எழுத்துக்கள்' || cat.toLowerCase() == 'mei') {
+    if (cat == 'Consonants' || cat == 'Consonants' || cat.toLowerCase() == 'mei') {
       return true;
     }
     return kMeiLetters.any((l) => v.title.trim() == l || v.title.trim().startsWith('$l '));
@@ -106,7 +106,7 @@ class _VideosScreenState extends State<VideosScreen> {
       builder: (context, _) {
         return Scaffold(
           appBar: KidAppBar(
-            title: 'காணொளிகள்',
+            title: 'Educational Videos',
             starCount: widget.progressService.stars,
             showBack: false,
           ),
@@ -142,14 +142,14 @@ class _VideosScreenState extends State<VideosScreen> {
                           if (_selectedFilter == 'all' || _selectedFilter == 'uyir') ...[
                             _buildSectionHeader(
                               icon: Icons.auto_awesome_rounded,
-                              title: 'உயிர் எழுத்துகள் காணொளிகள்',
+                              title: 'Alphabet Vowels & Phonics Videos',
                               countText: '${uyirList.length}/12',
-                              subtitle: 'அ முதல் ஔ வரையிலான எழுத்துப் பாடங்கள்',
+                              subtitle: 'Fun phonics and song lessons for vowels',
                               badgeColor: AppColors.uyirColor,
                             ),
                             const SizedBox(height: 10),
                             if (uyirList.isEmpty)
-                              _buildEmptyCategoryCard('உயிர் எழுத்துகள் காணொளிகள் எதுவும் இல்லை')
+                              _buildEmptyCategoryCard('No vowel videos found')
                             else
                               ...uyirList.map((v) => _buildVideoCard(v, isUyir: true)),
                             const SizedBox(height: 24),
@@ -159,9 +159,9 @@ class _VideosScreenState extends State<VideosScreen> {
                           if (_selectedFilter == 'all' || _selectedFilter == 'mei') ...[
                             _buildSectionHeader(
                               icon: Icons.edit_note_rounded,
-                              title: 'மெய் எழுத்துகள் காணொளிகள்',
+                              title: 'Alphabet Consonants & Word Videos',
                               countText: '${meiList.length}/18',
-                              subtitle: 'க் முதல் ன் வரையிலான எழுத்துப் பாடங்கள்',
+                              subtitle: 'Fun lessons for English consonants B to Z',
                               badgeColor: AppColors.meiColor,
                             ),
                             const SizedBox(height: 10),
@@ -217,7 +217,7 @@ class _VideosScreenState extends State<VideosScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(
-                    '🎬 காணொளி திரையரங்கம்',
+                    '🎬 Alphabet Video Theater',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -227,7 +227,7 @@ class _VideosScreenState extends State<VideosScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'பார்த்து கற்றுக்கொள்வோம்!',
+                  'Watch and Learn Alphabets!',
                   style: AppTextStyles.cardTitle.copyWith(
                     fontSize: 18,
                     color: const Color(0xFF004D40),
@@ -236,7 +236,7 @@ class _VideosScreenState extends State<VideosScreen> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'உயிர் மற்றும் மெய் எழுத்துகள் காணொளிகள்',
+                  'Alphabet Phonics, Rhymes & Lessons',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -259,9 +259,9 @@ class _VideosScreenState extends State<VideosScreen> {
 
   Widget _buildFilterChips(int uyirCount, int meiCount) {
     final filters = [
-      {'id': 'all', 'label': 'அனைத்தும்', 'count': _videos.length},
-      {'id': 'uyir', 'label': 'உயிர் எழுத்துகள்', 'count': uyirCount},
-      {'id': 'mei', 'label': 'மெய் எழுத்துகள்', 'count': meiCount},
+      {'id': 'all', 'label': 'All Videos', 'count': _videos.length},
+      {'id': 'uyir', 'label': 'Vowels', 'count': uyirCount},
+      {'id': 'mei', 'label': 'Consonants', 'count': meiCount},
     ];
 
     return SingleChildScrollView(
@@ -438,7 +438,7 @@ class _VideosScreenState extends State<VideosScreen> {
     final isLetterTitle = (isUyir && kUyirLetters.contains(video.title.trim())) ||
         (isMei && kMeiLetters.contains(video.title.trim()));
 
-    final displayTitle = isLetterTitle ? '${video.title} - எழுத்து காணொளி' : video.title;
+    final displayTitle = isLetterTitle ? '${video.title} - Letter Video' : video.title;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -646,7 +646,7 @@ class _VideosScreenState extends State<VideosScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'மெய் எழுத்துகள் காணொளிகள் (18)',
+                      'Consonants Videos (21)',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
@@ -654,7 +654,7 @@ class _VideosScreenState extends State<VideosScreen> {
                       ),
                     ),
                     Text(
-                      'நிர்வாகப் பலகையிலிருந்து பதிவேற்றலாம் (Admin Panel Upload)',
+                      'Videos can be managed from the Admin Panel',
                       style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                     ),
                   ],

@@ -47,22 +47,22 @@ class KidScaffoldBackground extends StatelessWidget {
           Positioned(
             top: 70,
             left: 24,
-            child: _buildFaintLetter('அ'),
+            child: _buildFaintLetter('A'),
           ),
           Positioned(
             top: 280,
             right: 20,
-            child: _buildFaintLetter('ஆ'),
+            child: _buildFaintLetter('B'),
           ),
           Positioned(
             bottom: 220,
             left: 30,
-            child: _buildFaintLetter('க'),
+            child: _buildFaintLetter('C'),
           ),
           Positioned(
             bottom: 60,
             right: 36,
-            child: _buildFaintLetter('ஃ'),
+            child: _buildFaintLetter('D'),
           ),
 
           // Main child content

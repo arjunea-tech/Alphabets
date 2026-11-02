@@ -14,7 +14,7 @@ class UserProgressModel {
     this.completedStories = 0,
     this.quizHighScore = 0,
     this.gamesPlayed = 0,
-    this.childName = 'குட்டி',
+    this.childName = 'Kid',
     this.avatarIndex = 0,
     this.soundEnabled = true,
   });
@@ -62,7 +62,7 @@ class UserProgressModel {
       completedStories: json['completedStories'] as int? ?? 0,
       quizHighScore: json['quizHighScore'] as int? ?? 0,
       gamesPlayed: json['gamesPlayed'] as int? ?? 0,
-      childName: json['childName'] as String? ?? 'குட்டி',
+      childName: json['childName'] as String? ?? 'Kid',
       avatarIndex: json['avatarIndex'] as int? ?? 0,
       soundEnabled: json['soundEnabled'] as bool? ?? true,
     );

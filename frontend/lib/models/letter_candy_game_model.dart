@@ -170,332 +170,191 @@ class CandyLetterStyle {
 class CandyColorPalette {
   /// Centralized map of Tamil Letter -> Dedicated Primary Color
   static const Map<String, Color> letterColors = {
-    // -------------------------------------------------------------
-    // 12 Uyir Letters (Vowels) + Aytham
-    // -------------------------------------------------------------
-    'அ': Color(0xFFFF1744), // Red (Strawberry)
-    'ஆ': Color(0xFFFF6D00), // Orange (Tangerine)
-    'இ': Color(0xFFFFB300), // Yellow (Honey Gold)
-    'ஈ': Color(0xFF00E676), // Lime / Mint Green
-    'உ': Color(0xFF00B0FF), // Sky Blue
-    'ஊ': Color(0xFFAA00FF), // Royal Purple
-    'எ': Color(0xFFFF4081), // Pink (Bubblegum)
-    'ஏ': Color(0xFF00897B), // Teal (Ocean)
-    'ஐ': Color(0xFF8D4B1E), // Brown (Caramel)
-    'ஒ': Color(0xFF3D5AFE), // Indigo (Electric Blue)
-    'ஓ': Color(0xFF1B5E20), // Dark Forest Green
-    'ஔ': Color(0xFF6A0080), // Violet (Deep Plum)
-    'ஃ': Color(0xFF546E7A), // Steel Slate
-
-    // -------------------------------------------------------------
-    // 18 Mei Letters (Consonants)
-    // -------------------------------------------------------------
-    'க்': Color(0xFF00C853), // Emerald Green
-    'ங்': Color(0xFFFF6D00), // Tangerine Gold
-    'ச்': Color(0xFF0091EA), // Sky Cyan Blue
-    'ஞ்': Color(0xFFFF1493), // Rose Pink
-    'ட்': Color(0xFF7B1FA2), // Vivid Purple
-    'ண்': Color(0xFFFFD600), // Bright Sun Yellow
-    'த்': Color(0xFFE53935), // Crimson Scarlet
-    'ந்': Color(0xFF00897B), // Deep Teal
-    'ப்': Color(0xFFFF5722), // Coral Flame
-    'ம்': Color(0xFFFF4081), // Magenta Bubblegum
-    'ய்': Color(0xFF00E5FF), // Electric Aqua
-    'ர்': Color(0xFF3D5AFE), // Royal Indigo
-    'ல்': Color(0xFF76FF03), // Mint Lime
-    'வ்': Color(0xFF8D4B1E), // Amber Cinnamon
-    'ழ்': Color(0xFFAA00FF), // Violet Amethyst
-    'ள்': Color(0xFF1B5E20), // Forest Pine
-    'ற்': Color(0xFFF50057), // Hot Fuchsia
-    'ன்': Color(0xFF2962FF), // Cobalt Sapphire
-
-    // -------------------------------------------------------------
-    // Uyirmei Letters (Ka series)
-    // -------------------------------------------------------------
-    'க': Color(0xFF00E5FF), // Electric Turquoise
-    'கா': Color(0xFFFF5722), // Coral Flame
-    'கி': Color(0xFF76FF03), // Lime Chartreuse
-    'கீ': Color(0xFFBA68C8), // Orchid Lavender
-    'கு': Color(0xFF2979FF), // Cobalt Blue
-    'கூ': Color(0xFFD50000), // Crimson Ruby
-    'கெ': Color(0xFFF50057), // Hot Pink
-    'கே': Color(0xFFFFB300), // Amber Gold
-    'கை': Color(0xFF00BFA5), // Mint Jade
-    'கொ': Color(0xFF1A237E), // Deep Navy
-    'கோ': Color(0xFF004D40), // Emerald Pine
-    'கௌ': Color(0xFF4A148C), // Plum Grape
+    'A': Color(0xFFFF1744),
+    'B': Color(0xFFFF6D00),
+    'C': Color(0xFFFFB300),
+    'D': Color(0xFF00E676),
+    'E': Color(0xFF00B0FF),
+    'F': Color(0xFFAA00FF),
+    'G': Color(0xFFFF4081),
+    'H': Color(0xFF00897B),
+    'I': Color(0xFF8D4B1E),
+    'J': Color(0xFF3D5AFE),
+    'K': Color(0xFF1B5E20),
+    'L': Color(0xFF6A0080),
+    'M': Color(0xFF00C853),
+    'N': Color(0xFF0091EA),
+    'O': Color(0xFFFF1493),
+    'P': Color(0xFF7B1FA2),
+    'Q': Color(0xFFFFD600),
+    'R': Color(0xFFE53935),
+    'S': Color(0xFFFF5722),
+    'T': Color(0xFF00E5FF),
+    'U': Color(0xFF76FF03),
+    'V': Color(0xFFF50057),
+    'W': Color(0xFF2962FF),
+    'X': Color(0xFFBA68C8),
+    'Y': Color(0xFF2979FF),
+    'Z': Color(0xFFD50000),
   };
 
   /// Detailed styling tokens for each letter (Gradient, Border, Shadow, Text)
   static const Map<String, CandyLetterStyle> letterStyles = {
-    // -------------------------------------------------------------
-    // 12 Uyir Letters (Vowels) + Aytham
-    // -------------------------------------------------------------
-    'அ': CandyLetterStyle(
+    'A': CandyLetterStyle(
       primaryColor: Color(0xFFFF1744),
-      gradientColors: [Color(0xFFFF5252), Color(0xFFFF1744), Color(0xFFD50000)],
-      borderColor: Color(0xFFFF8A80),
-      shadowColor: Color(0xFF8A0000),
+      gradientColors: [Color(0xFFFF1744), Color(0xFFFF6D00)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ஆ': CandyLetterStyle(
+    'B': CandyLetterStyle(
       primaryColor: Color(0xFFFF6D00),
-      gradientColors: [Color(0xFFFF9100), Color(0xFFFF6D00), Color(0xFFE65100)],
-      borderColor: Color(0xFFFFD180),
-      shadowColor: Color(0xFFBF360C),
+      gradientColors: [Color(0xFFFF6D00), Color(0xFFFFB300)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'இ': CandyLetterStyle(
+    'C': CandyLetterStyle(
       primaryColor: Color(0xFFFFB300),
-      gradientColors: [Color(0xFFFFD54F), Color(0xFFFFB300), Color(0xFFFF8F00)],
-      borderColor: Color(0xFFFFF9C4),
-      shadowColor: Color(0xFFE65100),
+      gradientColors: [Color(0xFFFFB300), Color(0xFF00E676)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ஈ': CandyLetterStyle(
+    'D': CandyLetterStyle(
       primaryColor: Color(0xFF00E676),
-      gradientColors: [Color(0xFF69F0AE), Color(0xFF00E676), Color(0xFF00C853)],
-      borderColor: Color(0xFFB9F6CA),
-      shadowColor: Color(0xFF1B5E20),
+      gradientColors: [Color(0xFF00E676), Color(0xFF00B0FF)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'உ': CandyLetterStyle(
+    'E': CandyLetterStyle(
       primaryColor: Color(0xFF00B0FF),
-      gradientColors: [Color(0xFF40C4FF), Color(0xFF00B0FF), Color(0xFF01579B)],
-      borderColor: Color(0xFF80D8FF),
-      shadowColor: Color(0xFF0D47A1),
+      gradientColors: [Color(0xFF00B0FF), Color(0xFFAA00FF)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ஊ': CandyLetterStyle(
+    'F': CandyLetterStyle(
       primaryColor: Color(0xFFAA00FF),
-      gradientColors: [Color(0xFFE040FB), Color(0xFFAA00FF), Color(0xFF7B1FA2)],
-      borderColor: Color(0xFFEA80FC),
-      shadowColor: Color(0xFF4A148C),
+      gradientColors: [Color(0xFFAA00FF), Color(0xFFFF4081)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'எ': CandyLetterStyle(
+    'G': CandyLetterStyle(
       primaryColor: Color(0xFFFF4081),
-      gradientColors: [Color(0xFFFF80AB), Color(0xFFFF4081), Color(0xFFC2185B)],
-      borderColor: Color(0xFFFFC1E3),
-      shadowColor: Color(0xFF880E4F),
+      gradientColors: [Color(0xFFFF4081), Color(0xFF00897B)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ஏ': CandyLetterStyle(
+    'H': CandyLetterStyle(
       primaryColor: Color(0xFF00897B),
-      gradientColors: [Color(0xFF26A69A), Color(0xFF00897B), Color(0xFF004D40)],
-      borderColor: Color(0xFF80CBC4),
-      shadowColor: Color(0xFF00251A),
+      gradientColors: [Color(0xFF00897B), Color(0xFF8D4B1E)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ஐ': CandyLetterStyle(
+    'I': CandyLetterStyle(
       primaryColor: Color(0xFF8D4B1E),
-      gradientColors: [Color(0xFFB76E3E), Color(0xFF8D4B1E), Color(0xFF5E2B08)],
-      borderColor: Color(0xFFD7CCC8),
-      shadowColor: Color(0xFF3E1B05),
+      gradientColors: [Color(0xFF8D4B1E), Color(0xFF3D5AFE)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ஒ': CandyLetterStyle(
+    'J': CandyLetterStyle(
       primaryColor: Color(0xFF3D5AFE),
-      gradientColors: [Color(0xFF8C9EFF), Color(0xFF3D5AFE), Color(0xFF1A237E)],
-      borderColor: Color(0xFFC5CAE9),
-      shadowColor: Color(0xFF0D1B5E),
+      gradientColors: [Color(0xFF3D5AFE), Color(0xFF1B5E20)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ஓ': CandyLetterStyle(
+    'K': CandyLetterStyle(
       primaryColor: Color(0xFF1B5E20),
-      gradientColors: [Color(0xFF43A047), Color(0xFF2E7D32), Color(0xFF1B5E20)],
-      borderColor: Color(0xFFA5D6A7),
-      shadowColor: Color(0xFF0D3311),
+      gradientColors: [Color(0xFF1B5E20), Color(0xFF6A0080)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ஔ': CandyLetterStyle(
+    'L': CandyLetterStyle(
       primaryColor: Color(0xFF6A0080),
-      gradientColors: [Color(0xFF9C27B0), Color(0xFF6A0080), Color(0xFF4A0072)],
-      borderColor: Color(0xFFE1BEE7),
-      shadowColor: Color(0xFF260033),
+      gradientColors: [Color(0xFF6A0080), Color(0xFF00C853)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ஃ': CandyLetterStyle(
-      primaryColor: Color(0xFF546E7A),
-      gradientColors: [Color(0xFF90A4AE), Color(0xFF546E7A), Color(0xFF37474F)],
-      borderColor: Color(0xFFCFD8DC),
-      shadowColor: Color(0xFF212121),
-    ),
-
-    // -------------------------------------------------------------
-    // 18 Mei Letters (Consonants)
-    // -------------------------------------------------------------
-    'க்': CandyLetterStyle(
+    'M': CandyLetterStyle(
       primaryColor: Color(0xFF00C853),
-      gradientColors: [Color(0xFF00E676), Color(0xFF00C853), Color(0xFF1B5E20)],
-      borderColor: Color(0xFFB9F6CA),
-      shadowColor: Color(0xFF004D40),
+      gradientColors: [Color(0xFF00C853), Color(0xFF0091EA)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ங்': CandyLetterStyle(
-      primaryColor: Color(0xFFFF6D00),
-      gradientColors: [Color(0xFFFF9800), Color(0xFFFF6D00), Color(0xFFE65100)],
-      borderColor: Color(0xFFFFD180),
-      shadowColor: Color(0xFFBF360C),
-    ),
-    'ச்': CandyLetterStyle(
+    'N': CandyLetterStyle(
       primaryColor: Color(0xFF0091EA),
-      gradientColors: [Color(0xFF40C4FF), Color(0xFF0091EA), Color(0xFF01579B)],
-      borderColor: Color(0xFF80D8FF),
-      shadowColor: Color(0xFF0D47A1),
+      gradientColors: [Color(0xFF0091EA), Color(0xFFFF1493)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ஞ்': CandyLetterStyle(
+    'O': CandyLetterStyle(
       primaryColor: Color(0xFFFF1493),
-      gradientColors: [Color(0xFFFF69B4), Color(0xFFFF1493), Color(0xFFC2185B)],
-      borderColor: Color(0xFFFFC1E3),
-      shadowColor: Color(0xFF880E4F),
+      gradientColors: [Color(0xFFFF1493), Color(0xFF7B1FA2)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ட்': CandyLetterStyle(
+    'P': CandyLetterStyle(
       primaryColor: Color(0xFF7B1FA2),
-      gradientColors: [Color(0xFFBA68C8), Color(0xFF7B1FA2), Color(0xFF4A148C)],
-      borderColor: Color(0xFFE1BEE7),
-      shadowColor: Color(0xFF311B92),
+      gradientColors: [Color(0xFF7B1FA2), Color(0xFFFFD600)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ண்': CandyLetterStyle(
+    'Q': CandyLetterStyle(
       primaryColor: Color(0xFFFFD600),
-      gradientColors: [Color(0xFFFFF176), Color(0xFFFFD600), Color(0xFFFF9100)],
-      borderColor: Color(0xFFFFFDE7),
-      shadowColor: Color(0xFFE65100),
+      gradientColors: [Color(0xFFFFD600), Color(0xFFE53935)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'த்': CandyLetterStyle(
+    'R': CandyLetterStyle(
       primaryColor: Color(0xFFE53935),
-      gradientColors: [Color(0xFFEF5350), Color(0xFFE53935), Color(0xFFB71C1C)],
-      borderColor: Color(0xFFFFCDD2),
-      shadowColor: Color(0xFF7F0000),
+      gradientColors: [Color(0xFFE53935), Color(0xFFFF5722)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ந்': CandyLetterStyle(
-      primaryColor: Color(0xFF00897B),
-      gradientColors: [Color(0xFF26A69A), Color(0xFF00897B), Color(0xFF004D40)],
-      borderColor: Color(0xFFB2DFDB),
-      shadowColor: Color(0xFF00251A),
-    ),
-    'ப்': CandyLetterStyle(
+    'S': CandyLetterStyle(
       primaryColor: Color(0xFFFF5722),
-      gradientColors: [Color(0xFFFF8A65), Color(0xFFFF5722), Color(0xFFD84315)],
-      borderColor: Color(0xFFFFCCBC),
-      shadowColor: Color(0xFF8A1E00),
+      gradientColors: [Color(0xFFFF5722), Color(0xFF00E5FF)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ம்': CandyLetterStyle(
-      primaryColor: Color(0xFFFF4081),
-      gradientColors: [Color(0xFFFF80AB), Color(0xFFFF4081), Color(0xFFC51162)],
-      borderColor: Color(0xFFFCE4EC),
-      shadowColor: Color(0xFF880E4F),
-    ),
-    'ய்': CandyLetterStyle(
+    'T': CandyLetterStyle(
       primaryColor: Color(0xFF00E5FF),
-      gradientColors: [Color(0xFF84FFFF), Color(0xFF00E5FF), Color(0xFF0097A7)],
-      borderColor: Color(0xFFE0F7FA),
-      shadowColor: Color(0xFF006064),
+      gradientColors: [Color(0xFF00E5FF), Color(0xFF76FF03)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ர்': CandyLetterStyle(
-      primaryColor: Color(0xFF3D5AFE),
-      gradientColors: [Color(0xFF8C9EFF), Color(0xFF3D5AFE), Color(0xFF1A237E)],
-      borderColor: Color(0xFFC5CAE9),
-      shadowColor: Color(0xFF0D1B5E),
-    ),
-    'ல்': CandyLetterStyle(
+    'U': CandyLetterStyle(
       primaryColor: Color(0xFF76FF03),
-      gradientColors: [Color(0xFFB2FF59), Color(0xFF76FF03), Color(0xFF33691E)],
-      borderColor: Color(0xFFDCEDC8),
-      shadowColor: Color(0xFF1B5E20),
+      gradientColors: [Color(0xFF76FF03), Color(0xFFF50057)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'வ்': CandyLetterStyle(
-      primaryColor: Color(0xFF8D4B1E),
-      gradientColors: [Color(0xFFB76E3E), Color(0xFF8D4B1E), Color(0xFF4E260E)],
-      borderColor: Color(0xFFD7CCC8),
-      shadowColor: Color(0xFF3E1B05),
-    ),
-    'ழ்': CandyLetterStyle(
-      primaryColor: Color(0xFFAA00FF),
-      gradientColors: [Color(0xFFE040FB), Color(0xFFAA00FF), Color(0xFF4A148C)],
-      borderColor: Color(0xFFEA80FC),
-      shadowColor: Color(0xFF311B92),
-    ),
-    'ள்': CandyLetterStyle(
-      primaryColor: Color(0xFF1B5E20),
-      gradientColors: [Color(0xFF43A047), Color(0xFF2E7D32), Color(0xFF1B5E20)],
-      borderColor: Color(0xFFA5D6A7),
-      shadowColor: Color(0xFF0D3311),
-    ),
-    'ற்': CandyLetterStyle(
+    'V': CandyLetterStyle(
       primaryColor: Color(0xFFF50057),
-      gradientColors: [Color(0xFFFF4081), Color(0xFFF50057), Color(0xFF880E4F)],
-      borderColor: Color(0xFFFF80AB),
-      shadowColor: Color(0xFF560027),
+      gradientColors: [Color(0xFFF50057), Color(0xFF2962FF)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'ன்': CandyLetterStyle(
+    'W': CandyLetterStyle(
       primaryColor: Color(0xFF2962FF),
-      gradientColors: [Color(0xFF448AFF), Color(0xFF2962FF), Color(0xFF0D47A1)],
-      borderColor: Color(0xFF82B1FF),
-      shadowColor: Color(0xFF002171),
+      gradientColors: [Color(0xFF2962FF), Color(0xFFBA68C8)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-
-    // -------------------------------------------------------------
-    // Uyirmei Letters (Ka series)
-    // -------------------------------------------------------------
-    'க': CandyLetterStyle(
-      primaryColor: Color(0xFF00E5FF),
-      gradientColors: [Color(0xFF84FFFF), Color(0xFF00E5FF), Color(0xFF0097A7)],
-      borderColor: Color(0xFFE0F7FA),
-      shadowColor: Color(0xFF006064),
-    ),
-    'கா': CandyLetterStyle(
-      primaryColor: Color(0xFFFF5722),
-      gradientColors: [Color(0xFFFF8A65), Color(0xFFFF5722), Color(0xFFBF360C)],
-      borderColor: Color(0xFFFFCCBC),
-      shadowColor: Color(0xFF8A1E00),
-    ),
-    'கி': CandyLetterStyle(
-      primaryColor: Color(0xFF76FF03),
-      gradientColors: [Color(0xFFB2FF59), Color(0xFF76FF03), Color(0xFF33691E)],
-      borderColor: Color(0xFFDCEDC8),
-      shadowColor: Color(0xFF1B5E20),
-    ),
-    'கீ': CandyLetterStyle(
+    'X': CandyLetterStyle(
       primaryColor: Color(0xFFBA68C8),
-      gradientColors: [Color(0xFFCE93D8), Color(0xFFBA68C8), Color(0xFF6A1B9A)],
-      borderColor: Color(0xFFF3E5F5),
-      shadowColor: Color(0xFF4A148C),
+      gradientColors: [Color(0xFFBA68C8), Color(0xFF2979FF)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'கு': CandyLetterStyle(
+    'Y': CandyLetterStyle(
       primaryColor: Color(0xFF2979FF),
-      gradientColors: [Color(0xFF82B1FF), Color(0xFF2979FF), Color(0xFF0D47A1)],
-      borderColor: Color(0xFFBBDEFB),
-      shadowColor: Color(0xFF002171),
+      gradientColors: [Color(0xFF2979FF), Color(0xFFD50000)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
-    'கூ': CandyLetterStyle(
+    'Z': CandyLetterStyle(
       primaryColor: Color(0xFFD50000),
-      gradientColors: [Color(0xFFFF5252), Color(0xFFD50000), Color(0xFF8A0000)],
-      borderColor: Color(0xFFFF8A80),
-      shadowColor: Color(0xFF560000),
-    ),
-    'கெ': CandyLetterStyle(
-      primaryColor: Color(0xFFF50057),
-      gradientColors: [Color(0xFFFF4081), Color(0xFFF50057), Color(0xFF880E4F)],
-      borderColor: Color(0xFFFF80AB),
-      shadowColor: Color(0xFF560027),
-    ),
-    'கே': CandyLetterStyle(
-      primaryColor: Color(0xFFFFB300),
-      gradientColors: [Color(0xFFFFD54F), Color(0xFFFFB300), Color(0xFFFF6F00)],
-      borderColor: Color(0xFFFFF9C4),
-      shadowColor: Color(0xFFC67100),
-    ),
-    'கை': CandyLetterStyle(
-      primaryColor: Color(0xFF00BFA5),
-      gradientColors: [Color(0xFF1DE9B6), Color(0xFF00BFA5), Color(0xFF004D40)],
-      borderColor: Color(0xFFA7FFEB),
-      shadowColor: Color(0xFF00251A),
-    ),
-    'கொ': CandyLetterStyle(
-      primaryColor: Color(0xFF1A237E),
-      gradientColors: [Color(0xFF536DFE), Color(0xFF304FFE), Color(0xFF1A237E)],
-      borderColor: Color(0xFF8C9EFF),
-      shadowColor: Color(0xFF0D1B5E),
-    ),
-    'கோ': CandyLetterStyle(
-      primaryColor: Color(0xFF004D40),
-      gradientColors: [Color(0xFF00897B), Color(0xFF00695C), Color(0xFF004D40)],
-      borderColor: Color(0xFF80CBC4),
-      shadowColor: Color(0xFF00251A),
-    ),
-    'கௌ': CandyLetterStyle(
-      primaryColor: Color(0xFF4A148C),
-      gradientColors: [Color(0xFF7B1FA2), Color(0xFF4A148C), Color(0xFF311B92)],
-      borderColor: Color(0xFFCE93D8),
-      shadowColor: Color(0xFF1A0033),
+      gradientColors: [Color(0xFFD50000), Color(0xFFFF1744)],
+      borderColor: Colors.white,
+      shadowColor: Color(0x33000000),
     ),
   };
 

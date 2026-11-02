@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../data/uyir_data.dart';
+import '../../data/english_letters_data.dart';
 import '../../models/letter_model.dart';
 import '../../services/data_service.dart';
 import '../../services/progress_service.dart';
@@ -19,15 +19,15 @@ class UyirScreen extends StatefulWidget {
 }
 
 class _UyirScreenState extends State<UyirScreen> {
-  List<LetterModel> _letters = uyirLettersList;
+  List<LetterModel> _letters = englishVowelsList;
 
   @override
   void initState() {
     super.initState();
-    _loadUyirLetters();
+    _loadVowels();
   }
 
-  Future<void> _loadUyirLetters() async {
+  Future<void> _loadVowels() async {
     try {
       final letters = await DataService.instance.getUyirLetters();
       if (mounted && letters.isNotEmpty) {
@@ -40,7 +40,6 @@ class _UyirScreenState extends State<UyirScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -48,14 +47,14 @@ class _UyirScreenState extends State<UyirScreen> {
       builder: (context, _) {
         return Scaffold(
           appBar: KidAppBar(
-            title: 'உயிர் எழுத்துகள் (12)',
+            title: 'Vowels (A, E, I, O, U)',
             starCount: widget.progressService.stars,
           ),
           body: KidScaffoldBackground(
             child: SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final crossAxisCount = constraints.maxWidth > 600 ? 4 : 3;
+                  final crossAxisCount = constraints.maxWidth > 600 ? 5 : 3;
 
                   return GridView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
