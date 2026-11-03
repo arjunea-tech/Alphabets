@@ -135,8 +135,6 @@ class _ReadingScreenState extends State<ReadingScreen> {
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            const Icon(Icons.volume_up_rounded, size: 18, color: AppColors.primaryDark),
                           ],
                         ),
                       ),
@@ -216,8 +214,6 @@ class _ReadingScreenState extends State<ReadingScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.volume_up_rounded, color: AppColors.storyColor, size: 20),
-                        const SizedBox(width: 8),
                         Text(
                           'Listen to Word',
                           style: AppTextStyles.bodyTextBold.copyWith(
@@ -564,12 +560,6 @@ class _ReadingScreenState extends State<ReadingScreen> {
                             _buildStorySentence(),
                             const SizedBox(height: 16),
 
-                            // Audio narration button
-                            CustomAudioButton(
-                              label: 'Listen to Story',
-                              color: AppColors.storyColor,
-                              onTap: _playNarrator,
-                            ),
                           ],
                         ),
                       ),

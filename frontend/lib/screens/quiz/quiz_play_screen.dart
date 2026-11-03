@@ -228,14 +228,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> with SingleTickerProvid
                                       textAlign: TextAlign.center,
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  AudioButton(
-                                    letter: q.question,
-                                    word: q.question,
-                                    size: 42,
-                                    color: AppColors.primary.withValues(alpha: 0.15),
-                                    iconColor: AppColors.primary,
-                                  ),
                                 ],
                               ),
                             ),
@@ -317,23 +309,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> with SingleTickerProvid
                                         fontWeight: FontWeight.w800,
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  // Kid-friendly audio speaker button to hear option pronunciation
-                                  AudioButton(
-                                    letter: option,
-                                    word: option,
-                                    size: 38,
-                                    color: _hasAnswered
-                                        ? (isThisCorrect
-                                            ? AppColors.mintGreen
-                                            : (isSelected
-                                                ? AppColors.playfulPink
-                                                : const Color(0xFFFF9800).withValues(alpha: 0.15)))
-                                        : const Color(0xFFFF9800).withValues(alpha: 0.15),
-                                    iconColor: _hasAnswered
-                                        ? (isThisCorrect || isSelected ? Colors.white : const Color(0xFFE65100))
-                                        : const Color(0xFFE65100),
                                   ),
                                   if (_hasAnswered && isThisCorrect) ...[
                                     const SizedBox(width: 8),

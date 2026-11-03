@@ -66,20 +66,6 @@ class LetterCard extends StatelessWidget {
                 child: Icon(Icons.star_rounded, color: AppColors.starGold, size: 18),
               ),
 
-            // Audio Speaker Button on Top Right (Does not navigate away)
-            Positioned(
-              top: 6,
-              right: 6,
-              child: AudioButton(
-                letter: letter.letter,
-                word: letter.word,
-                audioPath: letter.audioPath,
-                size: 32,
-                color: color.withValues(alpha: 0.15),
-                iconColor: color,
-              ),
-            ),
-
             // Main Card Content: [ Image ] on top, and underneath ONLY the Tamil Letter [  ]
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 12, 10, 10),

@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import '../../models/car_racing_game_model.dart';
 import '../../models/letter_basket_game_model.dart';
 import '../../models/letter_fishing_game_model.dart';
+import '../../models/game_item_model.dart';
 import '../../services/progress_service.dart';
+import '../../services/data_service.dart';
+import '../../services/api_config.dart';
 import '../../widgets/bouncy_button.dart';
 import '../../widgets/kid_scaffold_background.dart';
 import 'agaram_run_game.dart';
@@ -11,6 +14,10 @@ import 'car_racing_game.dart';
 import 'letter_basket_game.dart';
 import 'letter_candy_game.dart';
 import 'letter_fishing_game.dart';
+import 'word_puzzle_game.dart';
+import 'balloon_pop_game.dart';
+import 'flappy_word_game.dart';
+import 'word_ninja_game.dart';
 
 class GamesScreen extends StatefulWidget {
   final ProgressService progressService;
@@ -26,6 +33,8 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
   late final AnimationController _floatAnimationController;
 
   final List<String> _categories = const ['All', 'New', 'Vowels', 'Consonants'];
+  List<GameItem> _games = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -34,6 +43,23 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       vsync: this,
       duration: const Duration(milliseconds: 2400),
     )..repeat(reverse: true);
+    _loadGames();
+  }
+
+  Future<void> _loadGames() async {
+    try {
+      final games = await DataService.instance.getActiveGames();
+      if (mounted) {
+        setState(() {
+          _games = games.where((g) => g.isActive).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -58,20 +84,34 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
               child: Center(
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 540),
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                    children: [
-                      // 1. Top Profile & Game Stats Header Bar
-                      _buildTopHeader(gamesPlayed, stars),
-                      const SizedBox(height: 16),
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      DataService.instance.clearGamesCache();
+                      await _loadGames();
+                    },
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                      children: [
+                        // 1. Top Profile & Game Stats Header Bar
+                        _buildTopHeader(gamesPlayed, stars),
+                        const SizedBox(height: 16),
 
-                      // 2. Category Filter Pills Row (All, New, Vowels, Consonants)
-                      _buildCategoryFilters(),
-                      const SizedBox(height: 18),
+                        // 2. Category Filter Pills Row (All, New, Vowels, Consonants)
+                        _buildCategoryFilters(),
+                        const SizedBox(height: 18),
 
-                      // 3. 2-Column Grid of Beautiful Game Cards with Rich Cover Art
-                      _buildGamesGrid(context),
-                    ],
+                        // 3. Dynamic Grid of Games Configured & Enabled in Superadmin
+                        if (_isLoading)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(40),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else
+                          _buildGamesGrid(context),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -105,7 +145,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
             child: Image.asset(
               'assets/images/welcome.png',
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (context, error, stackTrace) => Container(
                 color: const Color(0xFFFFF3CD),
                 child: const Icon(Icons.face_rounded, color: Color(0xFFFF9F1C), size: 30),
               ),
@@ -247,147 +287,53 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
 
   /// 2-Column Responsive Grid of Active Educational Games
   Widget _buildGamesGrid(BuildContext context) {
-    // 0: All, 1: New, 2: Vowels, 3: Consonants
-    final showCandy = _selectedCategoryIndex == 0 || _selectedCategoryIndex == 1 || _selectedCategoryIndex == 3;
-    final showRunner = _selectedCategoryIndex == 0 || _selectedCategoryIndex == 1 || _selectedCategoryIndex == 3;
-    final showRacing = _selectedCategoryIndex == 0 || _selectedCategoryIndex == 2;
-    final showFishing = _selectedCategoryIndex == 0 || _selectedCategoryIndex == 2;
-    final showBasketVowels = _selectedCategoryIndex == 0 || _selectedCategoryIndex == 2;
-    final showBasketConsonants = _selectedCategoryIndex == 0 || _selectedCategoryIndex == 3;
+    final filteredGames = _games.where((g) {
+      if (_selectedCategoryIndex == 0) return true; // All
+      if (_selectedCategoryIndex == 1) {
+        // New Games
+        return g.gameType == 'balloon' ||
+            g.gameType == 'flappy' ||
+            g.gameType == 'ninja' ||
+            g.gameType == 'runner' ||
+            g.gameType == 'candy';
+      }
+      if (_selectedCategoryIndex == 2) {
+        // Vowels
+        final title = g.title.toLowerCase();
+        final prompt = g.prompt.toLowerCase();
+        return title.contains('vowel') ||
+            prompt.contains('vowel') ||
+            g.gameType == 'racing' ||
+            g.gameType == 'balloon' ||
+            g.gameType == 'flappy';
+      }
+      if (_selectedCategoryIndex == 3) {
+        // Consonants
+        final title = g.title.toLowerCase();
+        final prompt = g.prompt.toLowerCase();
+        return title.contains('consonant') ||
+            prompt.contains('consonant') ||
+            g.gameType == 'ninja' ||
+            g.gameType == 'candy' ||
+            g.gameType == 'runner' ||
+            g.id == 'game_basket_2';
+      }
+      return true;
+    }).toList();
 
-    final cards = <Widget>[];
-
-    // Card 1: Alphabet Candy Match
-    if (showCandy) {
-      cards.add(
-        _buildStandardGameCard(
-          context,
-          title: 'Alphabet Candy',
-          coverAsset: 'assets/images/games/candy_match_cover.png',
-          badgeIcon: Icons.grid_view_rounded,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => TamilLetterCandyGame(
-                  progressService: widget.progressService,
-                ),
-              ),
-            );
-          },
-        ),
-      );
-    }
-
-    // Card 2: Alphabet Runner (Hero Card with runner boy & Play button)
-    if (showRunner) {
-      cards.add(
-        _buildHeroRunnerGameCard(
-          context,
-          title: 'Alphabet Runner',
-          coverAsset: 'assets/images/games/runner_cover.png',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => AgaramRunGame(
-                  progressService: widget.progressService,
-                ),
-              ),
-            );
-          },
-        ),
-      );
-    }
-
-    // Card 3: Alphabet Car Racing
-    if (showRacing) {
-      cards.add(
-        _buildStandardGameCard(
-          context,
-          title: 'Car Racing (Vowels)',
-          coverAsset: 'assets/images/games/car_racing_cover.png',
-          badgeIcon: Icons.directions_car_filled_rounded,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CarRacingGame(
-                  progressService: widget.progressService,
-                  mode: RacingGameMode.uyir,
-                ),
-              ),
-            );
-          },
-        ),
-      );
-    }
-
-    // Card 4: Letter Fishing
-    if (showFishing) {
-      cards.add(
-        _buildStandardGameCard(
-          context,
-          title: 'Letter Fishing',
-          coverAsset: 'assets/images/games/fishing_cover.png',
-          badgeIcon: Icons.waves_rounded,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => LetterFishingGame(
-                  progressService: widget.progressService,
-                  mode: FishingGameMode.uyir,
-                ),
-              ),
-            );
-          },
-        ),
-      );
-    }
-
-    // Card 5: Letter Basket (Vowels)
-    if (showBasketVowels) {
-      cards.add(
-        _buildStandardGameCard(
-          context,
-          title: 'Letter Basket (Vowels)',
-          coverAsset: 'assets/images/games/basket_vowels_cover.png',
-          badgeIcon: Icons.shopping_basket_rounded,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => LetterBasketGame(
-                  progressService: widget.progressService,
-                  mode: BasketGameMode.uyir,
-                ),
-              ),
-            );
-          },
-        ),
-      );
-    }
-
-    // Card 6: Letter Basket (Consonants)
-    if (showBasketConsonants) {
-      cards.add(
-        _buildStandardGameCard(
-          context,
-          title: 'Letter Basket (Consonants)',
-          coverAsset: 'assets/images/games/basket_consonants_cover.png',
-          badgeIcon: Icons.shopping_basket_rounded,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => LetterBasketGame(
-                  progressService: widget.progressService,
-                  mode: BasketGameMode.mei,
-                ),
-              ),
-            );
-          },
+    if (filteredGames.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(40),
+        alignment: Alignment.center,
+        child: Column(
+          children: [
+            Icon(Icons.sports_esports_outlined, size: 54, color: Colors.grey.shade400),
+            const SizedBox(height: 12),
+            Text(
+              'No active games in this category',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.grey.shade600),
+            ),
+          ],
         ),
       );
     }
@@ -398,16 +344,17 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         return Wrap(
           spacing: 12,
           runSpacing: 14,
-          children: cards.asMap().entries.map((entry) {
+          children: filteredGames.asMap().entries.map((entry) {
             final idx = entry.key;
-            final card = entry.value;
+            final game = entry.value;
+
             return AnimatedBuilder(
               animation: _floatAnimationController,
               builder: (context, _) {
-                // Organic floating and breathing wave (like an animated GIF sticker!)
                 final double phase = idx * 1.05;
                 final double floatY = math.sin((_floatAnimationController.value * 2 * math.pi) + phase) * 3.5;
                 final double scale = 1.0 + math.cos((_floatAnimationController.value * 2 * math.pi) + phase) * 0.012;
+
                 return Transform.translate(
                   offset: Offset(0, floatY),
                   child: Transform.scale(
@@ -415,7 +362,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                     child: SizedBox(
                       width: itemWidth,
                       height: 155,
-                      child: card,
+                      child: _buildGameCardFor(context, game),
                     ),
                   ),
                 );
@@ -424,6 +371,133 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
           }).toList(),
         );
       },
+    );
+  }
+
+  Widget _buildGameCardFor(BuildContext context, GameItem game) {
+    if (game.gameType == 'runner') {
+      return _buildHeroRunnerGameCard(
+        context,
+        title: game.title,
+        coverAsset: _resolveCoverAsset(game),
+        onTap: () => _launchGame(context, game),
+      );
+    }
+
+    return _buildStandardGameCard(
+      context,
+      title: game.title,
+      coverAsset: _resolveCoverAsset(game),
+      badgeIcon: _badgeIconFor(game.gameType),
+      onTap: () => _launchGame(context, game),
+    );
+  }
+
+  String _resolveCoverAsset(GameItem game) {
+    if (game.clueImage != null && game.clueImage!.isNotEmpty) {
+      if (game.clueImage!.startsWith('assets/')) {
+        return game.clueImage!;
+      }
+      return game.clueImage!;
+    }
+
+    switch (game.gameType) {
+      case 'balloon':
+        return 'assets/images/games/balloon_pop_cover.png';
+      case 'flappy':
+        return 'assets/images/games/flappy_word_cover.png';
+      case 'ninja':
+        return 'assets/images/games/word_ninja_cover.png';
+      case 'candy':
+        return 'assets/images/games/candy_match_cover.png';
+      case 'runner':
+        return 'assets/images/games/runner_cover.png';
+      case 'racing':
+        return 'assets/images/games/car_racing_cover.png';
+      case 'fishing':
+        return 'assets/images/games/fishing_cover.png';
+      case 'basket':
+        if (game.title.toLowerCase().contains('consonant') || game.id.contains('2')) {
+          return 'assets/images/games/basket_consonants_cover.png';
+        }
+        return 'assets/images/games/basket_vowels_cover.png';
+      case 'puzzle':
+      default:
+        return 'assets/images/welcome.png';
+    }
+  }
+
+  IconData _badgeIconFor(String gameType) {
+    switch (gameType) {
+      case 'balloon':
+        return Icons.bubble_chart_rounded;
+      case 'flappy':
+        return Icons.flight_rounded;
+      case 'ninja':
+        return Icons.sports_kabaddi_rounded;
+      case 'candy':
+        return Icons.grid_view_rounded;
+      case 'runner':
+        return Icons.directions_run_rounded;
+      case 'racing':
+        return Icons.directions_car_filled_rounded;
+      case 'fishing':
+        return Icons.waves_rounded;
+      case 'basket':
+        return Icons.shopping_basket_rounded;
+      case 'puzzle':
+      default:
+        return Icons.extension_rounded;
+    }
+  }
+
+  void _launchGame(BuildContext context, GameItem game) {
+    Widget targetScreen;
+
+    switch (game.gameType) {
+      case 'balloon':
+        targetScreen = BalloonPopGame(progressService: widget.progressService);
+        break;
+      case 'flappy':
+        targetScreen = FlappyWordGame(progressService: widget.progressService);
+        break;
+      case 'ninja':
+        targetScreen = WordNinjaGame(progressService: widget.progressService);
+        break;
+      case 'runner':
+        targetScreen = AgaramRunGame(progressService: widget.progressService);
+        break;
+      case 'candy':
+        targetScreen = TamilLetterCandyGame(progressService: widget.progressService);
+        break;
+      case 'racing':
+        targetScreen = CarRacingGame(
+          progressService: widget.progressService,
+          mode: RacingGameMode.uyir,
+        );
+        break;
+      case 'fishing':
+        targetScreen = LetterFishingGame(
+          progressService: widget.progressService,
+          mode: FishingGameMode.uyir,
+        );
+        break;
+      case 'basket':
+        final isMei = game.title.toLowerCase().contains('consonant') || game.id.contains('2');
+        targetScreen = LetterBasketGame(
+          progressService: widget.progressService,
+          mode: isMei ? BasketGameMode.mei : BasketGameMode.uyir,
+        );
+        break;
+      case 'puzzle':
+      default:
+        targetScreen = WordPuzzleGame(progressService: widget.progressService);
+        break;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => targetScreen),
     );
   }
 
@@ -454,20 +528,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
             fit: StackFit.expand,
             children: [
               // Background Cover Image
-              Image.asset(
-                coverAsset,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF8338EC), Color(0xFF3A86FF)],
-                    ),
-                  ),
-                  child: Center(
-                    child: Icon(badgeIcon, color: Colors.white.withValues(alpha: 0.6), size: 48),
-                  ),
-                ),
-              ),
+              _buildCoverImage(coverAsset, badgeIcon),
 
               // Bottom Dark Scrim Gradient for Crisp Title Readability
               Positioned.fill(
@@ -565,20 +626,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
             fit: StackFit.expand,
             children: [
               // Background Cover Image
-              Image.asset(
-                coverAsset,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF2EC4B6), Color(0xFF0F9F90)],
-                    ),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.directions_run_rounded, color: Colors.white, size: 48),
-                  ),
-                ),
-              ),
+              _buildCoverImage(coverAsset, Icons.directions_run_rounded),
 
               // Soft Gradient Overlay
               Positioned.fill(
@@ -674,4 +722,45 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     );
   }
 
+  Widget _buildCoverImage(String coverAsset, IconData fallbackIcon) {
+    if (coverAsset.startsWith('http://') || coverAsset.startsWith('https://')) {
+      return Image.network(
+        coverAsset,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildFallbackCover(fallbackIcon),
+      );
+    }
+
+    final resolvedUrl = ApiConfig.resolveMediaUrl(coverAsset);
+    if (resolvedUrl != null && (resolvedUrl.startsWith('http://') || resolvedUrl.startsWith('https://'))) {
+      return Image.network(
+        resolvedUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Image.asset(
+          coverAsset,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _buildFallbackCover(fallbackIcon),
+        ),
+      );
+    }
+
+    return Image.asset(
+      coverAsset,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => _buildFallbackCover(fallbackIcon),
+    );
+  }
+
+  Widget _buildFallbackCover(IconData icon) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF8338EC), Color(0xFF3A86FF)],
+        ),
+      ),
+      child: Center(
+        child: Icon(icon, color: Colors.white.withValues(alpha: 0.6), size: 48),
+      ),
+    );
+  }
 }

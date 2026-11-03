@@ -69,6 +69,8 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
   AnimationController? _demoController;
   bool _isDemoActive = false;
   bool get isDemoActive => _isDemoActive;
+  bool _isFullDemo = false;
+  Timer? _stepTransitionTimer;
 
   // Learn-mode feedback for a wrongly traced stroke
   int _failedAttempts = 0;
@@ -85,7 +87,7 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
     if (_demoController == null) {
       _demoController = AnimationController(
         vsync: this,
-        duration: const Duration(milliseconds: 2200),
+        duration: const Duration(milliseconds: 3200),
       );
 
       _demoController!.addListener(() {
@@ -94,7 +96,6 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
 
       _demoController!.addStatusListener((status) {
         if (status == AnimationStatus.completed) {
-          // One-time demo completed! Stop cleanly and let the child draw!
           if (mounted) {
             setState(() {
               _isDemoActive = false;
@@ -137,6 +138,7 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
   @override
   void dispose() {
     _hintTimer?.cancel();
+    _stepTransitionTimer?.cancel();
     _pulseController?.dispose();
     _demoController?.dispose();
     super.dispose();
@@ -155,31 +157,35 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
     }
   }
 
-  /// Speaks the step instruction and plays the path demo ONE TIME along the active stroke
-  void playCurrentStepDemo() {
+  /// Plays a continuous animated demo showing the full letter smoothly in one go!
+  void playFullGuideDemo() {
     _initControllers();
+    if (_isDemoActive) {
+      _stopDemo();
+      return;
+    }
+
     final letterData = TamilStrokeDataRepository.getLetter(widget.letter);
     if (letterData.strokes.isEmpty) return;
 
-    final curStep = activeStepIndex;
-    final strokeIndex = curStep.clamp(0, letterData.strokes.length - 1);
-    final stroke = letterData.strokes[strokeIndex];
+    setState(() {
+      _isDemoActive = true;
+      _hintText = null;
+    });
 
-    // 1. Speak step instruction (Audio Announcement)
+    // Pronounce letter name
     try {
-      final cleanTitle = stroke.title.replaceAll(RegExp(r'[^\u0B80-\u0BFF0-9a-zA-Z\s:]'), '').trim();
-      final cleanInstruction = stroke.instruction.replaceAll(RegExp(r'[^\u0B80-\u0BFF0-9a-zA-Z\s]'), '').trim();
-      AudioService.instance.playTamilAudio('$cleanTitle. $cleanInstruction');
+      AudioService.instance.playTamilAudio(widget.letter);
     } catch (_) {}
 
-    // 2. Play animated demo ONE TIME along the stroke path
-    if (mounted) {
-      setState(() {
-        _isDemoActive = true;
-      });
-    }
-    _demoController?.duration = const Duration(milliseconds: 2200);
+    final durationMs = 2800 + (letterData.strokes.length * 600);
+    _demoController?.duration = Duration(milliseconds: durationMs);
     _demoController?.forward(from: 0.0);
+  }
+
+  /// Speaks the step instruction and plays the path demo
+  void playCurrentStepDemo() {
+    playFullGuideDemo();
   }
 
   void _stopDemo() {
@@ -305,13 +311,6 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
     if (_isDemoActive) {
       _stopDemo();
     }
-    // Learn Mode: Touch MUST be on the active step! If touching elsewhere, ignore!
-    if (widget.mode == WritingCanvasMode.learn && !_isPointNearActiveStroke(localPos)) {
-      final cur = activeStepIndex + 1;
-      _showHint('Start tracing from the green dot of step $cur!');
-      return;
-    }
-    _lastCollectedCheckpoints = 0;
     widget.onDrawingStateChanged?.call(true);
     setState(() {
       _currentStroke = [localPos];
@@ -320,19 +319,10 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
 
   void _onPointerMove(Offset localPos) {
     if (_currentStroke.isEmpty) {
-      if (widget.mode == WritingCanvasMode.learn && !_isPointNearActiveStroke(localPos)) {
-        return;
-      }
-      _lastCollectedCheckpoints = 0;
       widget.onDrawingStateChanged?.call(true);
       setState(() {
         _currentStroke = [localPos];
       });
-      return;
-    }
-
-    // Learn Mode: ignore points dragged outside the active step's path
-    if (widget.mode == WritingCanvasMode.learn && !_isPointNearActiveStroke(localPos)) {
       return;
     }
 
@@ -343,46 +333,18 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
       setState(() {
         _currentStroke.add(localPos);
       });
-
-      // Play cheerful star collection sound when a checkpoint is collected in forward order
-      if (widget.mode == WritingCanvasMode.learn) {
-        final letterData = TamilStrokeDataRepository.getLetter(widget.letter);
-        if (letterData.strokes.isNotEmpty) {
-          final cur = activeStepIndex.clamp(0, letterData.strokes.length - 1);
-          final count = WritingBoundaryValidator.getCollectedCheckpointsCount(
-            userPoints: _currentStroke,
-            stroke: letterData.strokes[cur],
-            size: _canvasSize,
-          );
-          if (count > _lastCollectedCheckpoints) {
-            _lastCollectedCheckpoints = count;
-            try {
-              AudioService.instance.playStarReward(context);
-            } catch (_) {}
-          }
-        }
-      }
     }
   }
 
   void _onPointerUp(Offset localPos) {
-    _lastCollectedCheckpoints = 0;
     widget.onDrawingStateChanged?.call(false);
     if (_currentStroke.isEmpty) return;
 
-    final letterData = TamilStrokeDataRepository.getLetter(widget.letter);
-
     setState(() {
-      // In learn mode, only append localPos if it is near the active stroke
-      final bool posValid = widget.mode != WritingCanvasMode.learn || _isPointNearActiveStroke(localPos);
-      if (posValid) {
-        if (_currentStroke.length == 1) {
-          _currentStroke.add(localPos.translate(0.5, 0.5));
-        } else {
-          _currentStroke.add(localPos);
-        }
-      } else if (_currentStroke.length == 1) {
-        _currentStroke.add(_currentStroke.first.translate(0.5, 0.5));
+      if (_currentStroke.length == 1) {
+        _currentStroke.add(localPos.translate(0.5, 0.5));
+      } else {
+        _currentStroke.add(localPos);
       }
       _strokes.add(List.from(_currentStroke));
       _currentStroke.clear();
@@ -390,107 +352,13 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
 
     widget.onStrokeUpdated?.call(_strokes.length);
     widget.onStrokesChanged?.call(getNormalizedStrokes());
-
-    // In Learn mode: advance only when the stroke starts at the green marker,
-    // follows the track in the right direction and reaches the red marker.
-    if (widget.mode == WritingCanvasMode.learn && letterData.strokes.isNotEmpty) {
-      final curStep = activeStepIndex.clamp(0, letterData.strokes.length - 1);
-      final lastStroke = _strokes.isNotEmpty ? _strokes.last : <Offset>[];
-      final attempt = WritingBoundaryValidator.checkStrokeAttempt(
-        userPoints: lastStroke,
-        stroke: letterData.strokes[curStep],
-        size: _canvasSize,
-      );
-
-      if (!attempt.isCorrect) {
-        _rejectStroke(attempt);
-        return;
-      }
-
-      _showHint(null);
-      _failedAttempts = 0;
-
-      // Lock in the completed step as a 100% solid, seamless, full rainbow fill
-      final densePts = WritingEngine.sampleDensePoints(letterData.strokes[curStep], _canvasSize);
-      if (densePts.isNotEmpty && _strokes.isNotEmpty) {
-        setState(() {
-          _strokes[_strokes.length - 1] = densePts;
-        });
-      }
-      if (curStep < letterData.strokes.length - 1) {
-        // Step finished! Give cheerful audio feedback and advance to next step
-        try {
-          // Great tracing
-        } catch (_) {}
-
-        Future.delayed(const Duration(milliseconds: 650), () {
-          if (mounted) {
-            setStep(curStep + 1, playDemo: true);
-          }
-        });
-      } else {
-        // Final step finished! All steps completed!
-        try {
-          // Completed letter tracing
-        } catch (_) {}
-
-        Future.delayed(const Duration(milliseconds: 600), () {
-          if (mounted) {
-            widget.onLetterCompleted?.call();
-          }
-        });
-      }
-    }
-  }
-
-  /// Removes a wrongly traced stroke and tells the child what to fix.
-  void _rejectStroke(StrokeAttemptResult attempt) {
-    // A tiny accidental touch is ignored silently.
-    final silent = attempt.status == StrokeAttemptStatus.tooShort && (_strokes.lastOrNull?.length ?? 0) <= 3;
-    setState(() {
-      if (_strokes.isNotEmpty) _strokes.removeLast();
-    });
-    widget.onStrokeUpdated?.call(_strokes.length);
-    widget.onStrokesChanged?.call(getNormalizedStrokes());
-    if (silent) return;
-
-    _failedAttempts++;
-    _showHint(attempt.hint);
-    try {
-      AudioService.instance.playTamilAudio(attempt.hint);
-    } catch (_) {}
-
-    // After repeated mistakes, show the movement again.
-    if (_failedAttempts % 2 == 0) {
-      Future.delayed(const Duration(milliseconds: 1400), () {
-        if (mounted && !_isDemoActive) {
-          _isDemoActive = true;
-          _demoController?.forward(from: 0.0);
-          setState(() {});
-        }
-      });
-    }
-  }
-
-  void _showHint(String? text) {
-    _hintTimer?.cancel();
-    if (!mounted) return;
-    setState(() => _hintText = text);
-    if (text != null) {
-      _hintTimer = Timer(const Duration(milliseconds: 2600), () {
-        if (mounted) setState(() => _hintText = null);
-      });
-    }
   }
 
   void _onPointerCancel() {
-    _lastCollectedCheckpoints = 0;
     widget.onDrawingStateChanged?.call(false);
     if (_currentStroke.isNotEmpty) {
       setState(() {
-        if (widget.mode != WritingCanvasMode.learn) {
-          _strokes.add(List.from(_currentStroke));
-        }
+        _strokes.add(List.from(_currentStroke));
         _currentStroke.clear();
       });
       widget.onStrokeUpdated?.call(_strokes.length);
@@ -652,6 +520,7 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
                 Positioned.fill(
                   child: CustomPaint(
                     painter: _HandwritingStrokesPainter(
+                      letter: widget.letter,
                       strokes: _strokes,
                       currentStroke: _currentStroke,
                       strokeColor: widget.strokeColor,
@@ -684,160 +553,55 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
                   ),
                 ),
 
-                // 4. Top Action & Step Pills Bar (Learn Mode)
+                // 4. Top Guide Button (Learn Mode)
                 if (isLearn && letterData.strokes.isNotEmpty)
                   Positioned(
                     top: 10,
-                    left: 10,
-                    right: 10,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Interactive Step Pills: [ ①  1 ] [ ②  2 ] [ ③  3 ]
-                        Flexible(
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: List.generate(letterData.strokes.length, (sIdx) {
-                                final s = letterData.strokes[sIdx];
-                                final isCur = sIdx == curStep;
-                                final isDone = sIdx < curStep;
-                                return GestureDetector(
-                                  onTap: () => setStep(sIdx, playDemo: true),
-                                  child: Container(
-                                    margin: const EdgeInsets.only(right: 6),
-                                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                                    decoration: BoxDecoration(
-                                      color: isCur
-                                          ? const Color(0xFFFF9F1C)
-                                          : (isDone ? const Color(0xFF10B981) : Colors.white.withValues(alpha: 0.9)),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: isCur
-                                            ? const Color(0xFFFF5400)
-                                            : (isDone ? const Color(0xFF059669) : const Color(0xFFCBD5E1)),
-                                        width: 1.5,
-                                      ),
-                                      boxShadow: [
-                                        if (isCur)
-                                          BoxShadow(
-                                            color: const Color(0xFFFF9F1C).withValues(alpha: 0.35),
-                                            blurRadius: 6,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                      ],
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        if (isDone)
-                                          const Icon(Icons.check_circle_rounded, size: 14, color: Colors.white)
-                                        else
-                                          Icon(
-                                            Icons.edit_note_rounded,
-                                            size: 14,
-                                            color: isCur ? Colors.white : const Color(0xFF475569),
-                                          ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Step ${s.strokeNumber}',
-                                          style: TextStyle(
-                                            fontFamily: 'Catamaran',
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: (isCur || isDone) ? Colors.white : const Color(0xFF475569),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }),
-                            ),
-                          ),
-                        ),
-
-                        // Demo Play Button: [ ▶  ]
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: playCurrentStepDemo,
+                    right: 12,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: playFullGuideDemo,
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                          decoration: BoxDecoration(
+                            gradient: _isDemoActive
+                                ? const LinearGradient(colors: [Color(0xFFFF9F1C), Color(0xFFFF5400)])
+                                : null,
+                            color: _isDemoActive ? null : Colors.white.withValues(alpha: 0.95),
                             borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-                              decoration: BoxDecoration(
-                                gradient: _isDemoActive
-                                    ? const LinearGradient(colors: [Color(0xFFFF9F1C), Color(0xFFFF5400)])
-                                    : null,
-                                color: _isDemoActive ? null : Colors.white.withValues(alpha: 0.95),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: _isDemoActive ? const Color(0xFFFF5400) : const Color(0xFF3A86FF),
-                                  width: 1.6,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF3A86FF).withValues(alpha: 0.2),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    _isDemoActive ? Icons.pause_circle_filled_rounded : Icons.play_arrow_rounded,
-                                    size: 18,
-                                    color: _isDemoActive ? Colors.white : const Color(0xFF3A86FF),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    _isDemoActive ? 'Showing...' : 'Guide ▶',
-                                    style: TextStyle(
-                                      fontFamily: 'Catamaran',
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w900,
-                                      color: _isDemoActive ? Colors.white : const Color(0xFF3A86FF),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            border: Border.all(
+                              color: _isDemoActive ? const Color(0xFFFF5400) : const Color(0xFF3A86FF),
+                              width: 1.6,
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF3A86FF).withValues(alpha: 0.2),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                // 5. Feedback when a stroke was traced wrongly (Learn Mode)
-                if (isLearn && _hintText != null)
-                  Positioned(
-                    left: 16,
-                    right: 16,
-                    bottom: 14,
-                    child: IgnorePointer(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF5964),
-                          borderRadius: BorderRadius.circular(18),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFFF5964).withValues(alpha: 0.35),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          _hintText!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontFamily: 'Catamaran',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _isDemoActive ? Icons.pause_circle_filled_rounded : Icons.play_arrow_rounded,
+                                size: 18,
+                                color: _isDemoActive ? Colors.white : const Color(0xFF3A86FF),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                _isDemoActive ? 'Showing Guide...' : 'Guide ▶',
+                                style: TextStyle(
+                                  fontFamily: 'Catamaran',
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                  color: _isDemoActive ? Colors.white : const Color(0xFF3A86FF),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -925,322 +689,90 @@ class _LetterPathGuidePainter extends CustomPainter {
       return;
     }
 
-    // 1. Same guide square as the letter outline and the stroke validators
     final double drawSize = WritingEngine.guideRect(size, letterData.letter).width;
     Offset toCanvas(Offset p) => WritingEngine.toCanvas(p, size, letterData.letter);
-
     final double trackFillWidth = drawSize * 0.055;
 
-    final int safeStep = letterData.strokes.isNotEmpty
-        ? activeStepIndex.clamp(0, letterData.strokes.length - 1)
-        : 0;
-
-    // --- PHASE 0: Progressive Guided Path (Option 1: Clean & Clutter-Free) ---
-    if (safeStep >= 0 && safeStep < letterData.strokes.length) {
-      final stroke = letterData.strokes[safeStep];
+    // 1. Draw COMPLETE letter guide path for ALL strokes (Shows FULL letter guide!)
+    for (final stroke in letterData.strokes) {
       if (!stroke.isDot && stroke.pathPoints.length > 1) {
-        final checkpoints = WritingBoundaryValidator.getCheckpointPositions(stroke, size);
-        final int collectedCount = isDemoActive
-            ? (checkpoints.length * demoProgress).floor()
-            : WritingBoundaryValidator.getCollectedCheckpointsCount(
-                userPoints: currentStroke,
-                stroke: stroke,
-                size: size,
-              );
-
-        // 1. Draw Active Segment Dotted Trail only
-        _drawProgressiveDottedPath(
-          canvas: canvas,
-          stroke: stroke,
-          size: size,
-          checkpoints: checkpoints,
-          collectedCount: collectedCount,
-          trackFillWidth: trackFillWidth,
-          isDemoActive: isDemoActive,
+        final dense = WritingEngine.sampleDensePoints(stroke, size);
+        _drawDottedPath(canvas, dense, trackFillWidth, alpha: 0.70);
+      } else if (stroke.isDot) {
+        final c = toCanvas(stroke.startPoint);
+        canvas.drawCircle(
+          c,
+          trackFillWidth * 0.5,
+          Paint()
+            ..color = const Color(0xFF3A86FF).withValues(alpha: 0.70)
+            ..style = PaintingStyle.fill,
         );
-
-        // 2. Draw Star Checkpoints with Progressive Reveal & Pop Animations
-        _drawProgressiveStars(
-          canvas: canvas,
-          checkpoints: checkpoints,
-          collectedCount: collectedCount,
-          pulse: pulseValue,
-          isDemoActive: isDemoActive,
-        );
-
-        // 3. Draw Red End Marker only when ALL star checkpoints are completed
-        final bool showEnd = checkpoints.isEmpty || collectedCount >= checkpoints.length || isDemoActive;
-        if (showEnd) {
-          _drawEndMarker(canvas, toCanvas(stroke.effectiveEndPoint), pulseValue);
-        }
       }
     }
 
-    // --- PHASE 1: Draw Start Badge ONLY at current active step start point ---
-    if (safeStep >= 0 && safeStep < letterData.strokes.length) {
-      final stroke = letterData.strokes[safeStep];
-      final startPos = toCanvas(stroke.startPoint);
-      _drawStepBadge(
-        canvas,
-        startPos,
-        stroke.strokeNumber,
-        pulseValue,
-        isCurrent: true,
-      );
+    // 2. Draw a clean, gentle start indicator dot (NO numbered step circle badge!)
+    if (letterData.strokes.isNotEmpty) {
+      final firstStroke = letterData.strokes.first;
+      final startPos = toCanvas(firstStroke.startPoint);
+      _drawGentleStartIndicator(canvas, startPos, pulseValue);
 
-      // Draw an inviting bouncing direction arrow pointing along the stroke path towards Star 1!
-      if (!isDemoActive && currentStroke.isEmpty && stroke.pathPoints.length > 3) {
-        final p0 = toCanvas(stroke.pathPoints[0]);
-        final p1 = toCanvas(stroke.pathPoints[3]);
+      // Inviting direction arrow at the beginning
+      if (!isDemoActive && currentStroke.isEmpty && firstStroke.pathPoints.length > 3) {
+        final p0 = toCanvas(firstStroke.pathPoints[0]);
+        final p1 = toCanvas(firstStroke.pathPoints[3]);
         _drawInitialDirectionArrow(canvas, p0, p1, pulseValue);
       }
     }
 
-    // --- PHASE 2: Animated Demo Motion (for ACTIVE STEP ONLY when demo is triggered) ---
-    if (isDemoActive && safeStep >= 0 && safeStep < letterData.strokes.length) {
-      final stroke = letterData.strokes[safeStep];
-      _drawSingleStrokeDemoMotion(canvas, stroke, toCanvas, trackFillWidth, demoProgress);
+    // 3. FULL LETTER Animated Demo Motion across ALL strokes continuously
+    if (isDemoActive) {
+      _drawFullLetterDemoMotion(canvas, letterData.strokes, toCanvas, trackFillWidth, demoProgress);
     }
   }
 
-  void _drawProgressiveDottedPath({
-    required Canvas canvas,
-    required LetterStrokeData stroke,
-    required Size size,
-    required List<Offset> checkpoints,
-    required int collectedCount,
-    required double trackFillWidth,
-    required bool isDemoActive,
-  }) {
-    if (stroke.pathPoints.length < 2) return;
-    final dense = WritingEngine.sampleDensePoints(stroke, size);
-    if (dense.length < 2) return;
+  void _drawDottedPath(Canvas canvas, List<Offset> points, double trackFillWidth, {double alpha = 0.65}) {
+    if (points.isEmpty) return;
 
-    if (isDemoActive || checkpoints.isEmpty) {
-      _drawDottedPath(canvas, dense, trackFillWidth, alpha: 0.55);
-      return;
-    }
+    final dotPaint = Paint()
+      ..color = const Color(0xFF3A86FF).withValues(alpha: alpha)
+      ..style = PaintingStyle.fill;
 
-    final ratios = WritingBoundaryValidator.getCheckpointRatios(stroke);
-    final cpIndices = ratios.map((r) => ((dense.length - 1) * r).round().clamp(0, dense.length - 1)).toList();
+    final double dotRadius = (trackFillWidth * 0.22).clamp(2.5, 4.5);
+    final double spacing = dotRadius * 3.2;
 
-    int startIdx = 0;
-    int endIdx = dense.length - 1;
-
-    if (collectedCount == 0 && cpIndices.isNotEmpty) {
-      startIdx = 0;
-      endIdx = cpIndices.first;
-    } else if (collectedCount > 0 && collectedCount < cpIndices.length) {
-      startIdx = cpIndices[collectedCount - 1];
-      endIdx = cpIndices[collectedCount];
-    } else if (collectedCount >= cpIndices.length) {
-      startIdx = cpIndices.isNotEmpty ? cpIndices.last : 0;
-      endIdx = dense.length - 1;
-    }
-
-    if (endIdx > startIdx) {
-      final activeSlice = dense.sublist(startIdx, endIdx + 1);
-      _drawDottedPath(canvas, activeSlice, trackFillWidth, alpha: 0.70);
-    }
-  }
-
-  void _drawDottedPath(Canvas canvas, List<Offset> pts, double trackFillWidth, {double alpha = 0.55}) {
-    final dot = Paint()..color = const Color(0xFFFF9F1C).withValues(alpha: alpha);
-    final r = math.max(trackFillWidth * 0.14, 2.0);
-    final gap = r * 3.8;
-    double carry = 0;
-    for (int i = 0; i < pts.length - 1; i++) {
-      final a = pts[i], b = pts[i + 1];
-      final len = (b - a).distance;
-      if (len <= 0) continue;
-      double d = carry;
-      while (d < len) {
-        canvas.drawCircle(Offset.lerp(a, b, d / len)!, r, dot);
-        d += gap;
+    double accumulated = spacing;
+    for (int i = 0; i < points.length; i++) {
+      if (i > 0) {
+        accumulated += (points[i] - points[i - 1]).distance;
       }
-      carry = d - len;
-    }
-  }
-
-  void _drawProgressiveStars({
-    required Canvas canvas,
-    required List<Offset> checkpoints,
-    required int collectedCount,
-    required double pulse,
-    required bool isDemoActive,
-  }) {
-    if (checkpoints.isEmpty) return;
-
-    for (int i = 0; i < checkpoints.length; i++) {
-      final cp = checkpoints[i];
-      final bool isCollected = i < collectedCount;
-      final bool isActiveTarget = i == collectedCount;
-
-      if (isDemoActive) {
-        _drawStar(
-          canvas: canvas,
-          center: cp,
-          pulse: pulse,
-          isCollected: isCollected,
-          isActiveTarget: isActiveTarget,
-        );
-      } else if (isCollected) {
-        // 1. Collected Star: Emerald green with celebratory sparkles!
-        _drawStar(
-          canvas: canvas,
-          center: cp,
-          pulse: pulse,
-          isCollected: true,
-          isActiveTarget: false,
-        );
-      } else if (isActiveTarget) {
-        // 2. Active Target Star: Glowing gold, pulsing invitation aura
-        _drawStar(
-          canvas: canvas,
-          center: cp,
-          pulse: pulse,
-          isCollected: false,
-          isActiveTarget: true,
-        );
+      if (accumulated >= spacing) {
+        canvas.drawCircle(points[i], dotRadius, dotPaint);
+        accumulated = 0.0;
       }
-      // 3. Future stars (i > collectedCount) are completely hidden to keep canvas neat!
     }
   }
 
-  void _drawStar({
-    required Canvas canvas,
-    required Offset center,
-    required double pulse,
-    required bool isCollected,
-    required bool isActiveTarget,
-  }) {
-    final double outerR = isCollected
-        ? 12.0
-        : (isActiveTarget ? (9.5 + pulse * 1.8) : 8.5);
-    final double innerR = outerR * 0.48;
+  void _drawGentleStartIndicator(Canvas canvas, Offset center, double pulse) {
+    final double radius = 9.0 + (pulse * 1.8);
 
-    // Glowing aura behind the star
+    // Soft pulsing halo
     final haloPaint = Paint()
-      ..color = (isCollected ? const Color(0xFF10B981) : const Color(0xFFFFB703))
-          .withValues(alpha: isCollected ? 0.35 : (0.28 + pulse * 0.22))
+      ..color = const Color(0xFF10B981).withValues(alpha: 0.35 * (1.0 - pulse))
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, outerR + (isActiveTarget ? 6.5 : 4.0), haloPaint);
+    canvas.drawCircle(center, radius + 6.0 * pulse, haloPaint);
 
-    // Build 5-pointed star path
-    final starPath = Path();
-    const double step = math.pi / 5;
-    for (int i = 0; i < 10; i++) {
-      final r = i.isEven ? outerR : innerR;
-      final angle = (i * step) - (math.pi / 2);
-      final x = center.dx + r * math.cos(angle);
-      final y = center.dy + r * math.sin(angle);
-      if (i == 0) {
-        starPath.moveTo(x, y);
-      } else {
-        starPath.lineTo(x, y);
-      }
-    }
-    starPath.close();
-
-    // Fill star with golden color (or emerald green if collected)
-    final fillPaint = Paint()
-      ..color = isCollected ? const Color(0xFF10B981) : const Color(0xFFFFC300)
+    // Green dot
+    final dotPaint = Paint()
+      ..color = const Color(0xFF10B981)
       ..style = PaintingStyle.fill;
-    canvas.drawPath(starPath, fillPaint);
+    canvas.drawCircle(center, radius, dotPaint);
 
     // Crisp white border
-    final strokePaint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 2.0
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
-    canvas.drawPath(starPath, strokePaint);
-
-    // If collected, draw cute sparkling glints around the star!
-    if (isCollected) {
-      final sparklePaint = Paint()
-        ..color = const Color(0xFFFFD166)
-        ..style = PaintingStyle.fill;
-      const sparkleOffsets = [
-        Offset(-1.3, -1.3),
-        Offset(1.3, -1.3),
-        Offset(-1.3, 1.3),
-        Offset(1.3, 1.3),
-      ];
-      for (final off in sparkleOffsets) {
-        canvas.drawCircle(center + off * outerR * 0.9, 1.8, sparklePaint);
-      }
-    }
-  }
-
-  void _drawEndMarker(Canvas canvas, Offset center, double pulse) {
-    final radius = 8.0 + pulse * 1.2;
-    canvas.drawCircle(center, radius + 3, Paint()..color = const Color(0xFFEF4444).withValues(alpha: 0.22));
-    canvas.drawCircle(center, radius, Paint()..color = const Color(0xFFEF4444));
-    canvas.drawCircle(
-      center,
-      radius,
-      Paint()
-        ..color = Colors.white
-        ..strokeWidth = 2.0
-        ..style = PaintingStyle.stroke,
-    );
-  }
-
-  void _drawStepBadge(Canvas canvas, Offset center, int stepNumber, double pulse, {required bool isCurrent}) {
-    final double baseRadius = 14.5;
-    final double radius = isCurrent ? baseRadius + (pulse * 2.2) : baseRadius;
-
-    // Pulsing halo for current active step
-    if (isCurrent) {
-      final haloPaint = Paint()
-        ..color = const Color(0xFF10B981).withValues(alpha: 0.35 * (1.0 - pulse))
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(center, radius + 8.0 * pulse, haloPaint);
-    }
-
-    // Drop shadow
-    canvas.drawCircle(
-      center.translate(0, 2),
-      radius,
-      Paint()
-        ..color = Colors.black.withValues(alpha: 0.22)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
-    );
-
-    // Badge circle
-    final badgePaint = Paint()
-      ..color = isCurrent ? const Color(0xFF10B981) : const Color(0xFF3A86FF)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, radius, badgePaint);
-
-    // White border
     final borderPaint = Paint()
       ..color = Colors.white
-      ..strokeWidth = 2.2
+      ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
     canvas.drawCircle(center, radius, borderPaint);
-
-    // Number text
-    final textSpan = TextSpan(
-      text: '$stepNumber',
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 13,
-        fontWeight: FontWeight.w900,
-        fontFamily: 'Catamaran',
-        height: 1.0,
-      ),
-    );
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
-    )..layout();
-
-    textPainter.paint(
-      canvas,
-      Offset(center.dx - textPainter.width / 2, center.dy - textPainter.height / 2),
-    );
   }
 
   void _drawInitialDirectionArrow(Canvas canvas, Offset p0, Offset p1, double pulse) {
@@ -1251,13 +783,13 @@ class _LetterPathGuidePainter extends CustomPainter {
     final normal = Offset(-dir.dy, dir.dx);
 
     final bounce = (pulse * 4.5);
-    final tip = p0 + dir * (26.0 + bounce);
-    final base = tip - dir * 11.0;
+    final tip = p0 + dir * (24.0 + bounce);
+    final base = tip - dir * 10.0;
 
     final arrowPath = Path()
       ..moveTo(tip.dx, tip.dy)
-      ..lineTo(base.dx + normal.dx * 6.5, base.dy + normal.dy * 6.5)
-      ..lineTo(base.dx - normal.dx * 6.5, base.dy - normal.dy * 6.5)
+      ..lineTo(base.dx + normal.dx * 6.0, base.dy + normal.dy * 6.0)
+      ..lineTo(base.dx - normal.dx * 6.0, base.dy - normal.dy * 6.0)
       ..close();
 
     final arrowPaint = Paint()
@@ -1267,117 +799,141 @@ class _LetterPathGuidePainter extends CustomPainter {
 
     final borderPaint = Paint()
       ..color = Colors.white
-      ..strokeWidth = 2.0
+      ..strokeWidth = 1.8
       ..style = PaintingStyle.stroke;
     canvas.drawPath(arrowPath, borderPaint);
   }
 
-  void _drawSingleStrokeDemoMotion(
+  void _drawFullLetterDemoMotion(
     Canvas canvas,
-    LetterStrokeData stroke,
+    List<LetterStrokeData> strokes,
     Offset Function(Offset) toCanvas,
     double trackFillWidth,
     double progress,
   ) {
-    final canvasPts = stroke.pathPoints.map(toCanvas).toList();
-    if (canvasPts.isEmpty) return;
+    if (strokes.isEmpty) return;
 
-    if (stroke.isDot) {
-      final c = toCanvas(stroke.startPoint);
-      final r = trackFillWidth * (0.3 + 0.3 * progress);
-      canvas.drawCircle(c, r, Paint()..color = const Color(0xFFFFB703)..style = PaintingStyle.fill);
-      return;
+    double totalLetterLen = 0.0;
+    final List<double> strokeLens = [];
+    final List<List<Offset>> allCanvasPts = [];
+
+    for (final stroke in strokes) {
+      final canvasPts = stroke.pathPoints.map(toCanvas).toList();
+      allCanvasPts.add(canvasPts);
+      if (stroke.isDot) {
+        strokeLens.add(10.0);
+        totalLetterLen += 10.0;
+      } else {
+        double sLen = 0.0;
+        for (int i = 0; i < canvasPts.length - 1; i++) {
+          sLen += (canvasPts[i + 1] - canvasPts[i]).distance;
+        }
+        strokeLens.add(sLen);
+        totalLetterLen += sLen;
+      }
     }
 
-    if (canvasPts.length < 2) return;
+    if (totalLetterLen <= 0) return;
 
-    double totalLen = 0.0;
-    final List<double> segmentLens = [];
-    for (int i = 0; i < canvasPts.length - 1; i++) {
-      final len = (canvasPts[i + 1] - canvasPts[i]).distance;
-      segmentLens.add(len);
-      totalLen += len;
-    }
-
-    if (totalLen <= 0) return;
-
-    final targetDist = progress * totalLen;
-    double accumulated = 0.0;
-    Offset currentPos = canvasPts.first;
+    final double targetDist = progress.clamp(0.0, 1.0) * totalLetterLen;
+    double accumulatedDist = 0.0;
 
     final trailPaint = Paint()
       ..color = const Color(0xFFFFB703)
-      ..strokeWidth = trackFillWidth * 0.72
+      ..strokeWidth = trackFillWidth * 0.76
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
 
-    final trailPath = Path()..moveTo(canvasPts.first.dx, canvasPts.first.dy);
+    Offset? activeTip;
 
-    for (int i = 0; i < canvasPts.length - 1; i++) {
-      final p0 = canvasPts[i];
-      final p1 = canvasPts[i + 1];
-      final len = segmentLens[i];
+    for (int sIdx = 0; sIdx < strokes.length; sIdx++) {
+      final stroke = strokes[sIdx];
+      final canvasPts = allCanvasPts[sIdx];
+      final sLen = strokeLens[sIdx];
 
-      if (accumulated + len <= targetDist) {
-        trailPath.lineTo(p1.dx, p1.dy);
-        accumulated += len;
-        currentPos = p1;
+      if (stroke.isDot) {
+        if (targetDist >= accumulatedDist) {
+          final c = toCanvas(stroke.startPoint);
+          canvas.drawCircle(c, trackFillWidth * 0.5, Paint()..color = const Color(0xFFFFB703)..style = PaintingStyle.fill);
+          activeTip = c;
+        }
+        accumulatedDist += sLen;
+        continue;
+      }
+
+      if (canvasPts.length < 2) {
+        accumulatedDist += sLen;
+        continue;
+      }
+
+      if (accumulatedDist + sLen <= targetDist) {
+        final fullPath = Path()..moveTo(canvasPts.first.dx, canvasPts.first.dy);
+        for (int i = 1; i < canvasPts.length; i++) {
+          fullPath.lineTo(canvasPts[i].dx, canvasPts[i].dy);
+        }
+        canvas.drawPath(fullPath, trailPaint);
+        activeTip = canvasPts.last;
+        accumulatedDist += sLen;
+      } else if (targetDist > accumulatedDist) {
+        final strokeTargetDist = targetDist - accumulatedDist;
+        double segAccum = 0.0;
+        final partialPath = Path()..moveTo(canvasPts.first.dx, canvasPts.first.dy);
+        Offset currentPos = canvasPts.first;
+
+        for (int i = 0; i < canvasPts.length - 1; i++) {
+          final p0 = canvasPts[i];
+          final p1 = canvasPts[i + 1];
+          final segLen = (p1 - p0).distance;
+
+          if (segAccum + segLen <= strokeTargetDist) {
+            partialPath.lineTo(p1.dx, p1.dy);
+            segAccum += segLen;
+            currentPos = p1;
+          } else {
+            final remain = strokeTargetDist - segAccum;
+            final ratio = (remain / (segLen > 0 ? segLen : 1.0)).clamp(0.0, 1.0);
+            currentPos = Offset(
+              p0.dx + (p1.dx - p0.dx) * ratio,
+              p0.dy + (p1.dy - p0.dy) * ratio,
+            );
+            partialPath.lineTo(currentPos.dx, currentPos.dy);
+            break;
+          }
+        }
+
+        canvas.drawPath(partialPath, trailPaint);
+        activeTip = currentPos;
+        break;
       } else {
-        final remain = targetDist - accumulated;
-        final ratio = (remain / (len > 0 ? len : 1.0)).clamp(0.0, 1.0);
-        currentPos = Offset(
-          p0.dx + (p1.dx - p0.dx) * ratio,
-          p0.dy + (p1.dy - p0.dy) * ratio,
-        );
-        trailPath.lineTo(currentPos.dx, currentPos.dy);
         break;
       }
     }
-    canvas.drawPath(trailPath, trailPaint);
 
-    // Glowing Magic Pointer
-    final pointerHalo = Paint()
-      ..color = const Color(0xFFFF5400).withValues(alpha: 0.35)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(currentPos, 16.0, pointerHalo);
-
-    final pointerCore = Paint()
-      ..color = const Color(0xFFFFBE0B)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(currentPos, 9.0, pointerCore);
-
-    final pointerBorder = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke;
-    canvas.drawCircle(currentPos, 9.0, pointerBorder);
-
-    // Hand icon
-    final iconPainter = TextPainter(
-      text: TextSpan(
-        text: String.fromCharCode(Icons.touch_app_rounded.codePoint),
-        style: TextStyle(
-          fontSize: 28,
-          fontFamily: Icons.touch_app_rounded.fontFamily,
-          package: Icons.touch_app_rounded.fontPackage,
-          color: const Color(0xFFFF5400),
-          shadows: [
-            Shadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 4,
-              offset: const Offset(1, 2),
-            ),
-          ],
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-
-    iconPainter.paint(
-      canvas,
-      Offset(currentPos.dx + 4, currentPos.dy - 28),
-    );
+    // Draw glowing stylus / pointer tip
+    if (activeTip != null) {
+      canvas.drawCircle(
+        activeTip,
+        14.0,
+        Paint()
+          ..color = const Color(0xFFFFB703).withValues(alpha: 0.40)
+          ..style = PaintingStyle.fill,
+      );
+      canvas.drawCircle(
+        activeTip,
+        7.0,
+        Paint()
+          ..color = const Color(0xFFFFF3B0)
+          ..style = PaintingStyle.fill,
+      );
+      canvas.drawCircle(
+        activeTip,
+        3.5,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.fill,
+      );
+    }
   }
 
   @override
@@ -1386,6 +942,7 @@ class _LetterPathGuidePainter extends CustomPainter {
 
 /// Vibrant Rainbow Stroke Painter with optional letter boundary clipping mask
 class _HandwritingStrokesPainter extends CustomPainter {
+  final String letter;
   final List<List<Offset>> strokes;
   final List<Offset> currentStroke;
   final Color strokeColor;
@@ -1393,6 +950,7 @@ class _HandwritingStrokesPainter extends CustomPainter {
   final Path? clipBoundary;
 
   _HandwritingStrokesPainter({
+    required this.letter,
     required this.strokes,
     required this.currentStroke,
     required this.strokeColor,
@@ -1425,9 +983,19 @@ class _HandwritingStrokesPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (size.width <= 0 || size.height <= 0) return;
 
-    final double guideWidth = WritingEngine.guideRect(size).width;
-    // Dynamic brush thickness that fits the canal cleanly without blooming into adjacent strokes
-    final double effectiveWidth = math.max(strokeWidth * 2.2, guideWidth * 0.125);
+    final double guideWidth = WritingEngine.guideRect(size, letter).width;
+    final bool isSmall = letter.length == 1 &&
+        letter.toLowerCase() == letter &&
+        letter.toUpperCase() != letter;
+
+    // Exact canal-matching stroke width:
+    // Small letters have narrower tracks (~15-20px on mobile screens),
+    // while capital letters have wider tracks (~20-25px).
+    // Using guideWidth * 0.072 for small and guideWidth * 0.088 for capital ensures
+    // the stroke fills neatly inside the canal without spilling or flooding nearby strokes!
+    final double effectiveWidth = isSmall
+        ? (guideWidth * 0.072).clamp(15.0, 20.0)
+        : (guideWidth * 0.088).clamp(20.0, 26.0);
 
     canvas.save();
     if (clipBoundary != null) {
@@ -1468,7 +1036,7 @@ class _HandwritingStrokesPainter extends CustomPainter {
       final color = _getRainbowColor(0.2);
       canvas.drawCircle(
         stroke.first,
-        width * 0.75,
+        width * 0.5,
         Paint()
           ..color = color
           ..style = PaintingStyle.fill
@@ -1484,20 +1052,7 @@ class _HandwritingStrokesPainter extends CustomPainter {
       final p0 = stroke[i];
       final p1 = stroke[i + 1];
 
-      // 1. Soft glowing aura under the stroke
-      canvas.drawLine(
-        p0,
-        p1,
-        Paint()
-          ..color = color.withValues(alpha: 0.35)
-          ..strokeWidth = width + 2.0
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round
-          ..style = PaintingStyle.stroke
-          ..isAntiAlias = true,
-      );
-
-      // 2. Core flood-fill rainbow line that saturates the whole canal
+      // Clean canal-bounded rainbow stroke
       canvas.drawLine(
         p0,
         p1,

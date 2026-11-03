@@ -322,12 +322,6 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                                 mainAxisSize: MainAxisSize.min,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(
-                                    Icons.volume_up_rounded,
-                                    color: color,
-                                    size: 24,
-                                  ),
-                                  const SizedBox(width: 8),
                                   _buildHighlightedWord(letter.word, letter.letter, color),
                                 ],
                               ),
@@ -340,29 +334,6 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                 ),
                 const SizedBox(height: 18),
 
-                // Audio Action Buttons (No overflow)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: CustomAudioButton(
-                        label: 'Listen',
-                        color: color,
-                        onTap: _playAudio,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Flexible(
-                      child: CustomAudioButton(
-                        label: 'Repeat',
-                        color: color,
-                        isSecondary: true,
-                        onTap: _playAudio,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
 
                 // Direct Writing Practice Shortcut
                 BouncyButton(

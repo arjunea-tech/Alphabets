@@ -589,109 +589,70 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
             ),
           ),
 
-          // Audio Pronunciation Button
-          AudioButton(
-            letter: _currentGuide.letter,
-            word: _currentGuide.sampleWord,
-            size: 40,
-            color: const Color(0xFFFF9F1C),
-          ),
-          const SizedBox(width: 8),
 
-          // History Screen Link Button
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () {
-                _autoSaveCurrentPractice(completed: false);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => WritingHistoryScreen(
-                      initialLetter: _currentGuide.letter,
-                    ),
-                  ),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF3A86FF), width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 6,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.history_edu_rounded,
-                  color: Color(0xFF3A86FF),
-                  size: 22,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-
-          // Star Counter
-          ListenableBuilder(
-            listenable: widget.progressService,
-            builder: (context, _) => StarCounter(count: widget.progressService.stars),
-          ),
         ],
       ),
     );
   }
 
-  /// Category Switcher
+  /// Category Switcher (Horizontally scrollable with individual pill chips)
   Widget _buildCategorySwitcher() {
     const categories = ['Capital (A-Z)', 'Small (a-z)', 'Vowels (5)', 'Consonants (21)'];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFFFD166), width: 2),
-        ),
-        child: Row(
-          children: List.generate(categories.length, (idx) {
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: SizedBox(
+        height: 42,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: categories.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, idx) {
             final isSelected = _selectedCategoryIndex == idx;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () => _switchCategory(idx),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(vertical: 7),
-                  decoration: BoxDecoration(
-                    gradient: isSelected
-                        ? const LinearGradient(
-                            colors: [Color(0xFFFF9F1C), Color(0xFFFF6B6B)],
-                          )
-                        : null,
-                    borderRadius: BorderRadius.circular(20),
+            return GestureDetector(
+              onTap: () => _switchCategory(idx),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: isSelected
+                      ? const LinearGradient(
+                          colors: [Color(0xFFFF9F1C), Color(0xFFFF6B6B)],
+                        )
+                      : null,
+                  color: isSelected ? null : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? Colors.transparent : const Color(0xFFFFD166),
+                    width: 1.5,
                   ),
-                  child: Center(
-                    child: Text(
-                      categories[idx],
-                      style: TextStyle(
-                        fontFamily: 'Catamaran',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        color: isSelected ? Colors.white : AppColors.textMuted,
-                      ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isSelected
+                          ? const Color(0xFFFF9F1C).withValues(alpha: 0.35)
+                          : Colors.black.withValues(alpha: 0.04),
+                      blurRadius: isSelected ? 6 : 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    categories[idx],
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontFamily: 'Catamaran',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      color: isSelected ? Colors.white : AppColors.textMuted,
                     ),
                   ),
                 ),
               ),
             );
-          }),
+          },
         ),
       ),
     );

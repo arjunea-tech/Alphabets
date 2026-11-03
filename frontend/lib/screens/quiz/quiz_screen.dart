@@ -214,22 +214,6 @@ class QuizScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () => AudioService.instance.playTamilAudio(category.title),
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryLight.withValues(alpha: 0.5),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.volume_up_rounded,
-                            size: 18,
-                            color: AppColors.primaryDark,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
                     ],
                   ),
                   const SizedBox(height: 2),

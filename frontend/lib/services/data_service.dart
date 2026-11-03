@@ -1,6 +1,7 @@
 import '../models/letter_model.dart';
 import '../models/story_model.dart';
 import '../models/game_model.dart';
+import '../models/game_item_model.dart';
 import '../models/video_model.dart';
 import '../models/quiz_model.dart';
 
@@ -24,6 +25,7 @@ abstract class IDataRepository {
   Future<StoryModel> getFeaturedStory();
   Future<List<GameQuestion>> getGameQuestions();
   Future<List<VideoItem>> getVideoLessons();
+  Future<List<GameItem>> getActiveGames();
   Future<List<QuizCategory>> getQuizCategories();
   Future<List<QuizQuestion>> getQuizQuestions(String categoryId);
 }
@@ -75,6 +77,102 @@ class LocalDataRepository implements IDataRepository {
   }
 
   @override
+  Future<List<GameItem>> getActiveGames() async {
+    return const [
+      GameItem(
+        id: 'game_candy_1',
+        gameType: 'candy',
+        title: 'Alphabet Candy Match',
+        prompt: 'Match 3 colorful letter candies together!',
+        clueImage: 'assets/images/games/candy_match_cover.png',
+        displayOrder: 1,
+        isActive: true,
+      ),
+      GameItem(
+        id: 'game_runner_1',
+        gameType: 'runner',
+        title: 'Alphabet Runner',
+        prompt: 'Run and collect letters along the jungle trail!',
+        clueImage: 'assets/images/games/runner_cover.png',
+        displayOrder: 2,
+        isActive: true,
+      ),
+      GameItem(
+        id: 'game_balloon_1',
+        gameType: 'balloon',
+        title: 'Balloon Word Pop',
+        prompt: 'Pop the floating balloons with the target letters!',
+        clueImage: 'assets/images/games/balloon_pop_cover.png',
+        displayOrder: 3,
+        isActive: true,
+      ),
+      GameItem(
+        id: 'game_flappy_1',
+        gameType: 'flappy',
+        title: 'Flappy Word',
+        prompt: 'Flap wings and fly through the correct cloud gates!',
+        clueImage: 'assets/images/games/flappy_word_cover.png',
+        displayOrder: 4,
+        isActive: true,
+      ),
+      GameItem(
+        id: 'game_ninja_1',
+        gameType: 'ninja',
+        title: 'Word Ninja',
+        prompt: 'Slice the flying letter fruits with your katana sword!',
+        clueImage: 'assets/images/games/word_ninja_cover.png',
+        displayOrder: 5,
+        isActive: true,
+      ),
+      GameItem(
+        id: 'game_racing_1',
+        gameType: 'racing',
+        title: 'Car Racing (Vowels)',
+        prompt: 'Steer your car and drive through the target letter!',
+        clueImage: 'assets/images/games/car_racing_cover.png',
+        displayOrder: 6,
+        isActive: true,
+      ),
+      GameItem(
+        id: 'game_fishing_1',
+        gameType: 'fishing',
+        title: 'Letter Fishing',
+        prompt: 'Catch the swimming fish carrying the target letter!',
+        clueImage: 'assets/images/games/fishing_cover.png',
+        displayOrder: 7,
+        isActive: true,
+      ),
+      GameItem(
+        id: 'game_basket_1',
+        gameType: 'basket',
+        title: 'Letter Basket (Vowels)',
+        prompt: 'Catch the falling vowel letters into your basket!',
+        clueImage: 'assets/images/games/basket_vowels_cover.png',
+        displayOrder: 8,
+        isActive: true,
+      ),
+      GameItem(
+        id: 'game_basket_2',
+        gameType: 'basket',
+        title: 'Letter Basket (Consonants)',
+        prompt: 'Catch the falling consonant letters into your magical basket!',
+        clueImage: 'assets/images/games/basket_consonants_cover.png',
+        displayOrder: 9,
+        isActive: true,
+      ),
+      GameItem(
+        id: 'game_puzzle_1',
+        gameType: 'puzzle',
+        title: 'Word Puzzle',
+        prompt: 'Select the missing starting letter to complete the word!',
+        clueImage: 'assets/images/welcome.png',
+        displayOrder: 10,
+        isActive: true,
+      ),
+    ];
+  }
+
+  @override
   Future<List<QuizCategory>> getQuizCategories() async {
     return tamilQuizCategories;
   }
@@ -91,6 +189,7 @@ class ApiDataRepository implements IDataRepository {
   List<LetterModel>? _cachedVowels;
   List<LetterModel>? _cachedConsonants;
   List<VideoItem>? _cachedVideos;
+  List<GameItem>? _cachedGames;
 
   LetterModel _enrichWithLocalAssets(LetterModel letter) {
     if (letter.imagePath == null ||
@@ -264,6 +363,33 @@ class ApiDataRepository implements IDataRepository {
     return _fallback.getVideoLessons();
   }
 
+  void clearGamesCache() {
+    _cachedGames = null;
+  }
+
+  @override
+  Future<List<GameItem>> getActiveGames() async {
+    if (_cachedGames != null && _cachedGames!.isNotEmpty) {
+      return _cachedGames!;
+    }
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}/games');
+      final res = await http.get(uri).timeout(const Duration(seconds: 4));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['success'] == true && data['data'] is List) {
+          final List list = data['data'];
+          final games = list.map((item) => GameItem.fromJson(item as Map<String, dynamic>)).toList();
+          if (games.isNotEmpty) {
+            _cachedGames = games;
+            return games;
+          }
+        }
+      }
+    } catch (_) {}
+    return _fallback.getActiveGames();
+  }
+
   @override
   Future<List<QuizCategory>> getQuizCategories() => _fallback.getQuizCategories();
 
@@ -275,6 +401,7 @@ class ApiDataRepository implements IDataRepository {
     _cachedVowels = null;
     _cachedConsonants = null;
     _cachedVideos = null;
+    _cachedGames = null;
   }
 }
 
@@ -299,12 +426,19 @@ class DataService {
   Future<StoryModel> getFeaturedStory() => _repo.getFeaturedStory();
   Future<List<GameQuestion>> getGameQuestions() => _repo.getGameQuestions();
   Future<List<VideoItem>> getVideoLessons() => _repo.getVideoLessons();
+  Future<List<GameItem>> getActiveGames() => _repo.getActiveGames();
   Future<List<QuizCategory>> getQuizCategories() => _repo.getQuizCategories();
   Future<List<QuizQuestion>> getQuizQuestions(String categoryId) => _repo.getQuizQuestions(categoryId);
 
   void clearVideoCache() {
     if (_repo is ApiDataRepository) {
       (_repo as ApiDataRepository).clearVideoCache();
+    }
+  }
+
+  void clearGamesCache() {
+    if (_repo is ApiDataRepository) {
+      (_repo as ApiDataRepository).clearGamesCache();
     }
   }
 

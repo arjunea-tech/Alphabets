@@ -4,17 +4,19 @@ import { GameItem } from '../types';
 import { Modal } from '../components/common/Modal';
 import { FileUpload } from '../components/common/FileUpload';
 import { useLanguage } from '../context/LanguageContext';
-import { Plus, Edit2, Trash2, CheckCircle2, XCircle, Loader2, Gamepad2, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle2, XCircle, Loader2, Gamepad2 } from 'lucide-react';
 import { resolveMediaUrl } from '../api/client';
 
 const GAME_TYPE_LABELS: Record<string, { label: string; shortLabel: string; color: string; bg: string }> = {
-  runner: { label: '🏃 Alphabet Runner (2D Runner)', shortLabel: '🏃 Runner', color: '#16A34A', bg: '#DCFCE7' },
   candy: { label: '🍬 Candy Match (Match-3)', shortLabel: '🍬 Candy Match', color: '#DB2777', bg: '#FCE7F3' },
-  fishing: { label: '🎣 Letter Fishing', shortLabel: '🎣 Fishing', color: '#0284C7', bg: '#E0F2FE' },
-  basket: { label: '🧺 Letter Basket', shortLabel: '🧺 Basket', color: '#D97706', bg: '#FEF3C7' },
+  runner: { label: '🏃 Alphabet Runner (2D Runner)', shortLabel: '🏃 Runner', color: '#16A34A', bg: '#DCFCE7' },
+  balloon: { label: '🎈 Balloon Word Pop', shortLabel: '🎈 Balloon Pop', color: '#8B5CF6', bg: '#EDE9FE' },
+  flappy: { label: '🕊️ Flappy Word', shortLabel: '🕊️ Flappy Word', color: '#0284C7', bg: '#E0F2FE' },
+  ninja: { label: '🥷 Word Ninja', shortLabel: '🥷 Word Ninja', color: '#EA580C', bg: '#FFEDD5' },
   racing: { label: '🚗 Alphabet Car Racing', shortLabel: '🚗 Racing', color: '#2563EB', bg: '#DBEAFE' },
-  puzzle: { label: '🧩 Word Puzzle', shortLabel: '🧩 Puzzle', color: '#7C3AED', bg: '#EDE9FE' },
-  balloon: { label: '🎈 Balloon Pop', shortLabel: '🎈 Balloon', color: '#DC2626', bg: '#FEE2E2' },
+  fishing: { label: '🎣 Letter Fishing', shortLabel: '🎣 Fishing', color: '#0D9488', bg: '#CCFBF1' },
+  basket: { label: '🧺 Letter Basket', shortLabel: '🧺 Basket', color: '#D97706', bg: '#FEF3C7' },
+  puzzle: { label: '🧩 Word Puzzle', shortLabel: '🧩 Puzzle', color: '#9333EA', bg: '#F3E8FF' },
   matching: { label: '🔄 Letter Matching', shortLabel: '🔄 Matching', color: '#4B5563', bg: '#F3F4F6' },
 };
 
@@ -48,7 +50,7 @@ export const GamesPage: React.FC = () => {
 
   const handleOpenAdd = () => {
     setCurrentGame({
-      game_type: 'runner',
+      game_type: 'balloon',
       title: '',
       prompt: '',
       clue: '',
@@ -56,7 +58,7 @@ export const GamesPage: React.FC = () => {
       correct_index: 0,
       options: ['A', 'B', 'C', 'D'],
       success_praise: 'Awesome! ⭐',
-      stars_reward: 3,
+      stars_reward: 5,
       display_order: games.length + 1,
       is_active: true,
     });
@@ -68,6 +70,19 @@ export const GamesPage: React.FC = () => {
     setCurrentGame(game);
     setOptionsStr(Array.isArray(game.options) ? game.options.join(', ') : '');
     setIsModalOpen(true);
+  };
+
+  const handleToggleActive = async (game: GameItem) => {
+    const newActive = !game.is_active;
+    try {
+      setGames((prev) =>
+        prev.map((g) => (g.id === game.id ? { ...g, is_active: newActive } : g))
+      );
+      await gamesApi.update(game.id, { is_active: newActive });
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to update game status');
+      fetchGames();
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -176,7 +191,7 @@ export const GamesPage: React.FC = () => {
               <th>{t('games.options')}</th>
               <th>{t('games.correctAnswer')}</th>
               <th>{t('games.starsReward')}</th>
-              <th>{t('games.status')}</th>
+              <th>Status (Click to Toggle)</th>
               <th style={{ textAlign: 'right' }}>{t('games.actions')}</th>
             </tr>
           </thead>
@@ -287,17 +302,26 @@ export const GamesPage: React.FC = () => {
                     </td>
                     <td style={{ color: '#EAB308', fontWeight: 700 }}>⭐ +{g.stars_reward}</td>
                     <td>
-                      {g.is_active ? (
-                        <span className="badge badge-success">
-                          <span className="badge-dot" />
-                          {t('common.active')}
-                        </span>
-                      ) : (
-                        <span className="badge badge-danger">
-                          <span className="badge-dot" />
-                          {t('common.inactive')}
-                        </span>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleActive(g)}
+                        className={`badge ${g.is_active ? 'badge-success' : 'badge-danger'}`}
+                        style={{
+                          cursor: 'pointer',
+                          border: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '5px 10px',
+                          borderRadius: '16px',
+                          fontWeight: 700,
+                          transition: 'all 0.15s ease',
+                        }}
+                        title="Click to toggle Active / Inactive for students in Mobile App"
+                      >
+                        <span className="badge-dot" />
+                        {g.is_active ? t('common.active') : t('common.inactive')}
+                      </button>
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <div className="action-btn-group">
@@ -330,16 +354,18 @@ export const GamesPage: React.FC = () => {
               <label className="form-label">{t('games.gameType')}</label>
               <select
                 className="form-control"
-                value={currentGame?.game_type || 'runner'}
+                value={currentGame?.game_type || 'balloon'}
                 onChange={(e) => setCurrentGame({ ...currentGame, game_type: e.target.value })}
               >
+                <option value="balloon">🎈 Balloon Word Pop</option>
+                <option value="flappy">🕊️ Flappy Word</option>
+                <option value="ninja">🥷 Word Ninja</option>
                 <option value="runner">🏃 Alphabet Runner (2D Runner Game)</option>
                 <option value="candy">🍬 Candy Match (Match-3 Candy)</option>
+                <option value="racing">🚗 Alphabet Car Racing</option>
                 <option value="fishing">🎣 Letter Fishing</option>
                 <option value="basket">🧺 Letter Basket</option>
-                <option value="racing">🚗 Alphabet Car Racing</option>
                 <option value="puzzle">🧩 Word Puzzle</option>
-                <option value="balloon">🎈 Balloon Pop</option>
                 <option value="matching">🔄 Letter Matching</option>
               </select>
             </div>
@@ -348,7 +374,7 @@ export const GamesPage: React.FC = () => {
               <input
                 type="text"
                 className="form-control"
-                placeholder="e.g. Alphabet Runner"
+                placeholder="e.g. Balloon Word Pop"
                 value={currentGame?.title || ''}
                 onChange={(e) => setCurrentGame({ ...currentGame, title: e.target.value })}
                 required
@@ -361,7 +387,7 @@ export const GamesPage: React.FC = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. Run and jump to collect letters!"
+              placeholder="e.g. Pop the balloons with target vowels!"
               value={currentGame?.prompt || ''}
               onChange={(e) => setCurrentGame({ ...currentGame, prompt: e.target.value })}
               required
@@ -374,7 +400,7 @@ export const GamesPage: React.FC = () => {
               <input
                 type="text"
                 className="form-control"
-                placeholder="e.g. Fun 2D Alphabet Runner"
+                placeholder="e.g. Pop VOWEL Letters: A, E, I, O, U"
                 value={currentGame?.clue || ''}
                 onChange={(e) => setCurrentGame({ ...currentGame, clue: e.target.value })}
               />
@@ -394,14 +420,14 @@ export const GamesPage: React.FC = () => {
           <div className="form-group">
             <FileUpload
               type="image"
-              label="Game Image / Thumbnail"
+              label="Game Cover Image / Thumbnail"
               currentValue={currentGame?.clue_image}
               onUploaded={(path) => setCurrentGame({ ...currentGame, clue_image: path })}
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">{t('games.options')} (Comma-separated)</label>
+            <label className="form-label">{t('games.options')} (Comma-separated letters/words)</label>
             <input
               type="text"
               className="form-control"
@@ -411,7 +437,7 @@ export const GamesPage: React.FC = () => {
               required
             />
             <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-              Separate choices with comma. E.g.: A, B, C, D
+              Separate choices with commas. E.g.: A, B, C, D or Apple, Ball, Cat, Dog
             </small>
           </div>
 
@@ -421,12 +447,12 @@ export const GamesPage: React.FC = () => {
               <input
                 type="number"
                 min="0"
-                max="5"
+                max="10"
                 className="form-control"
                 value={currentGame?.correct_index || 0}
                 onChange={(e) => setCurrentGame({ ...currentGame, correct_index: parseInt(e.target.value, 10) })}
               />
-              <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>First option = 0, Second = 1</small>
+              <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>First option = 0, Second = 1, etc.</small>
             </div>
 
             <div className="form-group">
@@ -434,7 +460,7 @@ export const GamesPage: React.FC = () => {
               <input
                 type="number"
                 className="form-control"
-                value={currentGame?.stars_reward || 3}
+                value={currentGame?.stars_reward || 5}
                 onChange={(e) => setCurrentGame({ ...currentGame, stars_reward: parseInt(e.target.value, 10) })}
               />
             </div>
@@ -446,7 +472,7 @@ export const GamesPage: React.FC = () => {
               <input
                 type="text"
                 className="form-control"
-                placeholder="Great Job! ⭐"
+                placeholder="Awesome! Super! ⭐"
                 value={currentGame?.success_praise || 'Awesome! ⭐'}
                 onChange={(e) => setCurrentGame({ ...currentGame, success_praise: e.target.value })}
               />
