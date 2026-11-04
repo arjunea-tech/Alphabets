@@ -1,8 +1,11 @@
 import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'cloudinary_media.dart';
 
 class ApiConfig {
+  /// Live backend used by release builds. Debug and profile builds use the local URLs below.
+  static const String productionBaseUrl = 'https://alphabets-api.macvelsoftware.com/api/v1';
+
   // Custom server IP override if testing on a physical phone on the same Wi-Fi network
   static String? customServerUrl;
   static String? _discoveredBaseUrl;
@@ -15,6 +18,7 @@ class ApiConfig {
     if (_discoveredBaseUrl != null && _discoveredBaseUrl!.isNotEmpty) {
       return [_discoveredBaseUrl!];
     }
+    if (kReleaseMode) return [productionBaseUrl];
     return [
       if (kIsWeb) 'http://localhost:5000/api/v1',
       if (!kIsWeb && Platform.isAndroid) 'http://10.0.2.2:5000/api/v1',
@@ -30,6 +34,7 @@ class ApiConfig {
     if (_discoveredBaseUrl != null && _discoveredBaseUrl!.isNotEmpty) {
       return _discoveredBaseUrl!;
     }
+    if (kReleaseMode) return productionBaseUrl;
     if (kIsWeb) return 'http://localhost:5000/api/v1';
     if (!kIsWeb && Platform.isAndroid) return 'http://10.0.2.2:5000/api/v1';
     return 'http://localhost:5000/api/v1';
