@@ -739,11 +739,7 @@ class CarRacingGameState extends State<CarRacingGame>
                   shape: BoxShape.circle,
                   border: Border.all(color: const Color(0xFFFFD54F), width: 1.5),
                 ),
-                child: Icon(
-                  _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                  color: const Color(0xFFF57F17),
-                  size: 20,
-                ),
+                child: const SizedBox.shrink(),
               ),
             ),
 
@@ -882,46 +878,7 @@ class CarRacingGameState extends State<CarRacingGame>
             ),
           ),
 
-          // Audio Speaker Replay Button
-          BouncyButton(
-            onPressed: _playTargetSound,
-            scaleFactor: 0.9,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFF9800), Color(0xFFF57C00)],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.orange.withValues(alpha: 0.3),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.volume_up_rounded,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                  SizedBox(width: 4),
-                  Text(
-                    'Listen Again',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const SizedBox.shrink(),
         ],
       ),
     );
@@ -1048,14 +1005,7 @@ class CarRacingGameState extends State<CarRacingGame>
               color: const Color(0xFF263238),
             ),
           ),
-          if (isWord) ...[
-            const SizedBox(width: 5),
-            Icon(
-              Icons.volume_up_rounded,
-              size: 16,
-              color: item.borderColor.withValues(alpha: 0.85),
-            ),
-          ],
+          // audio icon removed
         ],
       ),
     );

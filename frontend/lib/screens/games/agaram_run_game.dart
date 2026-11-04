@@ -1,13 +1,11 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 
-import '../../data/uyir_data.dart';
 import '../../data/english_letters_data.dart';
 import '../../models/agaram_run_game_model.dart';
 import '../../models/letter_model.dart';
-import '../../services/audio_service.dart';
 import '../../services/progress_service.dart';
 import '../../widgets/bouncy_button.dart';
 
@@ -15,6 +13,24 @@ enum MovementDirection {
   idle,
   left,
   right,
+}
+
+class FloatingScoreText {
+  double x;
+  double y;
+  final String text;
+  final Color color;
+  double life;
+  final double maxLife;
+
+  FloatingScoreText({
+    required this.x,
+    required this.y,
+    required this.text,
+    required this.color,
+    this.life = 0.8,
+    this.maxLife = 0.8,
+  });
 }
 
 class AgaramRunGame extends StatefulWidget {
@@ -33,34 +49,34 @@ class AgaramRunGame extends StatefulWidget {
 
 class _AgaramRunGameState extends State<AgaramRunGame>
     with TickerProviderStateMixin {
-  // Services
-  final AudioService _audioService = AudioService.instance;
   final Random _rng = Random();
 
-  // Game Engine 60fps Ticker
+  // 60 FPS Physics Ticker
   late final Ticker _ticker;
   Duration _lastElapsed = Duration.zero;
 
-  // Game Flow States: 'start', 'playing', 'paused', 'victory', 'game_over'
+  // Game States: 'start', 'playing', 'paused', 'victory', 'game_over'
   String _gameState = 'start';
-  bool _isMuted = false;
 
   // Level & World State
   late int _currentLevelIndex;
   late List<AgaramRunLevel> _levels;
   AgaramRunLevel get _currentLevel => _levels[_currentLevelIndex];
 
-  // Active Level Entities
   late List<PlatformTile> _platforms;
   late List<CollectibleItem> _collectibles;
   late List<ObstacleItem> _obstacles;
 
   // Target Educational Letter Prompt
   int _currentTargetLetterIdx = 0;
-  LetterModel get _currentTargetLetter =>
-      _currentLevel.targetLetters[_currentTargetLetterIdx % _currentLevel.targetLetters.length];
+  LetterModel get _currentTargetLetter {
+    if (_currentLevel.targetLetters.isEmpty) {
+      return englishLettersList.first;
+    }
+    return _currentLevel.targetLetters[_currentTargetLetterIdx % _currentLevel.targetLetters.length];
+  }
 
-  // Player Physics State
+  // Player Physics & Animation
   double _playerX = 60.0;
   double _playerY = 220.0;
   double _playerVx = 0.0;
@@ -69,9 +85,10 @@ class _AgaramRunGameState extends State<AgaramRunGame>
   double _coyoteTimer = 0.0;
   int _facingDirection = 1; // 1 = right, -1 = left
   double _runLegPhase = 0.0;
-  double _invulnerableTimer = 0.0; // Flash when taking damage
+  double _invulnerableTimer = 0.0;
+  double _animTime = 0.0;
 
-  // Player Stats
+  // Stats
   int _score = 0;
   int _starsCollected = 0;
   int _lettersCollected = 0;
@@ -80,30 +97,30 @@ class _AgaramRunGameState extends State<AgaramRunGame>
   // Camera Horizontal Scroll
   double _cameraX = 0.0;
 
-  // Movement Direction State (One-tap continuous movement)
+  // Controls
   MovementDirection _moveDirection = MovementDirection.idle;
 
-  // Particle System
+  // Modern Particle System & Floating Texts
   final List<AgaramRunParticle> _particles = [];
+  final List<FloatingScoreText> _floatingScores = [];
 
   // Feedback Toast
   String? _toastMessage;
-  Color _toastColor = const Color(0xFFFFD54F);
+  Color _toastColor = const Color(0xFF10B981);
   double _toastOpacity = 0.0;
 
-  // Animations
+  // HUD Pulse Animation
   late AnimationController _pulseController;
   late Animation<double> _pulseAnim;
 
   @override
   void initState() {
     super.initState();
-    _isMuted = _audioService.isMuted;
     _currentLevelIndex = (widget.initialLevel - 1).clamp(0, 3);
 
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1100),
+      duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
     _pulseAnim = Tween<double>(begin: 1.0, end: 1.08).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
@@ -112,7 +129,6 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     _buildLevels();
     _loadLevelData();
 
-    // Start 60 FPS physics ticker
     _ticker = createTicker(_onTick)..start();
   }
 
@@ -123,94 +139,80 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     super.dispose();
   }
 
-  // --------------------------------------------------------------------------
-  // LEVEL DEFINITIONS
-  // --------------------------------------------------------------------------
   void _buildLevels() {
-    // Level 1: Uyir Letters (Short & Long vowels)
-    final uyirLetters = englishLettersList;
+    final letters = englishLettersList;
 
-    // Build Level 1 World Layout (Length: 3200 logical pixels)
+    // Modern 3300px World with Variety of Floating Platforms
     final level1Platforms = <PlatformTile>[
-      // Start Landing
-      PlatformTile(id: 1, x: 0, y: 320, width: 420, height: 120, type: PlatformType.ground),
-      
-      // First floating stepping stones
-      PlatformTile(id: 2, x: 480, y: 260, width: 140, height: 32, type: PlatformType.floating),
-      PlatformTile(id: 3, x: 680, y: 210, width: 130, height: 32, type: PlatformType.floating),
-      
-      // Ground segment 2
-      PlatformTile(id: 4, x: 860, y: 320, width: 500, height: 120, type: PlatformType.ground),
-      
-      // Moving platform over chasm
+      // Start Platform
+      PlatformTile(id: 1, x: 0, y: 320, width: 440, height: 140, type: PlatformType.ground),
+
+      // Stepping stones
+      PlatformTile(id: 2, x: 500, y: 260, width: 140, height: 36, type: PlatformType.floating),
+      PlatformTile(id: 3, x: 700, y: 210, width: 140, height: 36, type: PlatformType.floating),
+
+      // Mid ground platform 2
+      PlatformTile(id: 4, x: 890, y: 320, width: 500, height: 140, type: PlatformType.ground),
+
+      // Futuristic moving hover platform over gap
       PlatformTile(
         id: 5,
-        x: 1420,
-        y: 240,
-        width: 140,
-        height: 28,
+        x: 1450,
+        y: 230,
+        width: 150,
+        height: 32,
         type: PlatformType.moving,
-        minX: 1400,
-        maxX: 1680,
-        speedX: 70,
+        minX: 1430,
+        maxX: 1720,
+        speedX: 85,
       ),
 
-      // Ground segment 3
-      PlatformTile(id: 6, x: 1750, y: 320, width: 550, height: 120, type: PlatformType.ground),
-      
-      // High floating path with bonus stars
-      PlatformTile(id: 7, x: 2050, y: 190, width: 150, height: 30, type: PlatformType.floating),
-      PlatformTile(id: 8, x: 2260, y: 150, width: 150, height: 30, type: PlatformType.floating),
+      // Ground platform 3
+      PlatformTile(id: 6, x: 1780, y: 320, width: 560, height: 140, type: PlatformType.ground),
 
-      // Final stretch to the Agaram Goal Finish Arch
-      PlatformTile(id: 9, x: 2450, y: 320, width: 750, height: 120, type: PlatformType.ground),
+      // Elevated floating route
+      PlatformTile(id: 7, x: 2100, y: 195, width: 150, height: 34, type: PlatformType.floating),
+      PlatformTile(id: 8, x: 2320, y: 155, width: 150, height: 34, type: PlatformType.floating),
+
+      // Finish Ground Runway
+      PlatformTile(id: 9, x: 2520, y: 320, width: 800, height: 140, type: PlatformType.ground),
     ];
 
-    // Collectibles (Target Uyir Letters + Bonus Stars)
+    // Collectibles (Target Letters + Bonus Stars)
     final level1Collectibles = <CollectibleItem>[
-      // Uyir Letter 1:  (Spaced for early collection)
-      CollectibleItem(id: 1, x: 200, y: 260, type: CollectibleType.targetLetter, letterModel: uyirLetters[0]),
-      // Star (Clear space before first jump at x=420)
-      CollectibleItem(id: 2, x: 290, y: 240, type: CollectibleType.bonusStar),
+      CollectibleItem(id: 1, x: 220, y: 250, type: CollectibleType.targetLetter, letterModel: letters[0]), // A
+      CollectibleItem(id: 2, x: 340, y: 230, type: CollectibleType.bonusStar),
 
-      // Target:  on floating platform 2 & Target:  on platform 3
-      CollectibleItem(id: 3, x: 540, y: 200, type: CollectibleType.targetLetter, letterModel: uyirLetters[1]),
-      CollectibleItem(id: 4, x: 745, y: 150, type: CollectibleType.targetLetter, letterModel: uyirLetters[2]), //  
+      CollectibleItem(id: 3, x: 570, y: 195, type: CollectibleType.targetLetter, letterModel: letters[1]), // B
+      CollectibleItem(id: 4, x: 770, y: 145, type: CollectibleType.targetLetter, letterModel: letters[2]), // C
 
-      // Ground segment 2: Letter  placed with generous approach
-      CollectibleItem(id: 5, x: 1080, y: 245, type: CollectibleType.targetLetter, letterModel: uyirLetters[3]),
-      // Star in air arc
-      CollectibleItem(id: 6, x: 1150, y: 220, type: CollectibleType.bonusStar),
+      CollectibleItem(id: 5, x: 1050, y: 245, type: CollectibleType.targetLetter, letterModel: letters[3]), // D
+      CollectibleItem(id: 6, x: 1200, y: 215, type: CollectibleType.bonusStar),
 
-      // Moving ledge letter: 
-      CollectibleItem(id: 7, x: 1540, y: 175, type: CollectibleType.targetLetter, letterModel: uyirLetters[4]),
+      CollectibleItem(id: 7, x: 1580, y: 165, type: CollectibleType.targetLetter, letterModel: letters[4]), // E
+      CollectibleItem(id: 8, x: 1920, y: 245, type: CollectibleType.targetLetter, letterModel: letters[5]), // F
 
-      // Letters: , , , 
-      CollectibleItem(id: 8, x: 1860, y: 260, type: CollectibleType.targetLetter, letterModel: uyirLetters[5]),
-      CollectibleItem(id: 9, x: 2125, y: 125, type: CollectibleType.targetLetter, letterModel: uyirLetters[6]),
-      CollectibleItem(id: 10, x: 2335, y: 85, type: CollectibleType.targetLetter, letterModel: uyirLetters[7]),
-      
-      // Final Stretch Letters: , , 
-      CollectibleItem(id: 11, x: 2580, y: 260, type: CollectibleType.targetLetter, letterModel: uyirLetters[8]),
-      CollectibleItem(id: 12, x: 2800, y: 260, type: CollectibleType.targetLetter, letterModel: uyirLetters[9]),
-      CollectibleItem(id: 13, x: 2980, y: 260, type: CollectibleType.targetLetter, letterModel: uyirLetters[10]),
+      CollectibleItem(id: 9, x: 2175, y: 130, type: CollectibleType.targetLetter, letterModel: letters[6]), // G
+      CollectibleItem(id: 10, x: 2395, y: 90, type: CollectibleType.targetLetter, letterModel: letters[7]), // H
+
+      CollectibleItem(id: 11, x: 2650, y: 245, type: CollectibleType.targetLetter, letterModel: letters[8]), // I
+      CollectibleItem(id: 12, x: 2850, y: 245, type: CollectibleType.targetLetter, letterModel: letters[9]), // J
+      CollectibleItem(id: 13, x: 3020, y: 245, type: CollectibleType.targetLetter, letterModel: letters[10]), // K
     ];
 
-    // Obstacles (Spaced naturally with clear approach & landing areas)
+    // Modern Obstacles
     final level1Obstacles = <ObstacleItem>[
-      // Rock spaced well after platform 4 landing
-      ObstacleItem(id: 1, x: 990, y: 288, width: 30, height: 32, type: ObstacleType.rock),
-      // Wooden log spaced with runway before chasm
-      ObstacleItem(id: 2, x: 1220, y: 285, width: 32, height: 35, type: ObstacleType.woodenLog),
-      ObstacleItem(id: 3, x: 1960, y: 288, width: 30, height: 32, type: ObstacleType.rock),
+      ObstacleItem(id: 1, x: 1000, y: 286, width: 34, height: 34, type: ObstacleType.rock),
+      ObstacleItem(id: 2, x: 1250, y: 282, width: 36, height: 38, type: ObstacleType.woodenLog),
+      ObstacleItem(id: 3, x: 1980, y: 286, width: 34, height: 34, type: ObstacleType.rock),
       ObstacleItem(
         id: 4,
-        x: 2700,
-        y: 286,
-        width: 34,
-        height: 34,
+        x: 2750,
+        y: 284,
+        width: 36,
+        height: 36,
         type: ObstacleType.snailEnemy,
-        patrolRange: 60,
+        patrolRange: 75,
       ),
     ];
 
@@ -218,14 +220,14 @@ class _AgaramRunGameState extends State<AgaramRunGame>
       AgaramRunLevel(
         levelNumber: 1,
         title: 'Alphabet Runner',
-        subtitle: 'Village Run',
-        description: 'Run, jump, and collect English letters to reach the goal line!',
-        targetLetters: uyirLetters.take(12).toList(),
-        worldWidth: 3200,
+        subtitle: 'Sunny Meadow Run',
+        description: 'Dash, jump, and collect English letters to cross the Finish Line!',
+        targetLetters: letters.take(11).toList(),
+        worldWidth: 3300,
         platforms: level1Platforms,
         collectibles: level1Collectibles,
         obstacles: level1Obstacles,
-        goalX: 3060,
+        goalX: 3120,
       ),
     ];
   }
@@ -275,6 +277,8 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     _invulnerableTimer = 0.0;
     _cameraX = 0.0;
     _currentTargetLetterIdx = 0;
+    _particles.clear();
+    _floatingScores.clear();
   }
 
   void _startGame() {
@@ -288,13 +292,8 @@ class _AgaramRunGameState extends State<AgaramRunGame>
       _lives = 3;
       _toastOpacity = 0.0;
     });
-
-    _playTargetLetterPronunciation();
   }
 
-  // --------------------------------------------------------------------------
-  // GAME LOOP (60 FPS PHYSICS TICK)
-  // --------------------------------------------------------------------------
   void _onTick(Duration elapsed) {
     if (!mounted) return;
 
@@ -309,18 +308,19 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     if (dt <= 0 || dt > 0.1 || _gameState != 'playing') return;
 
     setState(() {
+      _animTime += dt;
       _updatePhysics(dt);
       _updateParticles(dt);
+      _updateFloatingScores(dt);
 
-      // Toast timer fade
       if (_toastOpacity > 0.0) {
-        _toastOpacity = (_toastOpacity - dt * 0.8).clamp(0.0, 1.0);
+        _toastOpacity = (_toastOpacity - dt * 0.9).clamp(0.0, 1.0);
       }
     });
   }
 
   void _updatePhysics(double dt) {
-    // 1. Update Moving Platforms
+    // 1. Moving platforms
     for (final p in _platforms) {
       if (p.type == PlatformType.moving) {
         p.x += p.moveDirection * p.speedX * dt;
@@ -334,10 +334,10 @@ class _AgaramRunGameState extends State<AgaramRunGame>
       }
     }
 
-    // 2. Update Patrol Obstacles
+    // 2. Patrol obstacles
     for (final obs in _obstacles) {
       if (obs.type == ObstacleType.snailEnemy && obs.patrolRange > 0) {
-        obs.x += obs.patrolDir * 35.0 * dt;
+        obs.x += obs.patrolDir * 40.0 * dt;
         if (obs.x > obs.startX + obs.patrolRange) {
           obs.x = obs.startX + obs.patrolRange;
           obs.patrolDir = -1;
@@ -348,33 +348,34 @@ class _AgaramRunGameState extends State<AgaramRunGame>
       }
     }
 
-    // 3. Horizontal Movement Physics (One-tap continuous movement)
-    const moveSpeed = 210.0;
+    // 3. Horizontal movement
+    const moveSpeed = 230.0;
 
     if (_moveDirection == MovementDirection.right) {
       _playerVx = moveSpeed;
       _facingDirection = 1;
-      _runLegPhase += dt * 14.0;
+      _runLegPhase += dt * 16.0;
+      _emitRunningDust();
     } else if (_moveDirection == MovementDirection.left) {
       _playerVx = -moveSpeed;
       _facingDirection = -1;
-      _runLegPhase += dt * 14.0;
+      _runLegPhase += dt * 16.0;
+      _emitRunningDust();
     } else {
       _playerVx = 0.0;
       _runLegPhase = 0.0;
     }
 
-    // 4. Gravity & Vertical Physics
-    const gravity = 1100.0;
-    const maxFallSpeed = 650.0;
+    // 4. Gravity & Jump Physics
+    const gravity = 1180.0;
+    const maxFallSpeed = 680.0;
 
-    _playerVy = (_playerVy + gravity * dt).clamp(-650.0, maxFallSpeed);
+    _playerVy = (_playerVy + gravity * dt).clamp(-680.0, maxFallSpeed);
 
-    // Apply movement delta
     _playerX += _playerVx * dt;
     _playerY += _playerVy * dt;
 
-    // 5. Platform AABB Collision Detection
+    // 5. Collisions with platforms
     const playerWidth = 32.0;
     const playerHeight = 44.0;
     final playerFeet = _playerY + playerHeight;
@@ -385,19 +386,16 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     bool foundGround = false;
 
     for (final p in _platforms) {
-      // Horizontal overlap check with a small side margin
       final overlapsX = (playerRight - 4.0) > p.x && (playerLeft + 4.0) < (p.x + p.width);
 
       if (overlapsX) {
-        // Landing check: falling/stationary and feet crossing top surface
         if (_playerVy >= 0) {
-          final isLanding = prevFeet <= p.y + 14.0 && playerFeet >= p.y - 2.0 && playerFeet <= p.y + p.height + 16.0;
+          final isLanding = prevFeet <= p.y + 16.0 && playerFeet >= p.y - 4.0 && playerFeet <= p.y + p.height + 16.0;
           if (isLanding) {
             _playerY = p.y - playerHeight;
             _playerVy = 0.0;
             foundGround = true;
 
-            // Stand and ride on moving platform
             if (p.type == PlatformType.moving) {
               _playerX += p.moveDirection * p.speedX * dt;
             }
@@ -414,38 +412,49 @@ class _AgaramRunGameState extends State<AgaramRunGame>
       _coyoteTimer = max(0.0, _coyoteTimer - dt);
     }
 
-    // 6. Chasm Pit Fall Check
+    // 6. Pitfall Check
     if (_playerY > 440) {
       _takeDamage(isPitFall: true);
     }
 
-    // 7. Clamp world bounds
-    _playerX = _playerX.clamp(0.0, _currentLevel.worldWidth);
-
-    // 8. Camera Smooth Tracking
-    final targetCamX = (_playerX - 120.0).clamp(0.0, _currentLevel.worldWidth - 360.0);
-    _cameraX += (targetCamX - _cameraX) * min(1.0, dt * 6.0);
-
-    // 9. Invulnerability Timer Tick
+    // 7. Invulnerability Blink Timer
     if (_invulnerableTimer > 0) {
       _invulnerableTimer = max(0.0, _invulnerableTimer - dt);
     }
 
-    // 10. Check Collectible Collisions
+    // 8. Smooth Camera Follow
+    const cameraLead = 140.0;
+    final targetCameraX = max(0.0, (_playerX - cameraLead));
+    _cameraX += (targetCameraX - _cameraX) * min(1.0, dt * 6.0);
+
+    // 9. Collectibles Check
     _checkCollectibleCollisions();
 
-    // 11. Check Obstacle Collisions
+    // 10. Obstacle Check
     _checkObstacleCollisions();
 
-    // 12. Check Goal Finish Line
+    // 11. Goal Finish Arch Check
     if (_playerX >= _currentLevel.goalX) {
       _onLevelCompleted();
     }
   }
 
-  // --------------------------------------------------------------------------
-  // INTERACTIVE GAME MECHANICS (COLLECTIBLES, OBSTACLES, AUDIO)
-  // --------------------------------------------------------------------------
+  void _emitRunningDust() {
+    if (!_isGrounded) return;
+    if (_rng.nextDouble() < 0.28) {
+      _particles.add(AgaramRunParticle(
+        x: _playerX + (_facingDirection == 1 ? 4 : 28),
+        y: _playerY + 42,
+        vx: -_facingDirection * (30.0 + _rng.nextDouble() * 40.0),
+        vy: -15.0 - _rng.nextDouble() * 25.0,
+        color: Colors.white70,
+        size: 2.5 + _rng.nextDouble() * 2.0,
+        life: 0.35,
+        maxLife: 0.35,
+      ));
+    }
+  }
+
   void _checkCollectibleCollisions() {
     final playerBox = Rect.fromLTWH(_playerX, _playerY, 32, 44);
 
@@ -456,53 +465,32 @@ class _AgaramRunGameState extends State<AgaramRunGame>
         item.isCollected = true;
 
         if (item.type == CollectibleType.bonusStar) {
-          // Bonus star collected!
           _score += 5;
           _starsCollected++;
-          _showToast('Star! +5', Colors.amberAccent);
-          _emitSparkles(item.x, item.y, Colors.amberAccent);
+          _showToast('Star! +5 ⭐', const Color(0xFFFBBF24));
+          _emitSparkles(item.x, item.y, const Color(0xFFFBBF24));
+          _floatingScores.add(FloatingScoreText(x: item.x, y: item.y - 10, text: '+5 ⭐', color: const Color(0xFFFBBF24)));
+          try { HapticFeedback.lightImpact(); } catch (_) {}
         } else if (item.type == CollectibleType.targetLetter) {
           final letter = item.letter;
           final target = _currentTargetLetter.letter;
 
           if (letter == target) {
-            // Correct Target Letter Collected!
-            _score += 10;
+            // Correct Target Letter!
+            _score += 15;
             _lettersCollected++;
-            _showToast('Awesome! "$letter" +10', const Color(0xFF00E676));
-            _emitSparkles(item.x, item.y, const Color(0xFF00E676), isLetterBurst: true);
+            _showToast('Great! "$letter" +15 ⭐', const Color(0xFF10B981));
+            _emitSparkles(item.x, item.y, const Color(0xFF10B981), isLetterBurst: true);
+            _floatingScores.add(FloatingScoreText(x: item.x, y: item.y - 15, text: '+15 "$letter"', color: const Color(0xFF10B981)));
 
-            // Play authentic native Tamil letter pronunciation
-            _audioService.playLetterSound(
-              context,
-              letter: item.letter,
-              word: item.word,
-              audioPath: item.audioPath,
-              showIndicator: false,
-            );
-
-            // Record letter learning progress
             widget.progressService?.markLetterCompleted(item.letterModel!.id);
-
-            // Advance target letter and pronounce next letter
             _currentTargetLetterIdx++;
-            Future.delayed(const Duration(milliseconds: 650), () {
-              if (mounted && _gameState == 'playing') {
-                _playTargetLetterPronunciation();
-              }
-            });
+            try { HapticFeedback.mediumImpact(); } catch (_) {}
           } else {
-            // Wrong Letter Touched (Friendly gentle feedback + letter audio)
-            _showToast('This is "$letter" - Target: "$target" 😊', const Color(0xFFFF8A65));
-            _audioService.playLetterSound(
-              context,
-              letter: item.letter,
-              word: item.word,
-              audioPath: item.audioPath,
-              showIndicator: false,
-            );
-            _audioService.playRetryFeedback(context);
-            _emitSparkles(item.x, item.y, const Color(0xFFFF8A65));
+            // Friendly gently reminder, no speech
+            _showToast('This is "$letter" - Look for "$target"!', const Color(0xFFF97316));
+            _emitSparkles(item.x, item.y, const Color(0xFFF97316));
+            try { HapticFeedback.selectionClick(); } catch (_) {}
           }
         }
       }
@@ -526,10 +514,9 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     if (_lives <= 0) return;
 
     _lives--;
-    _invulnerableTimer = 1.6; // 1.6 seconds blink invulnerability
+    _invulnerableTimer = 1.6;
 
     if (isPitFall) {
-      // Respawn back onto the nearest safe ground platform behind player
       final safePlat = _platforms.firstWhere(
         (p) => p.x <= _playerX && p.type == PlatformType.ground,
         orElse: () => _platforms.first,
@@ -538,14 +525,10 @@ class _AgaramRunGameState extends State<AgaramRunGame>
       _playerY = safePlat.y - 50;
       _playerVx = 0.0;
       _playerVy = 0.0;
-    } else {
-      // Small knockback
-      _playerVx = -_facingDirection * 150.0;
-      _playerVy = -240.0;
     }
 
-    _showToast('Watch out! ❤️ -1', Colors.pinkAccent);
-    _audioService.playRetryFeedback(context);
+    _showToast('Watch out! ❤️ -1', const Color(0xFFEF4444));
+    try { HapticFeedback.heavyImpact(); } catch (_) {}
 
     if (_lives <= 0) {
       _onGameOver();
@@ -553,13 +536,12 @@ class _AgaramRunGameState extends State<AgaramRunGame>
   }
 
   void _triggerJump() {
-    if ((_isGrounded || _coyoteTimer > 0) && _gameState == 'playing') {
-      setState(() {
-        _playerVy = -500.0;
-        _isGrounded = false;
-        _coyoteTimer = 0.0;
-        _emitJumpDust(_playerX + 16, _playerY + 44);
-      });
+    if (_isGrounded || _coyoteTimer > 0) {
+      _playerVy = -480.0;
+      _isGrounded = false;
+      _coyoteTimer = 0.0;
+      try { HapticFeedback.mediumImpact(); } catch (_) {}
+      _emitJumpDust(_playerX + 16, _playerY + 44);
     }
   }
 
@@ -577,8 +559,9 @@ class _AgaramRunGameState extends State<AgaramRunGame>
       _resetMovementState();
     });
 
+    widget.progressService?.addStars(15);
     widget.progressService?.recordGameCompleted(3);
-    _audioService.playStarReward(context);
+    try { HapticFeedback.heavyImpact(); } catch (_) {}
   }
 
   void _onGameOver() {
@@ -586,18 +569,6 @@ class _AgaramRunGameState extends State<AgaramRunGame>
       _gameState = 'game_over';
       _resetMovementState();
     });
-  }
-
-  void _playTargetLetterPronunciation() {
-    if (!_isMuted && _gameState == 'playing') {
-      _audioService.playLetterSound(
-        context,
-        letter: _currentTargetLetter.letter,
-        word: _currentTargetLetter.word,
-        audioPath: _currentTargetLetter.audioPath,
-        showIndicator: false,
-      );
-    }
   }
 
   void _showToast(String msg, Color color) {
@@ -608,106 +579,123 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     });
   }
 
-  // -------------------------------------------------------------
-  // PARTICLE SYSTEM
-  // -------------------------------------------------------------
   void _emitJumpDust(double x, double y) {
-    for (int i = 0; i < 6; i++) {
-      _particles.add(
-        AgaramRunParticle(
-          x: x,
-          y: y,
-          vx: (_rng.nextDouble() - 0.5) * 60,
-          vy: -_rng.nextDouble() * 30,
-          color: Colors.white70,
-          size: 4.0 + _rng.nextDouble() * 3,
-          life: 0.35,
-          maxLife: 0.35,
-        ),
-      );
+    for (int i = 0; i < 9; i++) {
+      final angle = (pi / 6) + _rng.nextDouble() * (2 * pi / 3);
+      final speed = 35.0 + _rng.nextDouble() * 65.0;
+      _particles.add(AgaramRunParticle(
+        x: x,
+        y: y,
+        vx: cos(angle) * speed * (_rng.nextBool() ? 1 : -1),
+        vy: -(sin(angle) * speed).abs(),
+        color: Colors.white70,
+        size: 3.0 + _rng.nextDouble() * 2.5,
+        life: 0.35,
+        maxLife: 0.35,
+      ));
     }
   }
 
   void _emitSparkles(double x, double y, Color color, {bool isLetterBurst = false}) {
-    final count = isLetterBurst ? 18 : 8;
+    final count = isLetterBurst ? 24 : 12;
     for (int i = 0; i < count; i++) {
       final angle = _rng.nextDouble() * 2 * pi;
-      final speed = 60.0 + _rng.nextDouble() * 120.0;
-      _particles.add(
-        AgaramRunParticle(
-          x: x,
-          y: y,
-          vx: cos(angle) * speed,
-          vy: sin(angle) * speed,
-          color: color,
-          size: 6.0 + _rng.nextDouble() * 6,
-          life: 0.6,
-          maxLife: 0.6,
-          isStar: i.isEven,
-        ),
-      );
+      final speed = 60.0 + _rng.nextDouble() * 140.0;
+      _particles.add(AgaramRunParticle(
+        x: x,
+        y: y,
+        vx: cos(angle) * speed,
+        vy: sin(angle) * speed,
+        color: i % 2 == 0 ? color : Colors.white,
+        size: 2.8 + _rng.nextDouble() * 3.5,
+        life: 0.55,
+        maxLife: 0.55,
+        isStar: _rng.nextBool(),
+      ));
     }
   }
 
   void _updateParticles(double dt) {
     for (int i = _particles.length - 1; i >= 0; i--) {
       final p = _particles[i];
-      p.life -= dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
+      p.vy += 180.0 * dt; // gentle gravity
+      p.life -= dt;
       if (p.life <= 0) {
         _particles.removeAt(i);
       }
     }
   }
 
-  // --------------------------------------------------------------------------
-  // BUILD UI
-  // --------------------------------------------------------------------------
+  void _updateFloatingScores(double dt) {
+    for (int i = _floatingScores.length - 1; i >= 0; i--) {
+      final f = _floatingScores[i];
+      f.y -= 40 * dt;
+      f.life -= dt;
+      if (f.life <= 0) {
+        _floatingScores.removeAt(i);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF81D4FA),
+      backgroundColor: const Color(0xFF0284C7),
       body: SafeArea(
         child: Stack(
           children: [
-            // 1. 2D Parallax World & Game Canvas
+            // 1. Modern 2D Parallax World & Game Canvas
             Positioned.fill(
-              child: CustomPaint(
-                painter: _AgaramWorldPainter(
-                  cameraX: _cameraX,
-                  worldWidth: _currentLevel.worldWidth,
-                  platforms: _platforms,
-                  collectibles: _collectibles,
-                  obstacles: _obstacles,
-                  goalX: _currentLevel.goalX,
-                  playerX: _playerX,
-                  playerY: _playerY,
-                  facingDirection: _facingDirection,
-                  isGrounded: _isGrounded,
-                  runLegPhase: _runLegPhase,
-                  isInvulnerable: _invulnerableTimer > 0,
-                  particles: _particles,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTapDown: (details) {
+                  // Tap on right half of screen triggers jump
+                  final screenW = MediaQuery.of(context).size.width;
+                  if (details.localPosition.dx > screenW * 0.55 && _gameState == 'playing') {
+                    _triggerJump();
+                  }
+                },
+                child: CustomPaint(
+                  painter: _ModernRunnerWorldPainter(
+                    cameraX: _cameraX,
+                    worldWidth: _currentLevel.worldWidth,
+                    platforms: _platforms,
+                    collectibles: _collectibles,
+                    obstacles: _obstacles,
+                    goalX: _currentLevel.goalX,
+                    playerX: _playerX,
+                    playerY: _playerY,
+                    facingDirection: _facingDirection,
+                    isGrounded: _isGrounded,
+                    runLegPhase: _runLegPhase,
+                    isInvulnerable: _invulnerableTimer > 0,
+                    particles: _particles,
+                    floatingScores: _floatingScores,
+                    targetLetter: _currentTargetLetter.letter,
+                    animTime: _animTime,
+                  ),
                 ),
               ),
             ),
 
-            // 2. In-Game HUD Header (Score, Target Letter, Lives, Level, Pause)
+            // 2. Modern Glassmorphic In-Game HUD Header (NO MIC / SPEAKER ICON)
             if (_gameState == 'playing')
               Positioned(
                 top: 8,
-                left: 14,
-                right: 14,
-                child: _buildHUDHeader(),
+                left: 12,
+                right: 12,
+                child: _buildModernHUDHeader(),
               ),
 
-            // 3. Touch Controls (Large Left, Right, Jump buttons)
+            // 3. Ergonomic Touch Controls
             if (_gameState == 'playing')
               Positioned(
                 bottom: 12,
                 left: 16,
                 right: 16,
-                child: _buildTouchControls(),
+                child: _buildModernTouchControls(),
               ),
 
             // 4. Floating Feedback Toast
@@ -723,11 +711,11 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                         decoration: BoxDecoration(
-                          color: _toastColor,
+                          color: _toastColor.withOpacity(0.95),
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.25),
+                              color: Colors.black.withOpacity(0.3),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -738,7 +726,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w900,
-                            color: Color(0xFF1B5E20),
+                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -747,183 +735,168 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                 ),
               ),
 
-            // 5. Start Screen Overlay
-            if (_gameState == 'start')
-              _buildStartScreen(),
-
-            // 6. Pause Menu Overlay
-            if (_gameState == 'paused')
-              _buildPauseScreen(),
-
-            // 7. Victory Screen Overlay
-            if (_gameState == 'victory')
-              _buildVictoryScreen(),
-
-            // 8. Game Over Screen Overlay
-            if (_gameState == 'game_over')
-              _buildGameOverScreen(),
+            // Overlays
+            if (_gameState == 'start') _buildStartScreen(),
+            if (_gameState == 'paused') _buildPauseScreen(),
+            if (_gameState == 'victory') _buildVictoryScreen(),
+            if (_gameState == 'game_over') _buildGameOverScreen(),
           ],
         ),
       ),
     );
   }
 
-  // --------------------------------------------------------------------------
-  // IN-GAME HUD
-  // --------------------------------------------------------------------------
-  Widget _buildHUDHeader() {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.topCenter,
+  // Modern Glassmorphic HUD Header
+  Widget _buildModernHUDHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A).withOpacity(0.75),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.18), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.35),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Exit / Back
-          BouncyButton(
-            onPressed: () => Navigator.pop(context),
+          // Back Button
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.92),
+                color: Colors.white.withOpacity(0.12),
                 shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+            ),
+          ),
+
+          // Glowing Target Letter Pill (NO MIC / SPEAKER ICON)
+          ScaleTransition(
+            scale: _pulseAnim,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF38BDF8), Color(0xFF0284C7)],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white, width: 1.5),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 6,
+                    color: const Color(0xFF38BDF8).withOpacity(0.5),
+                    blurRadius: 10,
                   ),
                 ],
               ),
-              child: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1B5E20), size: 22),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'TARGET: ',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white70,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  Text(
+                    _currentTargetLetter.letter,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
-          const SizedBox(width: 8),
+          // Hearts & Score
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 3 Hearts
+              Row(
+                children: List.generate(3, (idx) {
+                  return Icon(
+                    idx < _lives ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    color: idx < _lives ? const Color(0xFFEF4444) : Colors.white24,
+                    size: 18,
+                  );
+                }),
+              ),
+              const SizedBox(width: 8),
 
-          // Target Letter Prompt Capsule: 🎯 "  !"
-          ScaleTransition(
-            scale: _pulseAnim,
-            child: GestureDetector(
-              onTap: _playTargetLetterPronunciation,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              // Score Stars
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFFF9C4), Colors.white],
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: const Color(0xFFFFB300), width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.amber.withOpacity(0.3),
-                      blurRadius: 10,
-                    ),
-                  ],
+                  color: Colors.white.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('🎯 ', style: TextStyle(fontSize: 16)),
+                    const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 16),
+                    const SizedBox(width: 3),
                     Text(
-                      _currentTargetLetter.letter,
-                      style: GoogleFonts.catamaran(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: const Color(0xFFD84315),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Text(
-                      'Collect Letter!',
-                      style: TextStyle(
+                      '$_score',
+                      style: const TextStyle(
                         fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFBF360C),
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.volume_up_rounded, color: Color(0xFFFF8F00), size: 16),
                   ],
                 ),
               ),
-            ),
-          ),
 
-          const SizedBox(width: 8),
+              const SizedBox(width: 6),
 
-          // Lives & Score Card
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.92),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFF81C784), width: 1.5),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Lives
-                Row(
-                  children: List.generate(3, (idx) {
-                    return Icon(
-                      idx < _lives ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                      color: Colors.pinkAccent,
-                      size: 16,
-                    );
-                  }),
-                ),
-                const SizedBox(width: 4),
-                const Icon(Icons.star_rounded, color: Color(0xFFFF9F1C), size: 16),
-                const SizedBox(width: 2),
-                // Score
-                Text(
-                  '$_score',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFFE65100),
+              // Pause Button
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _gameState = 'paused';
+                    _resetMovementState();
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.12),
+                    shape: BoxShape.circle,
                   ),
+                  child: const Icon(Icons.pause_rounded, color: Colors.white, size: 18),
                 ),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // Pause Button
-          BouncyButton(
-            onPressed: () {
-              setState(() {
-                _gameState = 'paused';
-                _resetMovementState();
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.92),
-                shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.pause_rounded, color: Color(0xFF1B5E20), size: 22),
-            ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  // --------------------------------------------------------------------------
-  // TOUCH CONTROLS (LARGE COMFORTABLE MOBILE BUTTONS)
-  // --------------------------------------------------------------------------
-  Widget _buildTouchControls() {
+  // Modern Ergonomic Touch Controls
+  Widget _buildModernTouchControls() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Left & Right D-Pad Controls (One-Tap Direction Switch)
+        // Left & Right D-Pad Controls
         Row(
           children: [
-            // Left Button (◀)
-            _buildControlButton(
+            _buildModernControlButton(
               icon: Icons.arrow_back_ios_new_rounded,
+              isActive: _moveDirection == MovementDirection.left,
               onTap: () {
                 setState(() {
                   _moveDirection = MovementDirection.left;
@@ -931,9 +904,9 @@ class _AgaramRunGameState extends State<AgaramRunGame>
               },
             ),
             const SizedBox(width: 14),
-            // Right Button (▶)
-            _buildControlButton(
+            _buildModernControlButton(
               icon: Icons.arrow_forward_ios_rounded,
+              isActive: _moveDirection == MovementDirection.right,
               onTap: () {
                 setState(() {
                   _moveDirection = MovementDirection.right;
@@ -943,60 +916,64 @@ class _AgaramRunGameState extends State<AgaramRunGame>
           ],
         ),
 
-        // Jump Button (⬆)
-        _buildJumpButton(),
+        // Modern Jump Button
+        _buildModernJumpButton(),
       ],
     );
   }
 
-  Widget _buildControlButton({
+  Widget _buildModernControlButton({
     required IconData icon,
+    required bool isActive,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
-        width: 72,
-        height: 72,
+        width: 68,
+        height: 68,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.88),
+          color: isActive ? const Color(0xFF38BDF8).withOpacity(0.4) : Colors.black.withOpacity(0.45),
           shape: BoxShape.circle,
-          border: Border.all(color: const Color(0xFF4CAF50), width: 3),
+          border: Border.all(
+            color: isActive ? const Color(0xFF38BDF8) : Colors.white.withOpacity(0.35),
+            width: 2.2,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.22),
+              color: Colors.black.withOpacity(0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Center(
-          child: Icon(icon, color: const Color(0xFF2E7D32), size: 32),
+          child: Icon(icon, color: Colors.white, size: 28),
         ),
       ),
     );
   }
 
-  Widget _buildJumpButton() {
+  Widget _buildModernJumpButton() {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: (_) => _triggerJump(),
       onTap: _triggerJump,
       child: Container(
-        width: 78,
-        height: 78,
+        width: 76,
+        height: 76,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFFFF9100), Color(0xFFFF6D00)],
+            colors: [Color(0xFFF97316), Color(0xFFEA580C)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 3.5),
+          border: Border.all(color: Colors.white, width: 3),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFFF6D00).withOpacity(0.45),
+              color: const Color(0xFFEA580C).withOpacity(0.55),
               blurRadius: 14,
               offset: const Offset(0, 5),
             ),
@@ -1006,13 +983,14 @@ class _AgaramRunGameState extends State<AgaramRunGame>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 32),
+              Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 30),
               Text(
-                'JUMP ⬆',
+                'JUMP',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                   color: Colors.white,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
@@ -1022,29 +1000,27 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     );
   }
 
-  // --------------------------------------------------------------------------
-  // START & MODAL SCREENS
-  // --------------------------------------------------------------------------
+  // Modern Start Screen
   Widget _buildStartScreen() {
     return Container(
-      color: Colors.black.withOpacity(0.4),
+      color: Colors.black.withOpacity(0.65),
       child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
+            constraints: const BoxConstraints(maxWidth: 380),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFFE8F5E9), Colors.white, Color(0xFFC8E6C9)],
+                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
               borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: const Color(0xFF4CAF50), width: 3),
+              border: Border.all(color: const Color(0xFF38BDF8), width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.35),
+                  color: const Color(0xFF38BDF8).withOpacity(0.25),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -1053,86 +1029,77 @@ class _AgaramRunGameState extends State<AgaramRunGame>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Game Artwork / Mascot
+                // Mascot / Icon
                 Container(
-                  width: 90,
-                  height: 90,
-                  decoration: const BoxDecoration(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFF38BDF8), Color(0xFF0284C7)]),
                     shape: BoxShape.circle,
-                    color: Color(0xFF81C784),
+                    border: Border.all(color: Colors.white, width: 2.5),
                   ),
                   child: const Center(
-                    child: Text('🏃‍♂️', style: TextStyle(fontSize: 52)),
+                    child: Icon(Icons.directions_run_rounded, color: Colors.white, size: 48),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-                // Title
                 const Text(
-                  'Alphabet Runner',
+                  'ALPHABET RUNNER',
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 24,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF1B5E20),
+                    color: Colors.white,
+                    letterSpacing: 0.8,
                   ),
                 ),
                 const SizedBox(height: 6),
-
-                // Subtitle
                 const Text(
-                  '“Run and learn English alphabet letters!”',
+                  'Collect the target letters and dash to the finish line!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF2E7D32),
-                    fontWeight: FontWeight.bold,
+                  style: TextStyle(fontSize: 13, color: Colors.white70),
+                ),
+                const SizedBox(height: 24),
+
+                // Controls Tutorial
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Row(children: [
+                        Icon(Icons.touch_app_rounded, color: Color(0xFF38BDF8), size: 18),
+                        SizedBox(width: 6),
+                        Text('◀ ▶ Move', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                      ]),
+                      Row(children: [
+                        Icon(Icons.arrow_upward_rounded, color: Color(0xFFF97316), size: 18),
+                        SizedBox(width: 6),
+                        Text('▲ Jump', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                      ]),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
-                // Play Button
                 BouncyButton(
                   onPressed: _startGame,
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF00E676), Color(0xFF00C853)],
-                      ),
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF00C853).withOpacity(0.4),
-                          blurRadius: 12,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
+                      gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Center(
                       child: Text(
-                        'Play Now ▶',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        ),
+                        'START RUNNING 🏃',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
                       ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                // How to play button
-                TextButton.icon(
-                  onPressed: _showHowToPlayDialog,
-                  icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF2E7D32), size: 18),
-                  label: const Text(
-                    'How to Play? 📖',
-                    style: TextStyle(
-                      color: Color(0xFF2E7D32),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
                     ),
                   ),
                 ),
@@ -1144,110 +1111,52 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     );
   }
 
-  void _showHowToPlayDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFFF1F8E9),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Row(
-          children: [
-            Text('📖 ', style: TextStyle(fontSize: 22)),
-            Text(
-              'How to Play',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF1B5E20),
-                fontSize: 18,
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHowToPlayItem('◀ ▶', 'Use buttons to move left and right'),
-            _buildHowToPlayItem('⬆', 'Press to jump up onto platforms'),
-            _buildHowToPlayItem('🎯', 'Collect the target English alphabet letters'),
-            _buildHowToPlayItem('⚠️', 'Avoid obstacles to save hearts'),
-            _buildHowToPlayItem('🏁', 'Reach the finish line to win!'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Got it! 👍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHowToPlayItem(String icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('$icon  ', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF33691E), fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+  // Modern Pause Screen
   Widget _buildPauseScreen() {
     return Container(
-      color: Colors.black.withOpacity(0.55),
+      color: Colors.black.withOpacity(0.65),
       child: Center(
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 28),
+          width: 300,
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: const Color(0xFF0F172A),
             borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 20,
-              ),
-            ],
+            border: Border.all(color: Colors.white24),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Game Paused',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1B5E20)),
-              ),
+              const Text('GAME PAUSED', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
               const SizedBox(height: 20),
-              ElevatedButton(
+              BouncyButton(
                 onPressed: () => setState(() => _gameState = 'playing'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4CAF50),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 48),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFF38BDF8), Color(0xFF0284C7)]),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Center(
+                    child: Text('Resume', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
                 ),
-                child: const Text('Resume ▶', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
-              const SizedBox(height: 8),
-              OutlinedButton(
-                onPressed: _startGame,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 48),
-                ),
-                child: const Text('Restart 🔄'),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
+              const SizedBox(height: 12),
+              BouncyButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Exit 🏠'),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white12,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Center(
+                    child: Text('Exit Game', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
+                  ),
+                ),
               ),
             ],
           ),
@@ -1256,48 +1165,92 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     );
   }
 
+  // Modern Victory Screen
   Widget _buildVictoryScreen() {
     return Container(
-      color: Colors.black.withOpacity(0.6),
+      color: Colors.black.withOpacity(0.78),
       child: Center(
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 24),
+          constraints: const BoxConstraints(maxWidth: 360),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFFDE7),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: const Color(0xFFFFD54F), width: 3),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: const Color(0xFFFBBF24), width: 2),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('🎉', style: TextStyle(fontSize: 48)),
+              const Icon(Icons.emoji_events_rounded, color: Color(0xFFFBBF24), size: 68),
+              const SizedBox(height: 12),
               const Text(
-                'Congratulations!',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Color(0xFFE65100)),
+                'RUN COMPLETE! 🎉',
+                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
               ),
+              const SizedBox(height: 6),
               const Text(
-                'You completed the level!',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF5D4037)),
+                'You reached the goal line and collected your letters!',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white70, fontSize: 13),
               ),
-              const SizedBox(height: 16),
-              Text('Final Score: $_score', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-              Text('Letters Collected: $_lettersCollected', style: const TextStyle(fontSize: 14)),
-              Text('Stars Collected: $_starsCollected', style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _startGame,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00E676),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 50),
+              const SizedBox(height: 18),
+
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white12),
                 ),
-                child: const Text('Play Again', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Column(children: [
+                      const Text('LETTERS', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 2),
+                      Text('$_lettersCollected', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+                    ]),
+                    Column(children: [
+                      const Text('SCORE', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 2),
+                      Text('$_score pts', style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 18, fontWeight: FontWeight.w900)),
+                    ]),
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Home'),
+              const SizedBox(height: 22),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  BouncyButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white12,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Text('Back to Games', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  BouncyButton(
+                    onPressed: _startGame,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Text('Play Again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1306,42 +1259,56 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     );
   }
 
+  // Modern Game Over Screen
   Widget _buildGameOverScreen() {
     return Container(
-      color: Colors.black.withOpacity(0.6),
+      color: Colors.black.withOpacity(0.78),
       child: Center(
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 24),
+          constraints: const BoxConstraints(maxWidth: 340),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: Colors.pinkAccent, width: 3),
+            color: const Color(0xFF0F172A),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: const Color(0xFFEF4444), width: 2),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('❤️', style: TextStyle(fontSize: 48)),
-              const Text(
-                'Try Again!',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.pinkAccent),
-              ),
-              const SizedBox(height: 8),
-              Text('Score: $_score', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Icon(Icons.heart_broken_rounded, color: Color(0xFFEF4444), size: 64),
+              const SizedBox(height: 12),
+              const Text('OUT OF LIVES', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 6),
+              const Text('Jump over obstacles and pits to keep running!', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 13)),
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _startGame,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF4081),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 50),
-                ),
-                child: const Text('Play Again 🔄', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Exit 🏠'),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  BouncyButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white12,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Text('Back to Games', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  BouncyButton(
+                    onPressed: _startGame,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFFEF4444), Color(0xFFDC2626)]),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Text('Try Again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1351,11 +1318,10 @@ class _AgaramRunGameState extends State<AgaramRunGame>
   }
 }
 
-// ----------------------------------------------------------------------------
-// 2D PARALLAX WORLD & ENTITIES PAINTER
-// ----------------------------------------------------------------------------
-
-class _AgaramWorldPainter extends CustomPainter {
+// --------------------------------------------------------------------------
+// MODERN WORLD PAINTER
+// --------------------------------------------------------------------------
+class _ModernRunnerWorldPainter extends CustomPainter {
   final double cameraX;
   final double worldWidth;
   final List<PlatformTile> platforms;
@@ -1369,8 +1335,11 @@ class _AgaramWorldPainter extends CustomPainter {
   final double runLegPhase;
   final bool isInvulnerable;
   final List<AgaramRunParticle> particles;
+  final List<FloatingScoreText> floatingScores;
+  final String targetLetter;
+  final double animTime;
 
-  _AgaramWorldPainter({
+  _ModernRunnerWorldPainter({
     required this.cameraX,
     required this.worldWidth,
     required this.platforms,
@@ -1384,6 +1353,9 @@ class _AgaramWorldPainter extends CustomPainter {
     required this.runLegPhase,
     required this.isInvulnerable,
     required this.particles,
+    required this.floatingScores,
+    required this.targetLetter,
+    required this.animTime,
   });
 
   @override
@@ -1391,48 +1363,61 @@ class _AgaramWorldPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    // 1. Sky Gradient
-    final skyShader = const LinearGradient(
-      colors: [Color(0xFF81D4FA), Color(0xFFB3E5FC), Color(0xFFE1F5FE)],
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-    ).createShader(Rect.fromLTWH(0, 0, w, h));
-    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..shader = skyShader);
+    // 1. Dynamic Modern Sky Gradient
+    final skyPaint = Paint()
+      ..shader = const LinearGradient(
+        colors: [Color(0xFF0284C7), Color(0xFF38BDF8), Color(0xFFBAE6FD)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(0, 0, w, h));
+    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), skyPaint);
 
-    // 2. Parallax Distant Hills (Layer 1: 0.15 scroll speed)
-    _drawDistantHills(canvas, size, cameraX * 0.15);
+    // 2. Glowing Sun with Corona
+    final sunOffset = Offset(w * 0.8 - (cameraX * 0.05) % (w * 0.4), h * 0.22);
+    final coronaPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [const Color(0xFFFEF08A).withOpacity(0.85), const Color(0xFFFDE047).withOpacity(0.0)],
+      ).createShader(Rect.fromCircle(center: sunOffset, radius: 55));
+    canvas.drawCircle(sunOffset, 55, coronaPaint);
+    canvas.drawCircle(sunOffset, 22, Paint()..color = const Color(0xFFFEF08A));
 
-    // 3. Parallax Village Trees & Huts (Layer 2: 0.4 scroll speed)
-    _drawVillageScenery(canvas, size, cameraX * 0.4);
+    // 3. Parallax Floating Clouds
+    _drawParallaxClouds(canvas, size, cameraX * 0.12);
 
-    // Transform Canvas for World Foreground (Layer 3: 1.0 full scroll speed)
+    // 4. Parallax Mountain Range (Layer 1: 0.22 scroll)
+    _drawParallaxMountains(canvas, size, cameraX * 0.22);
+
+    // 5. Parallax Lush Cartoon Hills (Layer 2: 0.48 scroll)
+    _drawParallaxHills(canvas, size, cameraX * 0.48);
+
+    // World Foreground (1.0 full camera translation)
     canvas.save();
     canvas.translate(-cameraX, 0);
 
-    // 4. Platforms
+    // 6. Modern Island Platforms
     for (final p in platforms) {
-      _drawPlatform(canvas, p);
+      _drawModernPlatform(canvas, p);
     }
 
-    // 5. Goal Finish Arch 🏁 " "
-    _drawGoalArch(canvas, goalX);
+    // 7. Grand Victory Portal
+    _drawGoalPortal(canvas, goalX);
 
-    // 6. Obstacles
+    // 8. Modern Obstacles
     for (final obs in obstacles) {
-      _drawObstacle(canvas, obs);
+      _drawModernObstacle(canvas, obs);
     }
 
-    // 7. Collectibles (Target Tamil Letters & Stars)
+    // 9. Modern Glassmorphic Collectibles
     for (final item in collectibles) {
       if (!item.isCollected) {
-        _drawCollectible(canvas, item);
+        _drawModernCollectible(canvas, item);
       }
     }
 
-    // 8. Player Character (Tamil Cartoon Kid)
-    _drawPlayer(canvas);
+    // 10. Modern Runner Character
+    _drawModernPlayer(canvas);
 
-    // 9. Particles
+    // 11. Particles
     for (final p in particles) {
       final alpha = (p.life / p.maxLife).clamp(0.0, 1.0);
       final paint = Paint()
@@ -1441,141 +1426,304 @@ class _AgaramWorldPainter extends CustomPainter {
       canvas.drawCircle(Offset(p.x, p.y), p.size * alpha, paint);
     }
 
+    // 12. Floating Score Numbers
+    for (final f in floatingScores) {
+      final alpha = (f.life / f.maxLife).clamp(0.0, 1.0);
+      final textSpan = TextSpan(
+        text: f.text,
+        style: TextStyle(
+          color: f.color.withOpacity(alpha),
+          fontSize: 16,
+          fontWeight: FontWeight.w900,
+          shadows: [
+            Shadow(color: Colors.black.withOpacity(0.6 * alpha), blurRadius: 4, offset: const Offset(0, 2)),
+          ],
+        ),
+      );
+      final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr)..layout();
+      tp.paint(canvas, Offset(f.x - (tp.width / 2), f.y));
+    }
+
     canvas.restore();
   }
 
-  void _drawDistantHills(Canvas canvas, Size size, double offset) {
-    final hillPaint = Paint()..color = const Color(0xFFC8E6C9);
+  void _drawParallaxClouds(Canvas canvas, Size size, double offset) {
+    final cloudPaint = Paint()..color = Colors.white.withOpacity(0.72);
+    final cloudShadowPaint = Paint()..color = const Color(0xFFBAE6FD).withOpacity(0.5);
+
+    for (double x = -100; x <= size.width + 200; x += 180) {
+      final posX = (x - (offset % 600));
+      final posY = 40.0 + sin((x + offset) * 0.01) * 15.0;
+
+      // Soft shadow
+      canvas.drawCircle(Offset(posX, posY + 5), 26, cloudShadowPaint);
+      canvas.drawCircle(Offset(posX + 24, posY + 3), 20, cloudShadowPaint);
+
+      // Cloud puffs
+      canvas.drawCircle(Offset(posX, posY), 26, cloudPaint);
+      canvas.drawCircle(Offset(posX + 22, posY - 2), 20, cloudPaint);
+      canvas.drawCircle(Offset(posX - 20, posY + 4), 18, cloudPaint);
+    }
+  }
+
+  void _drawParallaxMountains(Canvas canvas, Size size, double offset) {
+    final mountainPaint = Paint()
+      ..shader = const LinearGradient(
+        colors: [Color(0xFF60A5FA), Color(0xFF93C5FD)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(0, size.height * 0.45, size.width, size.height * 0.55));
+
     final path = Path();
     path.moveTo(0, size.height);
-    for (double x = 0; x <= size.width + 120; x += 100) {
-      final worldPos = x + (offset % 200);
-      final hillY = size.height * 0.55 + sin(worldPos * 0.02) * 28.0;
-      path.lineTo(x, hillY);
+    for (double x = 0; x <= size.width + 120; x += 90) {
+      final worldPos = x + (offset % 400);
+      final mY = size.height * 0.52 + sin(worldPos * 0.015) * 36.0;
+      path.lineTo(x, mY);
+    }
+    path.lineTo(size.width, size.height);
+    path.close();
+    canvas.drawPath(path, mountainPaint);
+  }
+
+  void _drawParallaxHills(Canvas canvas, Size size, double offset) {
+    final hillPaint = Paint()
+      ..shader = const LinearGradient(
+        colors: [Color(0xFF34D399), Color(0xFF059669)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(0, size.height * 0.60, size.width, size.height * 0.40));
+
+    final path = Path();
+    path.moveTo(0, size.height);
+    for (double x = 0; x <= size.width + 120; x += 70) {
+      final worldPos = x + (offset % 300);
+      final hY = size.height * 0.64 + sin(worldPos * 0.02) * 22.0;
+      path.lineTo(x, hY);
     }
     path.lineTo(size.width, size.height);
     path.close();
     canvas.drawPath(path, hillPaint);
   }
 
-  void _drawVillageScenery(Canvas canvas, Size size, double offset) {
-    final treePaint = Paint()..color = const Color(0xFFA5D6A7);
-    for (double x = -60; x <= size.width + 100; x += 140) {
-      final posX = x - (offset % 140);
-      // Draw simple tree top
-      canvas.drawCircle(Offset(posX, size.height * 0.62), 24, treePaint);
-    }
-  }
-
-  void _drawPlatform(Canvas canvas, PlatformTile p) {
+  void _drawModernPlatform(Canvas canvas, PlatformTile p) {
     final rect = p.rect;
 
-    if (p.type == PlatformType.ground) {
-      // Ground with grass top
-      final groundPaint = Paint()..color = const Color(0xFF795548);
-      canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(8)), groundPaint);
+    // Platform Drop Shadow for depth
+    final shadowRect = Rect.fromLTWH(p.x + 4, p.y + 10, p.width - 8, p.height);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(shadowRect, const Radius.circular(16)),
+      Paint()..color = Colors.black.withOpacity(0.22)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
 
-      // Lush green top trim
-      final grassPaint = Paint()..color = const Color(0xFF4CAF50);
+    if (p.type == PlatformType.ground) {
+      // Rounded 3D Earth Island
+      final bodyPaint = Paint()
+        ..shader = const LinearGradient(
+          colors: [Color(0xFF5D4037), Color(0xFF3E2723)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ).createShader(rect);
+      canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(14)), bodyPaint);
+
+      // Lush Glossy Emerald Grass Cap
+      final grassRect = Rect.fromLTWH(p.x, p.y, p.width, 22);
+      final grassPaint = Paint()
+        ..shader = const LinearGradient(
+          colors: [Color(0xFF34D399), Color(0xFF059669)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ).createShader(grassRect);
+      canvas.drawRRect(RRect.fromRectAndRadius(grassRect, const Radius.circular(12)), grassPaint);
+
+      // Glossy Top Highlight Strip
       canvas.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTWH(p.x, p.y, p.width, 16), const Radius.circular(6)),
-        grassPaint,
+        RRect.fromRectAndRadius(Rect.fromLTWH(p.x + 4, p.y + 2, p.width - 8, 4), const Radius.circular(4)),
+        Paint()..color = Colors.white.withOpacity(0.45),
       );
     } else {
-      // Floating / Moving Wooden Ledge
-      final woodPaint = Paint()..color = p.type == PlatformType.moving ? const Color(0xFFFFB74D) : const Color(0xFF8D6E63);
-      canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(8)), woodPaint);
+      // Floating / Moving Island
+      final isMoving = p.type == PlatformType.moving;
+      final ledgeColor1 = isMoving ? const Color(0xFF0EA5E9) : const Color(0xFFD97706);
+      final ledgeColor2 = isMoving ? const Color(0xFF0369A1) : const Color(0xFFB45309);
 
-      final borderPaint = Paint()
-        ..color = Colors.white.withOpacity(0.6)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0;
-      canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(8)), borderPaint);
+      final ledgePaint = Paint()
+        ..shader = LinearGradient(
+          colors: [ledgeColor1, ledgeColor2],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ).createShader(rect);
+      canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(14)), ledgePaint);
+
+      // Neon Top Strip
+      final topStripRect = Rect.fromLTWH(p.x, p.y, p.width, 10);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(topStripRect, const Radius.circular(10)),
+        Paint()..color = isMoving ? const Color(0xFF7DD3FC) : const Color(0xFFFDE68A),
+      );
+
+      // Futuristic Thruster Energy Glow for moving platform
+      if (isMoving) {
+        final thrusterGlow = Paint()
+          ..color = const Color(0xFF38BDF8).withOpacity(0.65)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+        canvas.drawCircle(Offset(p.x + p.width * 0.25, p.y + p.height + 4), 6, thrusterGlow);
+        canvas.drawCircle(Offset(p.x + p.width * 0.75, p.y + p.height + 4), 6, thrusterGlow);
+      }
     }
   }
 
-  void _drawGoalArch(Canvas canvas, double gx) {
-    // Two decorative stone pillars
-    final pillarPaint = Paint()..color = const Color(0xFFFFF176);
-    canvas.drawRect(Rect.fromLTWH(gx, 180, 16, 140), pillarPaint);
-    canvas.drawRect(Rect.fromLTWH(gx + 90, 180, 16, 140), pillarPaint);
+  void _drawGoalPortal(Canvas canvas, double gx) {
+    // Futuristic Checkered Neon Victory Portal
+    final p1 = Rect.fromLTWH(gx, 150, 18, 170);
+    final p2 = Rect.fromLTWH(gx + 100, 150, 18, 170);
 
-    // Arch header
-    final archPaint = Paint()..color = const Color(0xFFFFB300);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromLTWH(gx - 8, 160, 122, 28), const Radius.circular(10)),
-      archPaint,
-    );
+    final pillarPaint = Paint()
+      ..shader = const LinearGradient(
+        colors: [Color(0xFFFBBF24), Color(0xFFD97706)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(p1);
 
-    // Finish Text 🏁
-    final textSpan = TextSpan(
-      text: 'Finish Line 🏁',
-      style: GoogleFonts.catamaran(
-        fontSize: 12,
-        fontWeight: FontWeight.w900,
-        color: const Color(0xFFD84315),
-      ),
+    canvas.drawRRect(RRect.fromRectAndRadius(p1, const Radius.circular(8)), pillarPaint);
+    canvas.drawRRect(RRect.fromRectAndRadius(p2, const Radius.circular(8)), pillarPaint);
+
+    // Rainbow Portal Banner
+    final bannerRect = Rect.fromLTWH(gx - 8, 130, 134, 32);
+    final bannerPaint = Paint()
+      ..shader = const LinearGradient(
+        colors: [Color(0xFFEC4899), Color(0xFF8B5CF6), Color(0xFF3B82F6)],
+      ).createShader(bannerRect);
+    canvas.drawRRect(RRect.fromRectAndRadius(bannerRect, const Radius.circular(12)), bannerPaint);
+
+    // Finish Text
+    const textSpan = TextSpan(
+      text: 'FINISH 🏁',
+      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.8),
     );
-    final textPainter = TextPainter(text: textSpan, textDirection: TextDirection.ltr)..layout();
-    textPainter.paint(canvas, Offset(gx + 53 - (textPainter.width / 2), 166));
+    final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr)..layout();
+    tp.paint(canvas, Offset(gx + 59 - (tp.width / 2), 137));
   }
 
-  void _drawObstacle(Canvas canvas, ObstacleItem obs) {
+  void _drawModernObstacle(Canvas canvas, ObstacleItem obs) {
     if (obs.type == ObstacleType.rock) {
-      final rockPaint = Paint()..color = const Color(0xFF78909C);
-      canvas.drawOval(obs.rect, rockPaint);
+      // Faceted 3D Crystal Boulder
+      final r = obs.rect;
+      final crystalPaint = Paint()
+        ..shader = const LinearGradient(
+          colors: [Color(0xFF94A3B8), Color(0xFF475569)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ).createShader(r);
+      canvas.drawRRect(RRect.fromRectAndRadius(r, const Radius.circular(10)), crystalPaint);
+
+      // Facet Highlight
+      canvas.drawCircle(Offset(obs.x + 10, obs.y + 10), 5, Paint()..color = Colors.white.withOpacity(0.55));
     } else if (obs.type == ObstacleType.woodenLog) {
-      final logPaint = Paint()..color = const Color(0xFF6D4C41);
-      canvas.drawRRect(RRect.fromRectAndRadius(obs.rect, const Radius.circular(6)), logPaint);
+      final logPaint = Paint()
+        ..shader = const LinearGradient(
+          colors: [Color(0xFFB45309), Color(0xFF78350F)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ).createShader(obs.rect);
+      canvas.drawRRect(RRect.fromRectAndRadius(obs.rect, const Radius.circular(8)), logPaint);
     } else if (obs.type == ObstacleType.snailEnemy) {
-      // Cute little snail
-      final shellPaint = Paint()..color = const Color(0xFFFF7043);
-      canvas.drawCircle(Offset(obs.x + 18, obs.y + 16), 14, shellPaint);
-      final bodyPaint = Paint()..color = const Color(0xFFFFD54F);
-      canvas.drawOval(Rect.fromLTWH(obs.x + 2, obs.y + 20, 32, 14), bodyPaint);
+      // Cute Modern Robotic/Cartoon Snail
+      final shellCenter = Offset(obs.x + 18, obs.y + 16);
+      final shellPaint = Paint()
+        ..shader = const LinearGradient(
+          colors: [Color(0xFFF97316), Color(0xFFC2410C)],
+        ).createShader(Rect.fromCircle(center: shellCenter, radius: 14));
+      canvas.drawCircle(shellCenter, 14, shellPaint);
+
+      // Body & Eye
+      canvas.drawOval(Rect.fromLTWH(obs.x + 2, obs.y + 20, 32, 14), Paint()..color = const Color(0xFFFBBF24));
+      canvas.drawCircle(Offset(obs.x + (obs.patrolDir == 1 ? 30 : 6), obs.y + 16), 3, Paint()..color = Colors.black87);
     }
   }
 
-  void _drawCollectible(Canvas canvas, CollectibleItem item) {
-    final cx = item.x;
-    final cy = item.y;
+  void _drawModernCollectible(Canvas canvas, CollectibleItem item) {
+    // Gentle floating bobbing
+    final floatY = item.y + sin(animTime * 3.5 + item.id) * 5.0;
+    final center = Offset(item.x, floatY);
 
     if (item.type == CollectibleType.bonusStar) {
-      // Draw 5-point star
-      final starPaint = Paint()..color = Colors.amber;
-      canvas.drawCircle(Offset(cx, cy), 16, starPaint);
-      canvas.drawCircle(Offset(cx, cy), 16, Paint()..color = Colors.white.withOpacity(0.5)..style = PaintingStyle.stroke..strokeWidth = 2);
+      // 3D Faceted Golden Star
+      final starGlow = Paint()
+        ..color = const Color(0xFFFBBF24).withOpacity(0.5)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+      canvas.drawCircle(center, 18, starGlow);
 
-      final textSpan = const TextSpan(text: '⭐', style: TextStyle(fontSize: 18));
+      final starPaint = Paint()
+        ..shader = const LinearGradient(
+          colors: [Color(0xFFFEF08A), Color(0xFFF59E0B)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ).createShader(Rect.fromCircle(center: center, radius: 18));
+      canvas.drawCircle(center, 18, starPaint);
+
+      const textSpan = TextSpan(text: '⭐', style: TextStyle(fontSize: 20));
       final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr)..layout();
-      tp.paint(canvas, Offset(cx - (tp.width / 2), cy - (tp.height / 2)));
+      tp.paint(canvas, Offset(center.dx - (tp.width / 2), center.dy - (tp.height / 2)));
     } else {
-      // Tamil Target Letter Token Bubble
-      final tokenPaint = Paint()..color = const Color(0xFFFF4081);
-      canvas.drawCircle(Offset(cx, cy), 20, tokenPaint);
+      final isTarget = item.letter == targetLetter;
 
-      final tokenBorder = Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5;
-      canvas.drawCircle(Offset(cx, cy), 20, tokenBorder);
+      // Outer Pulsing Halo if target letter
+      if (isTarget) {
+        final pulseHalo = Paint()
+          ..color = const Color(0xFF10B981).withOpacity(0.65)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+        canvas.drawCircle(center, 26, pulseHalo);
 
+        // Rotating sparkle ring
+        canvas.drawCircle(
+          center,
+          24,
+          Paint()
+            ..color = const Color(0xFF6EE7B7)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.0,
+        );
+      }
+
+      // 3D Glassmorphic Letter Orb
+      final orbPaint = Paint()
+        ..shader = LinearGradient(
+          colors: isTarget
+              ? [const Color(0xFF10B981), const Color(0xFF047857)]
+              : [const Color(0xFF38BDF8), const Color(0xFF0284C7)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ).createShader(Rect.fromCircle(center: center, radius: 21));
+      canvas.drawCircle(center, 21, orbPaint);
+
+      // Glass specular highlight
+      canvas.drawCircle(
+        Offset(center.dx - 6, center.dy - 6),
+        7,
+        Paint()..color = Colors.white.withOpacity(0.48),
+      );
+
+      // Crisp High-Contrast Letter
       final textSpan = TextSpan(
         text: item.letter,
-        style: GoogleFonts.catamaran(
-          fontSize: 18,
+        style: const TextStyle(
+          fontSize: 22,
           fontWeight: FontWeight.w900,
           color: Colors.white,
+          shadows: [
+            Shadow(color: Colors.black45, blurRadius: 4, offset: Offset(0, 1)),
+          ],
         ),
       );
       final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr)..layout();
-      tp.paint(canvas, Offset(cx - (tp.width / 2), cy - (tp.height / 2)));
+      tp.paint(canvas, Offset(center.dx - (tp.width / 2), center.dy - (tp.height / 2)));
     }
   }
 
-  void _drawPlayer(Canvas canvas) {
+  void _drawModernPlayer(Canvas canvas) {
     if (isInvulnerable && (DateTime.now().millisecond % 200 < 100)) {
-      return; // Damage flashing effect
+      return; // Damage flash
     }
 
     final px = playerX + 16;
@@ -1587,53 +1735,91 @@ class _AgaramWorldPainter extends CustomPainter {
       canvas.scale(-1, 1);
     }
 
-    // 1. Cartoon Kid Body (T-shirt)
-    final shirtPaint = Paint()..color = const Color(0xFFFF5722);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(const Rect.fromLTWH(-10, -4, 20, 18), const Radius.circular(6)),
-      shirtPaint,
-    );
+    // Invulnerability Protective Shield Bubble
+    if (isInvulnerable) {
+      final shieldPaint = Paint()
+        ..color = const Color(0xFFFBBF24).withOpacity(0.4)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+      canvas.drawCircle(Offset.zero, 28, shieldPaint);
+      canvas.drawCircle(
+        Offset.zero,
+        28,
+        Paint()..color = const Color(0xFFFBBF24)..style = PaintingStyle.stroke..strokeWidth = 2,
+      );
+    }
 
-    // 2. Head & Face
-    final facePaint = Paint()..color = const Color(0xFFFFCC80);
-    canvas.drawCircle(const Offset(0, -14), 11, facePaint);
+    // 1. Sporty Runner Hoodie / Body
+    final bodyPaint = Paint()
+      ..shader = const LinearGradient(
+        colors: [Color(0xFF38BDF8), Color(0xFF0284C7)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(const Rect.fromLTWH(-14, -6, 28, 26));
+    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(-14, -6, 28, 26), const Radius.circular(10)), bodyPaint);
 
-    // 3. Hair
-    final hairPaint = Paint()..color = const Color(0xFF3E2723);
+    // White athletic stripe
+    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(-3, -4, 6, 22), const Radius.circular(3)), Paint()..color = Colors.white70);
+
+    // 2. Cartoon Face (Cute round head)
+    final headPaint = Paint()..color = const Color(0xFFFFCC80);
+    canvas.drawCircle(const Offset(0, -14), 14, headPaint);
+
+    // Blushing cheeks
+    canvas.drawCircle(const Offset(6, -11), 3.5, Paint()..color = Colors.pinkAccent.withOpacity(0.5));
+
+    // Big Sparkly Cartoon Eyes
+    canvas.drawCircle(const Offset(4, -14), 3, Paint()..color = const Color(0xFF0F172A));
+    canvas.drawCircle(const Offset(5, -15), 1, Paint()..color = Colors.white);
+
+    // Happy Smile
     canvas.drawArc(
-      const Rect.fromLTWH(-11, -25, 22, 18),
-      pi,
-      pi,
-      true,
-      hairPaint,
-    );
-
-    // 4. Eyes & Smile
-    canvas.drawCircle(const Offset(4, -14), 2, Paint()..color = const Color(0xFF1B5E20));
-    canvas.drawArc(
-      const Rect.fromLTWH(0, -12, 6, 6),
+      const Rect.fromLTWH(1, -12, 6, 6),
       0,
       pi,
       false,
-      Paint()..color = Colors.red..style = PaintingStyle.stroke..strokeWidth = 1.2,
+      Paint()..color = const Color(0xFFDC2626)..style = PaintingStyle.stroke..strokeWidth = 1.4,
     );
 
-    // 5. Animated Running Legs
-    final legSwing = isGrounded ? sin(runLegPhase) * 6.0 : 4.0;
+    // 3. Cool Sporty Backwards Runner Cap
+    final capPaint = Paint()
+      ..shader = const LinearGradient(
+        colors: [Color(0xFFEF4444), Color(0xFFB91C1C)],
+      ).createShader(const Rect.fromLTWH(-13, -26, 26, 16));
+    canvas.drawArc(
+      const Rect.fromLTWH(-13, -27, 26, 18),
+      pi,
+      pi,
+      true,
+      capPaint,
+    );
+
+    // Cap Visor sticking backwards
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(const Rect.fromLTWH(-18, -19, 10, 4), const Radius.circular(2)),
+      Paint()..color = const Color(0xFF991B1B),
+    );
+
+    // 4. Animated Athletic Running Legs with Sneakers
+    final legSwing = isGrounded ? sin(runLegPhase) * 8.0 : 5.0;
     final legPaint = Paint()
-      ..color = const Color(0xFF1976D2)
+      ..color = const Color(0xFF0F172A)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.0
+      ..strokeWidth = 4.5
       ..strokeCap = StrokeCap.round;
 
     // Left leg
-    canvas.drawLine(const Offset(-4, 14), Offset(-4 - legSwing, 22), legPaint);
+    canvas.drawLine(const Offset(-5, 16), Offset(-5 - legSwing, 26), legPaint);
     // Right leg
-    canvas.drawLine(const Offset(4, 14), Offset(4 + legSwing, 22), legPaint);
+    canvas.drawLine(const Offset(5, 16), Offset(5 + legSwing, 26), legPaint);
+
+    // Red & White Sneakers
+    final shoePaint = Paint()..color = const Color(0xFFEF4444);
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(-9 - legSwing, 24, 10, 5), const Radius.circular(2)), shoePaint);
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(1 + legSwing, 24, 10, 5), const Radius.circular(2)), shoePaint);
 
     canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant _AgaramWorldPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _ModernRunnerWorldPainter oldDelegate) => true;
 }

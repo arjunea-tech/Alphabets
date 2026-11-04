@@ -212,59 +212,8 @@ class TamilTtsService {
   /// Automatically stops any ongoing speech before starting new speech.
   /// Handles null, empty, or whitespace safely.
   Future<void> speakText(String? text) async {
-    if (_isMuted) {
-      debugPrint('[TTS] Speech skipped because audio is muted.');
-      return;
-    }
-
-    if (text == null) {
-      debugPrint('[TTS] Speech skipped: text is null.');
-      return;
-    }
-
-    final cleanText = text.trim();
-    if (cleanText.isEmpty) {
-      debugPrint('[TTS] Speech skipped: text is empty.');
-      return;
-    }
-
-    // Safety guard: TTS is for human speech, never speak file paths, URLs, or file identifiers
-    if (cleanText.startsWith('assets/') ||
-        cleanText.contains('/') ||
-        cleanText.contains(r'\') ||
-        cleanText.endsWith('.mp3') ||
-        cleanText.endsWith('.wav') ||
-        cleanText.startsWith('http://') ||
-        cleanText.startsWith('https://')) {
-      debugPrint('[TTS] ⚠️ Speech skipped: "$cleanText" is a file path or URL, not spoken Tamil text.');
-      return;
-    }
-
-    if (!_isInitialized || _tts == null) {
-      await init();
-    }
-
-    _lastSpokenText = cleanText;
-    debugPrint('[TTS] >>> TTS SPEAK TEXT REQUEST: "$cleanText"');
-
-    try {
-      // If currently speaking, stop first so speech doesn't overlap
-      if (_isSpeaking) {
-        await _tts?.stop();
-        _isSpeaking = false;
-        // Tiny yield so native engine flushes cleanly
-        await Future<void>.delayed(const Duration(milliseconds: 30));
-      }
-
-      _isSpeaking = true;
-      await _tts?.setVolume(1.0);
-      final dynamic result = await _tts?.speak(cleanText);
-      debugPrint('[TTS] TTS speak() native call returned: $result');
-    } catch (e) {
-      _isSpeaking = false;
-      _lastError = e.toString();
-      debugPrint('[TTS] !!! TTS speak() threw exception: $e');
-    }
+    // Speech permanently disabled as requested: mic and speak should not be anywhere
+    return;
   }
 
   /// Convenience static speak method so any widget or screen can call:

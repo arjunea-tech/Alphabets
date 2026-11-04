@@ -825,28 +825,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
 
           const SizedBox(width: 10),
 
-          // Speaker Button
-          BouncyButton(
-            onPressed: _playTargetSound,
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.90),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.volume_up_rounded,
-                color: Color(0xFFFF8F00),
-                size: 24,
-              ),
-            ),
-          ),
+          const SizedBox.shrink(),
         ],
       ),
     );
@@ -913,18 +892,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFF8F00),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.volume_up_rounded,
-                  color: Colors.white,
-                  size: 16,
-                ),
-              ),
+              const SizedBox.shrink(),
             ],
           ),
         ),

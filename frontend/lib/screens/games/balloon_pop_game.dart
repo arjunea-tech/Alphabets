@@ -677,17 +677,6 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
               );
             }),
           ),
-          const SizedBox(width: 6),
-
-          // Sound Toggle
-          IconButton(
-            onPressed: () => setState(() => _soundEnabled = !_soundEnabled),
-            icon: Icon(
-              _soundEnabled ? Icons.volume_up_rounded : Icons.volume_off_rounded,
-              color: Colors.white70,
-              size: 22,
-            ),
-          ),
         ],
       ),
     );

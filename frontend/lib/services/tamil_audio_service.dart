@@ -588,56 +588,7 @@ class TamilAudioService {
   }
 
   /// Displays an attractive kid-friendly floating audio indicator with speaker icon
-  static void showAudioIndicator(
-    BuildContext context, {
-    required String text,
-    String? subtext,
-  }) {
-    if (!context.mounted) return;
-    try {
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          duration: const Duration(milliseconds: 1400),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          backgroundColor: const Color(0xFF2B2D42).withValues(alpha: 0.95),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          content: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF3F4259),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.volume_up_rounded,
-                  color: Color(0xFFFFD166),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  (subtext != null && subtext.isNotEmpty && subtext != text)
-                      ? 'ஒலி: $text ($subtext)'
-                      : 'ஒலி: $text',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    } catch (e) {
-      debugPrint('[TamilAudioService] showAudioIndicator notice: $e');
-    }
-  }
+  static void showAudioIndicator(BuildContext context, {required String text, String? subtext}) { return; }
 
   Future<bool> _fetchAndPlayOnlineAudio(String text) async {
     try {
@@ -715,136 +666,13 @@ class TamilAudioService {
   /// 2. Plays remote URLs (if applicable)
   /// 3. Streams dynamic Tamil speech audio
   /// 4. Fallback to device TTS
-  Future<void> playTamilAudio(String? text, {String? fallbackTamilText}) async {
-    if (_isMuted || text == null || text.trim().isEmpty) return;
+  Future<void> playTamilAudio(String? text, {String? fallbackTamilText}) async { return; }
 
-    final trimmed = text.trim();
-
-    // 1. Remote URLs (backend streaming or remote audio)
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      try {
-        await player.stop();
-        await player.setVolume(1.0);
-        await player.play(UrlSource(trimmed), volume: 1.0);
-        return;
-      } catch (e) {
-        debugPrint('[TamilAudioService] UrlSource playback failed for $trimmed: $e');
-      }
-    }
-
-    // 2. Extract clean spoken Tamil text
-    final spokenText = extractSpokenTamilText(trimmed);
-    final targetText = spokenText.isNotEmpty ? spokenText : trimmed;
-
-    // 3. Direct or candidate asset path lookup
-    final isPath = trimmed.startsWith('assets/') || trimmed.endsWith('.mp3');
-    final assetPath = isPath ? trimmed : getAudioPath(targetText);
-
-    // 4. Play bundled asset if present
-    if (assetPath != null && await isAssetAvailable(assetPath)) {
-      final played = await _playAsset(assetPath);
-      if (played) return;
-    }
-
-    // 5. Try candidate letter audio paths (e.g., 'அ')
-    final candidates = _getLetterCandidatePaths(targetText);
-    for (final candidate in candidates) {
-      if (await isAssetAvailable(candidate)) {
-        final played = await _playAsset(candidate);
-        if (played) return;
-      }
-    }
-
-    // 6. Try fallback text if provided
-    if (fallbackTamilText != null && fallbackTamilText.trim().isNotEmpty) {
-      final fbClean = extractSpokenTamilText(fallbackTamilText);
-      final fbPath = getAudioPath(fbClean);
-      if (fbPath != null && await isAssetAvailable(fbPath)) {
-        final played = await _playAsset(fbPath);
-        if (played) return;
-      }
-    }
-
-    // 7. Play crystal-clear Tamil speech via high quality online stream
-    final playedOnline = await _fetchAndPlayOnlineAudio(targetText);
-    if (playedOnline) return;
-
-    // 8. Fallback to device TTS engine (for mobile devices)
-    await TamilTtsService.instance.speakText(targetText);
-
-    // 9. Windows native OneCore voice fallback
-    if (Platform.isWindows) {
-      await _speakWindowsNativeTamil(targetText);
-    }
-  }
-
-  Future<void> _speakWindowsNativeTamil(String text) async {
-    try {
-      final safeText = text.replaceAll('"', '""').replaceAll("'", "''");
-      final script = '''
-Add-Type -AssemblyName System.Speech;
-[Windows.Media.SpeechSynthesis.SpeechSynthesizer, Windows.Media, ContentType=WindowsRuntime] | Out-Null;
-\$synth = New-Object Windows.Media.SpeechSynthesis.SpeechSynthesizer;
-\$taVoice = [Windows.Media.SpeechSynthesis.SpeechSynthesizer]::AllVoices | Where-Object { \$_.Language -like "ta*" };
-if (\$taVoice) {
-    \$synth.Voice = \$taVoice;
-    \$stream = \$synth.SynthesizeTextToStreamAsync("$safeText").GetAwaiter().GetResult();
-    \$fileStream = [System.IO.File]::Create("\$([System.IO.Path]::GetTempPath())tamil_winrt.wav");
-    \$stream.AsStreamForRead().CopyTo(\$fileStream);
-    \$fileStream.Close();
-    (New-Object System.Media.SoundPlayer("\$([System.IO.Path]::GetTempPath())tamil_winrt.wav")).PlaySync();
-}
-''';
-      await Process.run('powershell', ['-WindowStyle', 'Hidden', '-Command', script]);
-    } catch (e) {
-      debugPrint('[TamilAudioService] Windows native speech error: $e');
-    }
-  }
+  Future<void> _speakWindowsNativeTamil(String text) async { return; }
 
   /// Convenience method matching existing AudioService signature
   /// Plays the authentic native Tamil pronunciation audio for the given letter.
-  Future<void> playLetterSound(
-    BuildContext context, {
-    required String letter,
-    String? word,
-    String? audioPath,
-    bool showIndicator = true,
-  }) async {
-    if (_isMuted) return;
-
-    if (showIndicator && context.mounted) {
-      showAudioIndicator(
-        context,
-        text: letter,
-        subtext: word,
-      );
-    }
-
-    // 1. If explicit audioPath provided and available, play it
-    if (audioPath != null && audioPath.trim().isNotEmpty && await isAssetAvailable(audioPath)) {
-      final played = await _playAsset(audioPath);
-      if (played) return;
-    }
-
-    // 2. Check canonical asset for this letter
-    final letterAsset = getAudioPath(letter);
-    if (letterAsset != null && await isAssetAvailable(letterAsset)) {
-      final played = await _playAsset(letterAsset);
-      if (played) return;
-    }
-
-    // 3. Check fallback candidate paths for letter 'அ' and others
-    final candidates = _getLetterCandidatePaths(letter);
-    for (final candidate in candidates) {
-      if (await isAssetAvailable(candidate)) {
-        final played = await _playAsset(candidate);
-        if (played) return;
-      }
-    }
-
-    // 4. Seamless fallback for letters & words
-    await playTamilAudio(letter);
-  }
+  Future<void> playLetterSound(BuildContext context, {required String letter, String? word, String? audioPath, bool showIndicator = true}) async { return; }
 
   static List<String> _getLetterCandidatePaths(String text) {
     final t = text.trim();

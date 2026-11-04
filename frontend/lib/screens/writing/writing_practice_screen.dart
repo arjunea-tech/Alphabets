@@ -40,6 +40,8 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
   final Color _activeColor = const Color(0xFF3A86FF);
   bool _isCanvasDrawing = false;
   final Set<String> _awardedLetters = {};
+  HandwritingEvaluationResult? _lastEvaluation;
+  bool _isAutoAdvancing = false;
 
 
 
@@ -114,6 +116,8 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     setState(() {
       _selectedCategoryIndex = index;
       _letterIndex = 0;
+      _lastEvaluation = null;
+      _isAutoAdvancing = false;
     });
     TamilLetterOutlines.clearCache();
     _canvasKey.currentState?.clearCanvas();
@@ -122,7 +126,11 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
   Future<void> _goToPrevious() async {
     if (_letterIndex > 0) {
       await _autoSaveCurrentPractice(completed: false);
-      setState(() => _letterIndex--);
+      setState(() {
+        _letterIndex--;
+        _lastEvaluation = null;
+        _isAutoAdvancing = false;
+      });
       _canvasKey.currentState?.clearCanvas();
     }
   }
@@ -130,26 +138,88 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
   Future<void> _goToNext() async {
     if (_letterIndex < _currentList.length - 1) {
       await _autoSaveCurrentPractice(completed: false);
-      setState(() => _letterIndex++);
+      setState(() {
+        _letterIndex++;
+        _lastEvaluation = null;
+        _isAutoAdvancing = false;
+      });
       _canvasKey.currentState?.clearCanvas();
     }
   }
 
-  /// Handles " / " using the AI Model recognition
-  /// [guidedComplete] is true when Learn mode finished every step and each stroke
-  /// already passed the start/direction/path/end check in the canvas.
-  Future<void> _handleFinishWriting({bool guidedComplete = false}) async {
+  /// Real-time stroke evaluation: If accuracy >= 70%, automatically advances to next letter!
+  void _onEvaluationChanged(HandwritingEvaluationResult eval) {
+    if (_isAutoAdvancing) return;
+
+    setState(() {
+      _lastEvaluation = eval;
+    });
+
+    if (eval.isPass && eval.score >= 70.0) {
+      _isAutoAdvancing = true;
+      _triggerSuccessAndAutoAdvance(eval);
+    }
+  }
+
+  Future<void> _triggerSuccessAndAutoAdvance(HandwritingEvaluationResult eval) async {
+    final currentLetter = _currentGuide.letter;
+    final starsToAdd = eval.stars > 0 ? eval.stars : 2;
+
+    if (!_awardedLetters.contains(currentLetter)) {
+      _awardedLetters.add(currentLetter);
+      widget.progressService.addStars(starsToAdd);
+      widget.progressService.markLetterCompleted(currentLetter);
+    }
+
+    await _autoSaveCurrentPractice(completed: true);
+
+    // Friendly 1000ms delay to let the kid admire their completed letter and score
+    await Future.delayed(const Duration(milliseconds: 1000));
+    if (!mounted) return;
+
+    if (_letterIndex < _currentList.length - 1) {
+      await _goToNext();
+      if (mounted) {
+        setState(() {
+          _lastEvaluation = null;
+          _isAutoAdvancing = false;
+        });
+      }
+    } else {
+      // Completed all letters in list!
+      if (mounted) {
+        setState(() {
+          _isAutoAdvancing = false;
+        });
+        _showAccuracyResultDialog(
+          HandwritingRecognitionResult(
+            expectedCharacter: currentLetter,
+            recognizedCharacter: currentLetter,
+            confidence: eval.score / 100.0,
+            strokeCount: eval.stars,
+            totalPointCount: 100,
+            modelStatus: MLModelStatus.loaded,
+            isMatchExplicit: true,
+          ),
+          isSuccess: true,
+        );
+      }
+    }
+  }
+
+  /// Handles handwriting check strictly using 80% coverage and precision evaluation
+  Future<void> _handleFinishWriting() async {
     final canvasState = _canvasKey.currentState;
     final hasDrawn = canvasState?.hasContent ?? false;
 
-    if (!hasDrawn || (canvasState?.totalPointsDrawn ?? 0) < 4) {
+    if (!hasDrawn || (canvasState?.totalPointsDrawn ?? 0) < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
           backgroundColor: const Color(0xFFFF9F1C),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           content: const Text(
-            'Trace the letter with your finger!',
+            'Trace the letter inside the outlines first!',
             style: TextStyle(
               fontFamily: 'Catamaran',
               fontWeight: FontWeight.bold,
@@ -161,27 +231,15 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
       return;
     }
 
-    // Learn mode: every stroke was already verified against the stroke guide, so the
-    // letter is correct. The ML model is not trained on these guided strokes and must
-    // not overrule that. Practice mode (free writing) still uses ML recognition.
-    final HandwritingRecognitionResult mlResult = guidedComplete
-        ? HandwritingRecognitionResult(
-            expectedCharacter: _currentGuide.letter,
-            recognizedCharacter: _currentGuide.letter,
-            confidence: 1.0,
-            strokeCount: canvasState!.strokeCount,
-            totalPointCount: canvasState.totalPointsDrawn,
-            modelStatus: MLModelStatus.loaded,
-            isMatchExplicit: true,
-          )
-        : await canvasState!.evaluateWithML();
+    // Rigorously evaluate strokes against the strict 80% coverage threshold
+    final HandwritingRecognitionResult mlResult = await canvasState!.evaluateWithML();
 
     if (mlResult.isMatch) {
       // Auto-save this successful practice
       await _autoSaveCurrentPractice(completed: true);
 
       final currentLetter = _currentGuide.letter;
-      final starsToAdd = mlResult.stars > 0 ? mlResult.stars : 1;
+      final starsToAdd = mlResult.stars > 0 ? mlResult.stars : 2;
 
       if (!_awardedLetters.contains(currentLetter)) {
         _awardedLetters.add(currentLetter);
@@ -190,15 +248,9 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
       }
 
       if (!mounted) return;
-      await AudioService.instance.playSuccessFeedback(context);
-
-      if (!mounted) return;
       _showAccuracyResultDialog(mlResult, isSuccess: true);
     } else {
       // Encouraging retry / feedback modal
-      if (!mounted) return;
-      await AudioService.instance.playRetryFeedback(context);
-
       if (!mounted) return;
       _showAccuracyResultDialog(mlResult, isSuccess: false);
     }
@@ -410,7 +462,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                     ),
                   ),
                 ] else ...[
-                  // Try Again Button
+                  // Try Again / Rewrite Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -428,12 +480,31 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                       ),
                       icon: const Icon(Icons.replay_rounded, size: 20),
                       label: const Text(
-                        'Rewrite',
+                        'Retry & Rewrite ✏️',
                         style: TextStyle(
                           fontFamily: 'Catamaran',
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
                         ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // Watch Guide Button
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _canvasKey.currentState?.clearCanvas();
+                      _canvasKey.currentState?.playFullGuideDemo();
+                    },
+                    icon: const Icon(Icons.play_circle_filled_rounded, color: Color(0xFF3A86FF), size: 20),
+                    label: const Text(
+                      'Watch Guide Animation ▶',
+                      style: TextStyle(
+                        fontFamily: 'Catamaran',
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF3A86FF),
                       ),
                     ),
                   ),
@@ -504,9 +575,8 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                                 strokeColor: _activeColor,
                                 strokeWidth: 20.0,
                                 onStrokeUpdated: (_) {},
-                                onLetterCompleted: () {
-                                  _handleFinishWriting(guidedComplete: true);
-                                },
+                                onLetterCompleted: () {},
+                                onEvaluationChanged: _onEvaluationChanged,
                                 onDrawingStateChanged: (drawing) {
                                   if (_isCanvasDrawing != drawing && mounted) {
                                     setState(() => _isCanvasDrawing = drawing);
@@ -696,86 +766,102 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
 
 
   Widget _buildBottomControls() {
+    final eval = _lastEvaluation;
+    final int scorePct = eval != null ? eval.score.round() : 0;
+    final bool hasDrawn = eval != null && scorePct > 0;
+    final bool isPassed = eval != null && eval.isPass && scorePct >= 70;
+
+    String statusText;
+    if (_isAutoAdvancing) {
+      statusText = '🎉 $scorePct% - Moving to Next Letter... 🚀';
+    } else if (isPassed) {
+      statusText = '⭐ $scorePct% - Great Job!';
+    } else if (hasDrawn) {
+      statusText = '$scorePct% Correct (Need 70% to pass) ✏️';
+    } else {
+      statusText = 'Trace inside outlines with your finger ✍️';
+    }
+
     return Row(
       children: [
-        // Clear / Reset Button: " "
-        Expanded(
-          flex: 4,
-          child: ElevatedButton.icon(
-            onPressed: () => _canvasKey.currentState?.clearCanvas(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFF8F9FA),
-              foregroundColor: const Color(0xFF495057),
-              padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 6),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
-                side: const BorderSide(color: Color(0xFFCED4DA), width: 2),
-              ),
-              elevation: 0,
+        // Clear / Reset Button
+        ElevatedButton.icon(
+          onPressed: () {
+            _canvasKey.currentState?.clearCanvas();
+            setState(() {
+              _lastEvaluation = null;
+              _isAutoAdvancing = false;
+            });
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFF8F9FA),
+            foregroundColor: const Color(0xFF495057),
+            padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+              side: const BorderSide(color: Color(0xFFCED4DA), width: 2),
             ),
-            icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: const FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                'Clear',
-                style: TextStyle(
-                  fontFamily: 'Catamaran',
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            elevation: 0,
+          ),
+          icon: const Icon(Icons.refresh_rounded, size: 18),
+          label: const Text(
+            'Clear',
+            style: TextStyle(
+              fontFamily: 'Catamaran',
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
         const SizedBox(width: 10),
 
-        // Check & Submit Button: " (Check) ⭐"
+        // Live Accuracy Percentage Card (Replaces old Submit button)
         Expanded(
-          flex: 6,
           child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
               gradient: LinearGradient(
-                colors: _activeMode == WritingCanvasMode.practice
-                    ? [const Color(0xFF2EC4B6), const Color(0xFF0F9F90)]
-                    : [const Color(0xFF3A86FF), const Color(0xFF0056D2)],
+                colors: isPassed
+                    ? [const Color(0xFF10B981), const Color(0xFF059669)]
+                    : (hasDrawn
+                        ? [const Color(0xFFFF9F1C), const Color(0xFFF77F00)]
+                        : [const Color(0xFFE2E8F0), const Color(0xFFCBD5E1)]),
               ),
               boxShadow: [
-                BoxShadow(
-                  color: (_activeMode == WritingCanvasMode.practice
-                          ? const Color(0xFF2EC4B6)
-                          : const Color(0xFF3A86FF))
-                      .withValues(alpha: 0.4),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
+                if (hasDrawn)
+                  BoxShadow(
+                    color: (isPassed ? const Color(0xFF10B981) : const Color(0xFFFF9F1C))
+                        .withValues(alpha: 0.35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
               ],
             ),
-            child: ElevatedButton.icon(
-              onPressed: _handleFinishWriting,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
-                shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(22),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  isPassed
+                      ? Icons.check_circle_rounded
+                      : (hasDrawn ? Icons.draw_rounded : Icons.touch_app_rounded),
+                  color: hasDrawn ? Colors.white : const Color(0xFF64748B),
+                  size: 20,
                 ),
-              ),
-              icon: const Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20),
-              label: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  _activeMode == WritingCanvasMode.practice
-                      ? 'Check Letter'
-                      : 'Submit',
-                  style: const TextStyle(
-                    fontFamily: 'Catamaran',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    statusText,
+                    style: TextStyle(
+                      fontFamily: 'Catamaran',
+                      color: hasDrawn ? Colors.white : const Color(0xFF475569),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ),

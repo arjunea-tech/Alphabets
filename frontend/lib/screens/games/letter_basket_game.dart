@@ -649,28 +649,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
 
             const SizedBox(width: 8),
 
-            // Sound Toggle Button
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _isMuted = !_isMuted;
-                  _audioService.setMuted(_isMuted);
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFFFD54F), width: 1.5),
-                ),
-                child: Icon(
-                  _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                  color: const Color(0xFFF57F17),
-                  size: 20,
-                ),
-              ),
-            ),
+            const SizedBox.shrink(),
 
             const SizedBox(width: 8),
 
@@ -818,11 +797,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
                 shape: BoxShape.circle,
                 border: Border.all(color: const Color(0xFFFFB74D), width: 1.5),
               ),
-              child: const Icon(
-                Icons.volume_up_rounded,
-                color: Color(0xFFE65100),
-                size: 22,
-              ),
+              child: const SizedBox.shrink(),
             ),
           ),
         ],

@@ -46,50 +46,6 @@ class _CustomAudioButtonState extends State<CustomAudioButton> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = widget.color ?? AppColors.secondary;
-
-    return BouncyButton(
-      onPressed: _handleTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: widget.isSecondary ? Colors.white : activeColor,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: activeColor,
-            width: 2.2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: activeColor.withValues(alpha: widget.isSecondary ? 0.15 : 0.35),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.volume_up_rounded,
-                color: widget.isSecondary ? activeColor : Colors.white,
-                size: 22,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                widget.label,
-                style: AppTextStyles.buttonText.copyWith(
-                  color: widget.isSecondary ? activeColor : Colors.white,
-                  fontSize: 15,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }

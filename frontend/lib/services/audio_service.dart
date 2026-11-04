@@ -24,39 +24,13 @@ class AudioService {
   }
 
   /// Main Centralized Audio API
-  Future<void> playTamilAudio(String? text, {String? fallbackTamilText}) async {
-    await TamilAudioService.instance.playTamilAudio(text, fallbackTamilText: fallbackTamilText);
-  }
+  Future<void> playTamilAudio(String? text, {String? fallbackTamilText}) async { return; }
 
   /// Plays pronunciation for a Tamil letter or word.
-  Future<void> playLetterSound(
-    BuildContext context, {
-    required String letter,
-    String? word,
-    String? audioPath,
-    bool showIndicator = true,
-  }) async {
-    await TamilAudioService.instance.playLetterSound(
-      context,
-      letter: letter,
-      word: word,
-      audioPath: audioPath,
-      showIndicator: showIndicator,
-    );
-  }
+  Future<void> playLetterSound(BuildContext context, {required String letter, String? word, String? audioPath, bool showIndicator = true}) async { return; }
 
   /// Displays floating audio indicator with speaker icon
-  void showFriendlyAudioIndicator(
-    BuildContext context,
-    String text, [
-    String? subtext,
-  ]) {
-    TamilAudioService.showAudioIndicator(
-      context,
-      text: text,
-      subtext: subtext,
-    );
-  }
+  void showFriendlyAudioIndicator(BuildContext context, String text, [String? subtext]) { return; }
 
   /// Plays pronunciation for the '+' () operator symbol
   Future<void> playPlusSound(BuildContext context, {bool showIndicator = true}) async {
@@ -64,9 +38,7 @@ class AudioService {
   }
 
   /// Speaks any Tamil text (letter, word, sentence, story, quiz question).
-  Future<void> speakText(String? text, {String? fallbackTamilText}) async {
-    await TamilAudioService.instance.playTamilAudio(text, fallbackTamilText: fallbackTamilText);
-  }
+  Future<void> speakText(String? text, {String? fallbackTamilText}) async { return; }
 
   /// Stops all audio playback.
   Future<void> stopAll() async {

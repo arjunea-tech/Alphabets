@@ -484,19 +484,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                   ),
                   const SizedBox(width: 6),
 
-                  // Sound Toggle
-                  IconButton(
-                    icon: Icon(
-                      _isSoundMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isSoundMuted = !_isSoundMuted;
-                      });
-                    },
-                  ),
+                  const SizedBox.shrink(),
                 ],
               ),
             ],
@@ -594,35 +582,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
             ),
           ),
 
-          // Audio pronounce button
-          GestureDetector(
-            onTap: () {
-              if (!_isSoundMuted) {
-                AudioService.instance.playTamilAudio(puzzle.word);
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const RadialGradient(
-                  colors: [Color(0xFFFF4081), Color(0xFFC2185B)],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFFF4081).withOpacity(0.4),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.volume_up_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ),
+          const SizedBox.shrink(),
         ],
       ),
     );

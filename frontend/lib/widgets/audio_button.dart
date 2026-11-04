@@ -72,41 +72,6 @@ class _AudioButtonState extends State<AudioButton>
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = widget.color ?? AppColors.primary;
-    final fgColor = widget.iconColor ?? Colors.white;
-
-    return Semantics(
-      label: '${widget.letter} Sound',
-      button: true,
-      child: GestureDetector(
-        onTap: _handleTap,
-        behavior: HitTestBehavior.opaque,
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: Container(
-            width: widget.size,
-            height: widget.size,
-            decoration: BoxDecoration(
-              color: bgColor,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: bgColor.withValues(alpha: 0.35),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Icon(
-                _isPlaying ? Icons.volume_up_rounded : Icons.volume_down_rounded,
-                color: fgColor,
-                size: widget.size * 0.55,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }

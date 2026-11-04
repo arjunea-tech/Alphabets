@@ -81,14 +81,15 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
   double _wingAngle = 0.0;
   double _animTimer = 0.0;
   // Gentle floaty gravity and buoyant flap impulse
-  final double _gravity = 360.0;
-  final double _flapStrength = -230.0;
+  final double _gravity = 280.0;
+  final double _flapStrength = -240.0;
 
   // Cloud Gate (Slow, calm, accessible horizontal speed)
   double _gateX = 420.0;
   final double _gateSpeed = 85.0; // Slow, giving kids 4-5 seconds per gate
   bool _gatePassed = false;
   bool _isAdvancingGate = false;
+  double _gateTimer = 0.0;
   String? _feedbackText;
   Color? _feedbackColor;
 
@@ -187,7 +188,7 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
   void _triggerVictory() {
     _loopTimer?.cancel();
     _loopTimer = null;
-    widget.progressService.addStars(15);
+    try { widget.progressService.addStars(15); } catch (_) {}
     if (mounted) {
       setState(() {
         _gameState = 'victory';
@@ -330,6 +331,15 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
     // 3. Cloud Gate Movement (Slow, Relaxing Pace)
     _gateX -= _gateSpeed * dt;
 
+    // Deterministic in-frame gate advancement
+    if (_isAdvancingGate) {
+      _gateTimer -= dt;
+      if (_gateTimer <= 0) {
+        _isAdvancingGate = false;
+        _advanceGate();
+      }
+    }
+
     // Gate collision checking
     final safeWaveIdx = _currentWaveIndex.clamp(0, _defaultWaves.length - 1);
     final wave = _defaultWaves[safeWaveIdx];
@@ -370,17 +380,12 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
         return;
       } else {
         _isAdvancingGate = true;
-        Future.delayed(const Duration(milliseconds: 600), () {
-          if (mounted && _gameState == 'playing') {
-            _isAdvancingGate = false;
-            _advanceGate();
-          }
-        });
+        _gateTimer = 0.65;
       }
     }
 
     // Recycle gate when off screen
-    if (!_gatePassed && !_isAdvancingGate && _gateX < -150) {
+    if (!_isAdvancingGate && _gateX < -150) {
       _advanceGate();
     }
 
@@ -433,17 +438,13 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
     }
 
     _isAdvancingGate = true;
-    Future.delayed(const Duration(milliseconds: 700), () {
-      if (mounted && _gameState == 'playing') {
-        _isAdvancingGate = false;
-        _advanceGate();
-      }
-    });
+    _gateTimer = 0.70;
   }
 
   void _advanceGate() {
-    if (!mounted || _isAdvancingGate) return;
-    _isAdvancingGate = true;
+    if (!mounted) return;
+    _isAdvancingGate = false;
+    _gateTimer = 0.0;
 
     if (_currentWaveIndex < _defaultWaves.length - 1) {
       setState(() {
@@ -573,8 +574,8 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
                     ),
 
                     // Overlays
-                    if (_gameState == 'victory') _buildVictoryOverlay(),
-                    if (_gameState == 'gameover') _buildGameOverOverlay(),
+                    if (_gameState == 'victory') Positioned.fill(child: _buildVictoryOverlay()),
+                    if (_gameState == 'gameover') Positioned.fill(child: _buildGameOverOverlay()),
                   ],
                 ),
               ),
@@ -644,15 +645,7 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () => setState(() => _soundEnabled = !_soundEnabled),
-                child: Icon(
-                  _soundEnabled ? Icons.volume_up_rounded : Icons.volume_off_rounded,
-                  color: Colors.white70,
-                  size: 20,
-                ),
-              ),
+              
             ],
           ),
         ],
@@ -737,69 +730,72 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
   }
 
   Widget _buildVictoryOverlay() {
-    return Container(
-      color: Colors.black87,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.emoji_events_rounded, color: Color(0xFFFBBF24), size: 72),
-              const SizedBox(height: 14),
-              const Text(
-                '🎉 SKYWAYS MASTER!',
-                style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'You navigated all 5 cloud gates successfully!',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-              const SizedBox(height: 22),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white12,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white24),
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        color: Colors.black87,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.emoji_events_rounded, color: Color(0xFFFBBF24), size: 72),
+                const SizedBox(height: 14),
+                const Text(
+                  '🎉 SKYWAYS MASTER!',
+                  style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
                 ),
-                child: Text(
-                  'Final Score: $_score pts  (+15 ⭐)',
-                  style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 18, fontWeight: FontWeight.bold),
+                const SizedBox(height: 8),
+                const Text(
+                  'You navigated all 5 cloud gates successfully!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  BouncyButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Text('Back to Games', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
+                const SizedBox(height: 22),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white12,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white24),
                   ),
-                  const SizedBox(width: 12),
-                  BouncyButton(
-                    onPressed: _startFlappyGame,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Text('Play Again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
+                  child: Text(
+                    'Final Score: $_score pts  (+15 ⭐)',
+                    style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    BouncyButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Text('Back to Games', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    BouncyButton(
+                      onPressed: _startFlappyGame,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Text('Play Again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -807,69 +803,72 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
   }
 
   Widget _buildGameOverOverlay() {
-    return Container(
-      color: Colors.black87,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.heart_broken_rounded, color: Color(0xFFEF4444), size: 72),
-              const SizedBox(height: 14),
-              const Text(
-                'OUT OF LIVES!',
-                style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Keep tapping to flap wings and fly to the correct cloud!',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-              const SizedBox(height: 22),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white12,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white24),
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        color: Colors.black87,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.heart_broken_rounded, color: Color(0xFFEF4444), size: 72),
+                const SizedBox(height: 14),
+                const Text(
+                  'OUT OF LIVES!',
+                  style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
                 ),
-                child: Text(
-                  'Score: $_score pts',
-                  style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 18, fontWeight: FontWeight.bold),
+                const SizedBox(height: 8),
+                const Text(
+                  'Keep tapping to flap wings and fly to the correct cloud!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  BouncyButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Text('Back to Games', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
+                const SizedBox(height: 22),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white12,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white24),
                   ),
-                  const SizedBox(width: 12),
-                  BouncyButton(
-                    onPressed: _startFlappyGame,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFFEF4444), Color(0xFFDC2626)]),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Text('Try Again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
+                  child: Text(
+                    'Score: $_score pts',
+                    style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    BouncyButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Text('Back to Games', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    BouncyButton(
+                      onPressed: _startFlappyGame,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(colors: [Color(0xFFEF4444), Color(0xFFDC2626)]),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Text('Try Again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
