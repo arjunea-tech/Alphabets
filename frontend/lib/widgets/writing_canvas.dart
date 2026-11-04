@@ -8,6 +8,7 @@ import '../models/handwriting_ml_model.dart';
 import '../models/letter_stroke_model.dart';
 import '../models/writing_practice_model.dart';
 import '../services/audio_service.dart';
+import '../services/handwriting_validator.dart';
 import '../services/tamil_handwriting_recognition_service.dart';
 import '../services/writing_boundary_validator.dart';
 import '../services/writing_engine.dart';
@@ -26,6 +27,7 @@ class WritingCanvas extends StatefulWidget {
   final Function(List<List<WritingPoint>> normalizedStrokes)? onStrokesChanged;
   final VoidCallback? onLetterCompleted;
   final ValueChanged<bool>? onDrawingStateChanged;
+  final ValueChanged<HandwritingEvaluationResult>? onEvaluationChanged;
 
   const WritingCanvas({
     super.key,
@@ -37,6 +39,7 @@ class WritingCanvas extends StatefulWidget {
     this.onStrokesChanged,
     this.onLetterCompleted,
     this.onDrawingStateChanged,
+    this.onEvaluationChanged,
   });
 
   @override
@@ -209,6 +212,17 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
     });
     widget.onStrokeUpdated?.call(0);
     widget.onStrokesChanged?.call([]);
+    widget.onEvaluationChanged?.call(const HandwritingEvaluationResult(
+      score: 0,
+      coverage: 0,
+      precision: 0,
+      stars: 0,
+      isPass: false,
+      title: 'Try Tracing!',
+      message: 'Trace inside the letter outlines with your finger to check.',
+      emoji: '✏️',
+      badgeColor: Color(0xFFFF9F1C),
+    ));
     if (widget.mode == WritingCanvasMode.learn) {
       Future.delayed(const Duration(milliseconds: 300), () {
         if (mounted) playCurrentStepDemo();
@@ -241,7 +255,7 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
     }).toList();
   }
 
-  /// Evaluates the drawn strokes using the Real ML Recognition Pipeline
+  /// Evaluates the drawn strokes using the Real ML Recognition Pipeline or English Stroke Validator
   Future<HandwritingRecognitionResult> evaluateWithML() async {
     final allStrokes = List<List<Offset>>.from(_strokes);
     if (_currentStroke.isNotEmpty) {
@@ -250,11 +264,37 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
 
     setState(() => _isRecognizing = true);
 
-    final result = await TamilHandwritingRecognitionService.instance.recognizeStrokes(
-      expectedLetter: widget.letter,
-      userStrokes: allStrokes,
-      canvasSize: _canvasSize,
-    );
+    HandwritingRecognitionResult result;
+    if (TamilHandwritingRecognitionService.defaultSupportedClasses.contains(widget.letter)) {
+      result = await TamilHandwritingRecognitionService.instance.recognizeStrokes(
+        expectedLetter: widget.letter,
+        userStrokes: allStrokes,
+        canvasSize: _canvasSize,
+      );
+    } else {
+      // English Alphabet Letter Verification via HandwritingValidator
+      final letterData = TamilStrokeDataRepository.getLetter(widget.letter);
+      final eval = HandwritingValidator.evaluate(
+        targetLetter: letterData,
+        userStrokes: allStrokes,
+        canvasSize: _canvasSize,
+      );
+
+      final totalPts = allStrokes.fold(0, (sum, s) => sum + s.length);
+      final isMatch = eval.isPass;
+      final conf = (eval.score / 100.0).clamp(0.0, 1.0);
+
+      result = HandwritingRecognitionResult(
+        expectedCharacter: widget.letter,
+        recognizedCharacter: isMatch ? widget.letter : null,
+        confidence: conf,
+        strokeCount: allStrokes.length,
+        totalPointCount: totalPts,
+        modelStatus: MLModelStatus.loaded,
+        isMatchExplicit: isMatch,
+        errorMessage: isMatch ? null : eval.message,
+      );
+    }
 
     if (mounted) {
       setState(() {
@@ -352,6 +392,18 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
 
     widget.onStrokeUpdated?.call(_strokes.length);
     widget.onStrokesChanged?.call(getNormalizedStrokes());
+
+    // Instant real-time evaluation after each stroke
+    if (_strokes.isNotEmpty && _canvasSize.width > 0 && _canvasSize.height > 0) {
+      final allStrokes = List<List<Offset>>.from(_strokes);
+      final letterData = TamilStrokeDataRepository.getLetter(widget.letter);
+      final eval = HandwritingValidator.evaluate(
+        targetLetter: letterData,
+        userStrokes: allStrokes,
+        canvasSize: _canvasSize,
+      );
+      widget.onEvaluationChanged?.call(eval);
+    }
   }
 
   void _onPointerCancel() {

@@ -56,14 +56,14 @@ class HandwritingRecognitionResult {
     return isModelReady &&
         recognizedCharacter != null &&
         recognizedCharacter == expectedCharacter &&
-        (confidence ?? 0.0) >= 0.45;
+        (confidence ?? 0.0) >= 0.70;
   }
 
   int get stars {
     if (!isMatch) return 0;
     final conf = confidence ?? 0.0;
-    if (conf >= 0.70) return 3;
-    if (conf >= 0.50) return 2;
+    if (conf >= 0.85) return 3;
+    if (conf >= 0.70) return 2;
     return 1;
   }
 
@@ -74,10 +74,11 @@ class HandwritingRecognitionResult {
     if (modelStatus == MLModelStatus.inferenceError) {
       return 'Try Again';
     }
+    final pct = ((confidence ?? 0.0) * 100).round();
     if (isMatch) {
-      return 'Correctly Written!';
+      return 'Correctly Written! ($pct%)';
     }
-    return 'Try Again!';
+    return 'Needs Practice ($pct% / 70%)';
   }
 
   String get feedbackMessage {
@@ -87,10 +88,13 @@ class HandwritingRecognitionResult {
     if (modelStatus == MLModelStatus.inferenceError) {
       return errorMessage ?? 'Please try writing again.';
     }
-    if (isMatch) {
-      return 'Excellent handwriting!';
+    if (errorMessage != null && errorMessage!.isNotEmpty) {
+      return errorMessage!;
     }
-    return 'Trace the letter carefully once more.';
+    if (isMatch) {
+      return 'Excellent handwriting! You filled the letter properly!';
+    }
+    return 'Trace carefully inside the outlines to fill at least 80% of the letter.';
   }
 
   Color get badgeColor {

@@ -928,17 +928,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
               ),
               Row(
                 children: [
-                  IconButton(
-                    icon: Icon(
-                      _isSoundMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isSoundMuted = !_isSoundMuted;
-                      });
-                    },
-                  ),
+                  const SizedBox.shrink(),
                 ],
               ),
             ],

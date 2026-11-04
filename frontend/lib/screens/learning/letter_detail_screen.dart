@@ -70,14 +70,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
     widget.progressService.markLetterCompleted(_currentLetter.id);
   }
 
-  void _playAudio() {
-    _audioService.playLetterSound(
-      context,
-      letter: _currentLetter.letter,
-      word: _currentLetter.word,
-      audioPath: _currentLetter.audioPath,
-    );
-  }
+  void _playAudio() { return; }
 
   void _goToPrevious() {
     if (_currentIndex > 0) {
@@ -303,11 +296,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                         if (letter.word.isNotEmpty) ...[
                           const SizedBox(height: 14),
                           BouncyButton(
-                            onPressed: () => _audioService.playLetterSound(
-                              context,
-                              letter: letter.word,
-                              showIndicator: true,
-                            ),
+                            onPressed: () {},
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                               decoration: BoxDecoration(

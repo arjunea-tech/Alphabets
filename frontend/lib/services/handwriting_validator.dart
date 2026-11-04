@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/letter_stroke_model.dart';
 import 'writing_engine.dart';
 
-/// Comprehensive multi-factor validator for handwriting evaluation in Practice Mode
+/// Comprehensive multi-factor validator for handwriting evaluation (Strict 80% Requirement)
 class HandwritingValidator {
   static HandwritingEvaluationResult evaluate({
     required TamilWritingLetter targetLetter,
@@ -20,24 +20,24 @@ class HandwritingValidator {
         stars: 0,
         isPass: false,
         title: 'Try Tracing!',
-        message: 'Trace the full shape of the letter with your finger to check.',
-        emoji: '',
+        message: 'Trace inside the letter outlines with your finger to check.',
+        emoji: '✏️',
         badgeColor: Color(0xFFFF9F1C),
       );
     }
 
     final int totalUserPoints = userStrokes.fold(0, (sum, s) => sum + s.length);
-    if (totalUserPoints < 6) {
-      return const HandwritingEvaluationResult(
-        score: 15,
+    if (totalUserPoints < 8) {
+      return HandwritingEvaluationResult(
+        score: 10,
         coverage: 0.1,
         precision: 0.1,
         stars: 0,
         isPass: false,
-        title: 'Incomplete Trace!',
-        message: 'Please trace all strokes of the letter with your finger.',
-        emoji: '',
-        badgeColor: Color(0xFFFF5964),
+        title: 'Incomplete Trace! (10% / 70%)',
+        message: 'Please trace the full shape of letter "${targetLetter.letter}". At least 70% is needed to pass!',
+        emoji: '✏️',
+        badgeColor: const Color(0xFFFF5964),
       );
     }
 
@@ -60,184 +60,110 @@ class HandwritingValidator {
         isPass: true,
         title: 'Awesome! Perfect!',
         message: 'You traced letter "${targetLetter.letter}" beautifully!',
-        emoji: '',
+        emoji: '🌟',
         badgeColor: const Color(0xFF10B981),
       );
     }
 
-    // 2. Factor 1: Starting Point Accuracy (Did strokes start near expected start points?)
-    double startPointScore = 0.0;
-    if (userStrokes.isNotEmpty && targetLetter.strokes.isNotEmpty) {
-      int matchedStartCount = 0;
-      for (int i = 0; i < math.min(userStrokes.length, targetLetter.strokes.length); i++) {
-        final expectedStart = WritingEngine.toCanvas(targetLetter.strokes[i].startPoint, canvasSize);
-        final userStart = userStrokes[i].first;
-        final startTolerance =
-            WritingEngine.toCanvasLength(targetLetter.strokes[i].tolerance, canvasSize) * 1.6;
-        if ((userStart - expectedStart).distance <= startTolerance) {
-          matchedStartCount++;
-        }
-      }
-      startPointScore = matchedStartCount / targetLetter.strokes.length;
-    }
-
-    // 3. Factor 2: Directionality Check
-    double directionScore = 0.0;
-    if (userStrokes.isNotEmpty && targetLetter.strokes.isNotEmpty) {
-      int correctDirectionCount = 0;
-      for (int i = 0; i < math.min(userStrokes.length, targetLetter.strokes.length); i++) {
-        final userStroke = userStrokes[i];
-        if (userStroke.length >= 2) {
-          final targetStroke = targetLetter.strokes[i];
-          final expectedStart = WritingEngine.toCanvas(targetStroke.startPoint, canvasSize);
-          final expectedEnd = WritingEngine.toCanvas(targetStroke.effectiveEndPoint, canvasSize);
-          final expectedVec = expectedEnd - expectedStart;
-          final userVec = userStroke.last - userStroke.first;
-
-          if (expectedVec.distance > 10 && userVec.distance > 10) {
-            final dot = (expectedVec.dx * userVec.dx + expectedVec.dy * userVec.dy) /
-                (expectedVec.distance * userVec.distance);
-            if (dot >= -0.2) {
-              correctDirectionCount++;
-            }
-          } else {
-            correctDirectionCount++;
-          }
-        } else {
-          correctDirectionCount++;
-        }
-      }
-      directionScore = correctDirectionCount / targetLetter.strokes.length;
-    }
-
-    // 4. Factor 3: Target Waypoint Coverage (How much of the template was covered)
-    final double targetHitRadius = math.max(canvasSize.width * 0.08, 28.0);
+    // 2. Strict Hit Radius matching the actual letter canal track (~20px)
+    final double targetHitRadius = math.max(canvasSize.width * 0.055, 20.0);
     final List<bool> coveredTarget = List<bool>.filled(allTargetDensePoints.length, false);
     int validUserPoints = 0;
 
-    for (final stroke in userStrokes) {
-      for (final pt in stroke) {
-        double minDist = double.infinity;
-        for (int i = 0; i < allTargetDensePoints.length; i++) {
-          final dist = (pt - allTargetDensePoints[i]).distance;
-          if (dist < minDist) minDist = dist;
-          if (dist <= targetHitRadius) {
-            coveredTarget[i] = true;
-          }
-        }
-        if (minDist <= targetHitRadius * 1.6) {
-          validUserPoints++;
+    // Flatten user points
+    final List<Offset> allUserPoints = [];
+    for (final s in userStrokes) {
+      allUserPoints.addAll(s);
+    }
+
+    // Check each target point against user touch points
+    for (int i = 0; i < allTargetDensePoints.length; i++) {
+      final tp = allTargetDensePoints[i];
+      for (final up in allUserPoints) {
+        if ((tp - up).distance <= targetHitRadius) {
+          coveredTarget[i] = true;
+          break;
         }
       }
     }
 
+    // Check user points precision (must be near letter path, not scribbled outside)
+    for (final up in allUserPoints) {
+      double minDist = double.infinity;
+      for (final tp in allTargetDensePoints) {
+        final d = (up - tp).distance;
+        if (d < minDist) minDist = d;
+      }
+      if (minDist <= targetHitRadius * 1.35) {
+        validUserPoints++;
+      }
+    }
+
+    // Overall Coverage: fraction of target template covered by user finger
     final double coverage = coveredTarget.where((c) => c).length / allTargetDensePoints.length;
 
-    // 5. Factor 4: Precision (User points on-target vs random scribbles)
-    final double precision = totalUserPoints > 0 ? (validUserPoints / totalUserPoints) : 0.0;
+    // Precision: fraction of user points that stayed inside the letter canal
+    final double precision = allUserPoints.isNotEmpty ? (validUserPoints / allUserPoints.length) : 0.0;
 
-    // 6. Factor 5: Structural letter verification rules
-    bool structuralPass = true;
-    final rule = targetLetter.validationRule;
-
-    if (rule.requireRightVerticalStem) {
-      // Must have vertical line on right side
-      bool hasRightStem = false;
-      for (final stroke in userStrokes) {
-        for (final pt in stroke) {
-          final nx = pt.dx / canvasSize.width;
-          final ny = pt.dy / canvasSize.height;
-          if (nx >= 0.58 && nx <= 0.82 && ny >= 0.22 && ny <= 0.78) {
-            hasRightStem = true;
-            break;
-          }
-        }
+    // Per-stroke coverage check (user must not completely skip any stroke)
+    bool allStrokesAttempted = true;
+    int offsetIndex = 0;
+    for (final strokePts in targetDenseStrokes) {
+      if (strokePts.isEmpty) continue;
+      int coveredCount = 0;
+      for (int i = 0; i < strokePts.length; i++) {
+        if (coveredTarget[offsetIndex + i]) coveredCount++;
       }
-      if (!hasRightStem) structuralPass = false;
+      final strokeCov = coveredCount / strokePts.length;
+      if (strokeCov < 0.40) {
+        allStrokesAttempted = false; // At least 40% of every individual stroke must be drawn!
+      }
+      offsetIndex += strokePts.length;
     }
 
-    if (rule.requireTopLeftLoop) {
-      // Must have curve/loop in top-left region
-      bool hasLoop = false;
-      for (final stroke in userStrokes) {
-        for (final pt in stroke) {
-          final nx = pt.dx / canvasSize.width;
-          final ny = pt.dy / canvasSize.height;
-          if (nx >= 0.20 && nx <= 0.50 && ny >= 0.22 && ny <= 0.50) {
-            hasLoop = true;
-            break;
-          }
-        }
-      }
-      if (!hasLoop) structuralPass = false;
-    }
-
-    if (rule.requireBottomWave) {
-      bool hasBottomWave = false;
-      bool hasTallStem = false;
-      for (final stroke in userStrokes) {
-        for (final pt in stroke) {
-          final nx = pt.dx / canvasSize.width;
-          final ny = pt.dy / canvasSize.height;
-          if (nx >= 0.35 && nx <= 0.78 && ny >= 0.60 && ny <= 0.85) hasBottomWave = true;
-          if (nx >= 0.70 && ny >= 0.20 && ny <= 0.40) hasTallStem = true;
-        }
-      }
-      if (!hasBottomWave || hasTallStem) structuralPass = false;
-    }
-
-    // 7. Calculate overall weighted score
-    final double compositeScore = (coverage * 0.45) +
-        (precision * 0.25) +
-        (startPointScore * 0.15) +
-        (directionScore * 0.15);
-
-    final double scaledScore = (compositeScore * 100.0).clamp(0.0, 100.0);
-
-    // Pass threshold: require minimum coverage, precision, and structural correctness
-    final bool isPass = structuralPass &&
-        coverage >= (rule.minCoverage * 0.85) &&
-        precision >= (rule.minPrecision * 0.80) &&
-        scaledScore >= 52.0;
+    // Strict 70% Rule requested by user:
+    // 1. Overall coverage >= 0.70 (70%)
+    // 2. Precision >= 0.50 (must stay reasonably inside track)
+    // 3. All strokes attempted (no completely missing lines)
+    final int coveragePercent = (coverage * 100).round();
+    final double scaledScore = (coverage * 80.0 + precision * 20.0).clamp(0.0, 100.0);
+    final int finalScore = scaledScore.round();
+    final bool isPass = coverage >= 0.70 && precision >= 0.50 && allStrokesAttempted;
 
     if (!isPass) {
-      final double failScore = scaledScore.clamp(15.0, 49.0);
+      String failReason;
+      if (!allStrokesAttempted) {
+        failReason = 'Some parts of letter "${targetLetter.letter}" were missed! Trace along all the lines to fill it.';
+      } else if (coveragePercent < 70) {
+        failReason = 'Filled $coveragePercent%. At least 70% coverage is needed to pass!';
+      } else {
+        failReason = 'Stay inside the letter track without drawing outside!';
+      }
+
       return HandwritingEvaluationResult(
-        score: failScore,
+        score: finalScore.clamp(5, 69).toDouble(),
         coverage: coverage,
         precision: precision,
         stars: 0,
         isPass: false,
-        title: 'Needs More Practice!',
-        message: 'This is not the exact shape of letter "${targetLetter.letter}". Follow the glowing arrows and try again!',
-        emoji: '',
-        badgeColor: const Color(0xFFFF5964),
+        title: 'Needs More Practice! ($coveragePercent% / 70%)',
+        message: failReason,
+        emoji: '🔄',
+        badgeColor: const Color(0xFFFF9F1C),
       );
     }
 
-    final double finalPassScore = math.max(scaledScore, 65.0);
-    final int stars = finalPassScore >= 85 ? 3 : (finalPassScore >= 72 ? 2 : 1);
-
-    String successTitle = 'Awesome! Perfect!';
-    String successMsg = 'You traced letter "${targetLetter.letter}" beautifully!';
-
-    if (stars == 2) {
-      successTitle = 'Great Job!';
-      successMsg = 'You traced letter "${targetLetter.letter}" very well!';
-    } else if (stars == 1) {
-      successTitle = 'Good Effort!';
-      successMsg = 'You traced it! Practice once more to earn all 3 stars!';
-    }
+    final int stars = finalScore >= 85 ? 3 : 2;
 
     return HandwritingEvaluationResult(
-      score: finalPassScore,
+      score: finalScore.toDouble(),
       coverage: coverage,
       precision: precision,
       stars: stars,
       isPass: true,
-      title: successTitle,
-      message: successMsg,
-      emoji: '',
+      title: finalScore >= 85 ? 'Awesome! Perfect! ($finalScore%)' : 'Well Done! ($finalScore%)',
+      message: 'You traced letter "${targetLetter.letter}" with $finalScore% accuracy!',
+      emoji: '🌟',
       badgeColor: const Color(0xFF10B981),
     );
   }

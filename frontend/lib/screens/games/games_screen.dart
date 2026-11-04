@@ -9,6 +9,7 @@ import '../../services/data_service.dart';
 import '../../services/api_config.dart';
 import '../../widgets/bouncy_button.dart';
 import '../../widgets/kid_scaffold_background.dart';
+import '../../widgets/animated_game_card_art.dart';
 import 'agaram_run_game.dart';
 import 'car_racing_game.dart';
 import 'letter_basket_game.dart';
@@ -41,8 +42,8 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     super.initState();
     _floatAnimationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2400),
-    )..repeat(reverse: true);
+      duration: const Duration(milliseconds: 3600),
+    )..repeat();
     _loadGames();
   }
 
@@ -362,7 +363,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                     child: SizedBox(
                       width: itemWidth,
                       height: 155,
-                      child: _buildGameCardFor(context, game),
+                      child: _buildGameCardFor(context, game, _floatAnimationController.value),
                     ),
                   ),
                 );
@@ -374,12 +375,13 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildGameCardFor(BuildContext context, GameItem game) {
+  Widget _buildGameCardFor(BuildContext context, GameItem game, double animTime) {
     if (game.gameType == 'runner') {
       return _buildHeroRunnerGameCard(
         context,
         title: game.title,
         coverAsset: _resolveCoverAsset(game),
+        animTime: animTime,
         onTap: () => _launchGame(context, game),
       );
     }
@@ -389,6 +391,8 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       title: game.title,
       coverAsset: _resolveCoverAsset(game),
       badgeIcon: _badgeIconFor(game.gameType),
+      gameType: game.gameType,
+      animTime: animTime,
       onTap: () => _launchGame(context, game),
     );
   }
@@ -507,6 +511,8 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     required String title,
     required String coverAsset,
     required IconData badgeIcon,
+    required String gameType,
+    required double animTime,
     required VoidCallback onTap,
   }) {
     return BouncyButton(
@@ -527,10 +533,16 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Background Cover Image
+              // 1. Background Cover Image
               _buildCoverImage(coverAsset, badgeIcon),
 
-              // Bottom Dark Scrim Gradient for Crisp Title Readability
+              // 2. Animated Living Action Canvas (Moving car, flappy bird, slicing ninja, balloons, etc.)
+              AnimatedGameCardArt(
+                gameType: gameType,
+                time: animTime,
+              ),
+
+              // 3. Bottom Dark Scrim Gradient for Crisp Title Readability
               Positioned.fill(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
@@ -539,10 +551,10 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withValues(alpha: 0.15),
-                        Colors.black.withValues(alpha: 0.78),
+                        Colors.black.withValues(alpha: 0.20),
+                        Colors.black.withValues(alpha: 0.85),
                       ],
-                      stops: const [0.45, 0.70, 1.0],
+                      stops: const [0.40, 0.68, 1.0],
                     ),
                   ),
                 ),
@@ -556,9 +568,9 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                   width: 34,
                   height: 34,
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.45),
+                    color: Colors.black.withValues(alpha: 0.50),
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.2),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1.2),
                   ),
                   child: Icon(badgeIcon, color: Colors.white, size: 18),
                 ),
@@ -572,9 +584,9 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.48),
+                    color: Colors.black.withValues(alpha: 0.55),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                   ),
                   child: Text(
                     title,
@@ -605,6 +617,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     BuildContext context, {
     required String title,
     required String coverAsset,
+    required double animTime,
     required VoidCallback onTap,
   }) {
     return BouncyButton(
@@ -625,10 +638,16 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Background Cover Image
+              // 1. Background Cover Image
               _buildCoverImage(coverAsset, Icons.directions_run_rounded),
 
-              // Soft Gradient Overlay
+              // 2. Animated Runner Action Canvas
+              AnimatedGameCardArt(
+                gameType: 'runner',
+                time: animTime,
+              ),
+
+              // 3. Soft Gradient Overlay
               Positioned.fill(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
@@ -636,11 +655,11 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withValues(alpha: 0.10),
+                        Colors.black.withValues(alpha: 0.15),
                         Colors.transparent,
-                        Colors.black.withValues(alpha: 0.65),
+                        Colors.black.withValues(alpha: 0.70),
                       ],
-                      stops: const [0.0, 0.5, 1.0],
+                      stops: const [0.0, 0.45, 1.0],
                     ),
                   ),
                 ),
@@ -654,9 +673,9 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.50),
+                    color: Colors.black.withValues(alpha: 0.55),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

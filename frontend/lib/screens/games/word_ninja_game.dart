@@ -210,19 +210,14 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
       'juice': Color(0xFFFB7185),
     },
     {
-      'type': 'kiwi',
-      'color': Color(0xFF78350F),
-      'juice': Color(0xFF22C55E),
-    },
-    {
       'type': 'banana',
       'color': Color(0xFFFACC15),
       'juice': Color(0xFFFEF08A),
     },
     {
-      'type': 'coconut',
-      'color': Color(0xFF451A03),
-      'juice': Color(0xFFF8FAFC),
+      'type': 'grapes',
+      'color': Color(0xFF9333EA),
+      'juice': Color(0xFFA855F7),
     },
   ];
 
@@ -579,37 +574,38 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
             Expanded(
               child: Stack(
                 children: [
-                  // 1. Scenic Ninja Dojo Background Art
+                  // 1. Scenic Ninja Dojo Background Art (Asset + Procedural Japanese Dojo Fallback)
                   Positioned.fill(
-                    child: Image.asset(
-                      'assets/images/games/word_ninja_cover.png',
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Color(0xFF1E1B4B), Color(0xFF0F172A)],
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: CustomPaint(
+                            painter: _DojoAtmospherePainter(),
                           ),
                         ),
-                      ),
-                    ),
-                  ),
-
-                  // 2. Dark Atmospheric Gradient Overlay for Contrast
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.55),
-                            Colors.black.withValues(alpha: 0.20),
-                            Colors.black.withValues(alpha: 0.65),
-                          ],
+                        Positioned.fill(
+                          child: Image.asset(
+                            'assets/images/games/word_ninja_cover.png',
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                          ),
                         ),
-                      ),
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.10),
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.35),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
@@ -731,15 +727,7 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () => setState(() => _soundEnabled = !_soundEnabled),
-                child: Icon(
-                  _soundEnabled ? Icons.volume_up_rounded : Icons.volume_off_rounded,
-                  color: Colors.white70,
-                  size: 20,
-                ),
-              ),
+              
             ],
           ),
         ],
@@ -1202,19 +1190,19 @@ class _NinjaArenaPainter extends CustomPainter {
         canvas.drawCircle(Offset.zero, r, kiwiPaint);
         break;
 
-      case 'coconut':
-        // Coconut Shell
-        final cocoPaint = Paint()
+      case 'grapes':
+        // Cluster of juicy grapes
+        final grapePaint = Paint()
           ..shader = RadialGradient(
             center: const Alignment(-0.25, -0.25),
             radius: 0.9,
-            colors: const [Color(0xFF78350F), Color(0xFF451A03), Color(0xFF1C0A02)],
+            colors: const [Color(0xFFA855F7), Color(0xFF9333EA), Color(0xFF581C87)],
           ).createShader(Rect.fromCircle(center: Offset.zero, radius: r));
-        canvas.drawCircle(Offset.zero, r, cocoPaint);
-        // Coconut eyes
-        canvas.drawCircle(Offset(-7, -r * 0.35), 4, Paint()..color = Colors.black87);
-        canvas.drawCircle(Offset(7, -r * 0.35), 4, Paint()..color = Colors.black87);
-        canvas.drawCircle(Offset(0, -r * 0.18), 4.5, Paint()..color = Colors.black87);
+        canvas.drawCircle(Offset(-r * 0.25, -r * 0.2), r * 0.45, grapePaint);
+        canvas.drawCircle(Offset(r * 0.25, -r * 0.2), r * 0.45, grapePaint);
+        canvas.drawCircle(Offset(0, r * 0.22), r * 0.48, grapePaint);
+        // Little green stem
+        canvas.drawCircle(Offset(0, -r * 0.65), 4, Paint()..color = const Color(0xFF22C55E));
         break;
 
       default:
@@ -1367,4 +1355,125 @@ class _NinjaArenaPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _NinjaArenaPainter oldDelegate) => true;
+}
+
+/// Scenic Procedural Ninja Dojo Background (renders if asset is delayed or fallback)
+class _DojoAtmospherePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.width <= 0 || size.height <= 0) return;
+
+    // 1. Deep Midnight Twilight Sky Gradient
+    final skyPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF111827)],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), skyPaint);
+
+    // 2. Glowing Giant Moon
+    final moonCenter = Offset(size.width * 0.80, size.height * 0.18);
+    final moonGlow = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFFFDE68A).withValues(alpha: 0.35),
+          const Color(0xFFFDE68A).withValues(alpha: 0.08),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.5, 1.0],
+      ).createShader(Rect.fromCircle(center: moonCenter, radius: 85));
+    canvas.drawCircle(moonCenter, 85, moonGlow);
+
+    final moonPaint = Paint()..color = const Color(0xFFFEF3C7);
+    canvas.drawCircle(moonCenter, 42, moonPaint);
+
+    // Moon craters
+    final craterPaint = Paint()..color = const Color(0xFFFDE68A).withValues(alpha: 0.55);
+    canvas.drawCircle(Offset(moonCenter.dx - 12, moonCenter.dy - 10), 9, craterPaint);
+    canvas.drawCircle(Offset(moonCenter.dx + 10, moonCenter.dy + 8), 6, craterPaint);
+    canvas.drawCircle(Offset(moonCenter.dx + 6, moonCenter.dy - 16), 5, craterPaint);
+
+    // 3. Traditional Dojo Wooden Beam Ceiling (Top Arch)
+    final beamPaint = Paint()..color = const Color(0xFF1A120B);
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, 18), beamPaint);
+
+    final archPath = Path()
+      ..moveTo(0, 18)
+      ..lineTo(size.width, 18)
+      ..lineTo(size.width - 25, 34)
+      ..lineTo(25, 34)
+      ..close();
+    canvas.drawPath(archPath, Paint()..color = const Color(0xFF2E1C0C));
+
+    // 4. Hanging Glowing Red/Gold Paper Lanterns
+    _drawLantern(canvas, Offset(size.width * 0.16, 68));
+    _drawLantern(canvas, Offset(size.width * 0.86, 68));
+
+    // 5. Wooden Tatami Dojo Floor at Bottom
+    final floorY = size.height - 48.0;
+    final floorPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF3E2723), Color(0xFF1B0000)],
+      ).createShader(Rect.fromLTWH(0, floorY, size.width, 48));
+    canvas.drawRect(Rect.fromLTWH(0, floorY, size.width, 48), floorPaint);
+
+    final floorBorder = Paint()
+      ..color = const Color(0xFFD97706)
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(0, floorY), Offset(size.width, floorY), floorBorder);
+
+    // Bamboo Silhouettes on Left & Right
+    final bambooPaint = Paint()..color = const Color(0xFF0F172A).withValues(alpha: 0.75);
+    _drawBamboo(canvas, 18, floorY, bambooPaint);
+    _drawBamboo(canvas, 32, floorY, bambooPaint);
+    _drawBamboo(canvas, size.width - 28, floorY, bambooPaint);
+  }
+
+  void _drawLantern(Canvas canvas, Offset center) {
+    // String
+    canvas.drawLine(Offset(center.dx, 18), Offset(center.dx, center.dy - 22), Paint()..color = const Color(0xFFD97706)..strokeWidth = 1.5);
+
+    // Lantern Glow
+    final glow = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFFF59E0B).withValues(alpha: 0.35),
+          Colors.transparent,
+        ],
+      ).createShader(Rect.fromCircle(center: center, radius: 45));
+    canvas.drawCircle(center, 45, glow);
+
+    // Lantern Body
+    final lanternRect = Rect.fromCenter(center: center, width: 28, height: 38);
+    final lanternPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFFEF4444), Color(0xFFB91C1C)],
+      ).createShader(lanternRect);
+    canvas.drawRRect(RRect.fromRectAndRadius(lanternRect, const Radius.circular(8)), lanternPaint);
+
+    // Gold Ribs & Caps
+    final gold = Paint()..color = const Color(0xFFFBBF24)..strokeWidth = 1.5..style = PaintingStyle.stroke;
+    canvas.drawRRect(RRect.fromRectAndRadius(lanternRect, const Radius.circular(8)), gold);
+    canvas.drawLine(Offset(center.dx - 12, center.dy), Offset(center.dx + 12, center.dy), gold);
+  }
+
+  void _drawBamboo(Canvas canvas, double x, double floorY, Paint paint) {
+    paint.strokeWidth = 6.0;
+    paint.style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(x, floorY), Offset(x, floorY - 140), paint);
+    // Nodes
+    paint.strokeWidth = 8.5;
+    canvas.drawLine(Offset(x - 4, floorY - 35), Offset(x + 4, floorY - 35), paint);
+    canvas.drawLine(Offset(x - 4, floorY - 75), Offset(x + 4, floorY - 75), paint);
+    canvas.drawLine(Offset(x - 4, floorY - 115), Offset(x + 4, floorY - 115), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DojoAtmospherePainter oldDelegate) => false;
 }
