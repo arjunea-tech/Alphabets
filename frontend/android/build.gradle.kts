@@ -5,7 +5,7 @@ allprojects {
     }
 }
 
-val newBuildDir = File(rootProject.projectDir, "../../build")
+val newBuildDir = File(rootProject.projectDir, "../build")
 rootProject.layout.buildDirectory.set(newBuildDir)
 
 subprojects {
