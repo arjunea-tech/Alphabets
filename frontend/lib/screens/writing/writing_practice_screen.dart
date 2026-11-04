@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/writing_data.dart';
 import '../../data/tamil_letter_outlines.dart';
 import '../../models/handwriting_ml_model.dart';
+import '../../models/letter_stroke_model.dart';
 import '../../models/writing_practice_model.dart';
 import '../../services/audio_service.dart';
 import '../../services/language_service.dart';
