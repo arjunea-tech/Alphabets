@@ -70,22 +70,9 @@ flutter:
   # Assets section
   assets:
     - assets/images/
+    - assets/images/alphabets/
     - assets/images/games/
-    - assets/sounds/
-    - assets/sounds/uyir/
-    - assets/sounds/mei/
-    - assets/sounds/uyirmei/
     - assets/animations/
-    - assets/audio/tamil/
-    - assets/audio/tamil/uyir/
-    - assets/audio/tamil/mei/
-    - assets/audio/tamil/aytham/
-    - assets/audio/tamil/uyirmei/
-    - assets/audio/tamil/words/
-    - assets/audio/tamil/sentences/
-    - assets/audio/tamil/stories/
-    - assets/audio/tamil/lessons/
-    - assets/audio/tamil/quizzes/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
