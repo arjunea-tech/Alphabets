@@ -12,6 +12,10 @@ cloudinary.config({
   secure: true,
 });
 
-logger.info(`☁️ Cloudinary configured for cloud: ${config.cloudinary.cloudName}`);
+if (config.cloudinary.cloudName && config.cloudinary.apiKey && config.cloudinary.apiSecret) {
+  logger.info(`☁️ Cloudinary configured for cloud: ${config.cloudinary.cloudName}`);
+} else {
+  logger.warn('⚠️ Cloudinary keys are missing from .env; media uploads to Cloudinary will not work.');
+}
 
 module.exports = cloudinary;
