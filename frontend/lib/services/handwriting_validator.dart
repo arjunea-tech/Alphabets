@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../models/letter_stroke_model.dart';
 import 'writing_engine.dart';
 
+export '../models/letter_stroke_model.dart' show HandwritingEvaluationResult;
+
 /// Comprehensive multi-factor validator for handwriting evaluation (Strict 80% Requirement)
 class HandwritingValidator {
   static HandwritingEvaluationResult evaluate({
