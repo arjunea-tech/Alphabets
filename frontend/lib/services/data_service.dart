@@ -169,6 +169,15 @@ class LocalDataRepository implements IDataRepository {
         displayOrder: 10,
         isActive: true,
       ),
+      GameItem(
+        id: 'game_matching_1',
+        gameType: 'matching',
+        title: 'Letter Matching',
+        prompt: 'Flip the cards and match each big letter with its small letter!',
+        clueImage: 'assets/images/games/letter_matching_cover.png',
+        displayOrder: 11,
+        isActive: true,
+      ),
     ];
   }
 

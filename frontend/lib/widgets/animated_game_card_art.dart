@@ -67,6 +67,9 @@ class _GameCardArtPainter extends CustomPainter {
       case 'basket':
         _paintBasket(canvas, size);
         break;
+      case 'matching':
+        _paintMatching(canvas, size);
+        break;
       case 'puzzle':
       default:
         _paintPuzzle(canvas, size);
@@ -931,6 +934,45 @@ class _GameCardArtPainter extends CustomPainter {
 
     // Golden Sparkle
     _drawSparkleStar(canvas, Offset(w * 0.50, h * 0.44), 6.0, const Color(0xFFFBBF24));
+  }
+
+  // =========================================================================
+  // 10. LETTER MATCHING: Two letter cards drifting together with a sparkle
+  // =========================================================================
+  void _paintMatching(Canvas canvas, Size size) {
+    final t = time * 2 * math.pi;
+    final w = size.width;
+    final h = size.height;
+
+    final slide = math.sin(t * 2.0).abs() * 6.0;
+
+    void drawCard(Offset topLeft, String label, Color color) {
+      final rect = RRect.fromRectAndRadius(
+        topLeft & const Size(30, 38),
+        const Radius.circular(7),
+      );
+      canvas.drawRRect(rect, Paint()..color = Colors.white);
+      canvas.drawRRect(
+        rect,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0,
+      );
+      final text = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.w900),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      text.paint(canvas, topLeft + Offset(15 - text.width / 2, 19 - text.height / 2));
+    }
+
+    drawCard(Offset(w * 0.20 + slide, h * 0.30), 'A', const Color(0xFF7C3AED));
+    drawCard(Offset(w * 0.80 - 30 - slide, h * 0.30), 'a', const Color(0xFFEC4899));
+
+    _drawSparkleStar(canvas, Offset(w * 0.50, h * 0.30), 6.0, const Color(0xFFFBBF24));
   }
 
   @override
