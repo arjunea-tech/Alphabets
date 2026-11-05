@@ -430,6 +430,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         }
         return 'assets/images/games/basket_vowels_cover.png';
       case 'puzzle':
+        return 'assets/images/games/word_puzzle_cover.png';
       default:
         return 'assets/images/welcome.png';
     }
