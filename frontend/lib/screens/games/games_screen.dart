@@ -398,11 +398,11 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
   }
 
   String _resolveCoverAsset(GameItem game) {
-    if (game.clueImage != null && game.clueImage!.isNotEmpty) {
-      if (game.clueImage!.startsWith('assets/')) {
-        return game.clueImage!;
-      }
-      return game.clueImage!;
+    // welcome.png is the seeded placeholder, not a real cover, so skip it and
+    // use the per-game cover below. Covers set from the admin panel still win.
+    final clueImage = game.clueImage?.trim() ?? '';
+    if (clueImage.isNotEmpty && !clueImage.endsWith('/welcome.png')) {
+      return clueImage;
     }
 
     switch (game.gameType) {
