@@ -4,6 +4,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tamil/models/letter_basket_game_model.dart';
 import 'package:tamil/screens/games/letter_basket_game.dart';
 import 'package:tamil/services/progress_service.dart';
+import 'package:tamil/models/game_content.dart';
+import 'package:tamil/models/game_item_model.dart';
+
+/// Admin-style content: one level with A–Z targets.
+final testContent = GameContent(
+  game: GameItem(
+    id: 'test_game',
+    gameType: 'racing',
+    title: 'Test',
+    prompt: 'Test prompt',
+    levels: [GameLevel(title: '', prompt: '', targets: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''))],
+  ),
+  adminLetters: const [],
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +37,7 @@ void main() {
       MaterialApp(
         home: LetterBasketGame(
           progressService: progressService,
+          content: testContent,
           mode: BasketGameMode.uyir,
         ),
       ),

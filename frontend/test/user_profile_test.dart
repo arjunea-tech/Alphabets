@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tamil/models/avatar_model.dart';
-import 'package:tamil/screens/profile/profile_screen.dart';
 import 'package:tamil/screens/settings/settings_screen.dart';
 import 'package:tamil/services/progress_service.dart';
 import 'package:tamil/services/tamil_transliteration_service.dart';
@@ -100,7 +99,7 @@ void main() {
       expect(progressService.childName, 'செல்வா');
     });
 
-    testWidgets('ProfileScreen renders child Tamil name, avatar, and statistics', (WidgetTester tester) async {
+    testWidgets('Settings shows child name, edit profile, and statistics', (WidgetTester tester) async {
       tester.view.physicalSize = const Size(800, 1400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
@@ -110,18 +109,18 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: ProfileScreen(progressService: progressService),
+          home: SettingsScreen(progressService: progressService),
         ),
       );
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump(const Duration(milliseconds: 300));
 
-      // Verify Tamil name 'செல்வா' is displayed
-      expect(find.text('செல்வா'), findsOneWidget);
-      expect(find.text('வயது: 6'), findsOneWidget);
-      expect(find.text('சுயவிவரத்தைத் திருத்து'), findsOneWidget);
-      expect(find.text('கற்றல் முன்னேற்றம்'), findsOneWidget);
-      expect(find.text('மொத்த நட்சத்திரங்கள்'), findsOneWidget);
+      // Name is shown in the edit field (the Tamil profile card was removed)
+      expect(find.widgetWithText(TextField, progressService.childName), findsOneWidget);
+
+      expect(find.text('Edit Profile'), findsOneWidget);
+      expect(find.text('Learning Progress'), findsOneWidget);
+      expect(find.text('Total Stars'), findsOneWidget);
     });
   });
 }

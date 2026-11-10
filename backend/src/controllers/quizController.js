@@ -18,6 +18,19 @@ class QuizController {
     }
   }
 
+  /** Kids' play mode: the app reveals the right answer after each pick, so answers are included. */
+  static async getForPlay(req, res, next) {
+    try {
+      const quiz = await QuizModel.getById(req.params.id, { includeAnswers: true });
+      if (!quiz || quiz.is_active === false || quiz.is_active === 0) {
+        return errorResponse(res, 'Quiz not found', null, 404);
+      }
+      return successResponse(res, 'Quiz fetched successfully', quiz);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getById(req, res, next) {
     try {
       // Include answers only if requested by admin (indicated by includeAnswers=true when authenticated)

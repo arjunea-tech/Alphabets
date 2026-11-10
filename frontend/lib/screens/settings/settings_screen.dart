@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/avatar_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/progress_service.dart';
-import '../../services/tamil_transliteration_service.dart';
+import '../../services/writing_practice_repository.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/bouncy_button.dart';
@@ -11,7 +11,6 @@ import '../../widgets/kid_scaffold_background.dart';
 import '../../widgets/mascot_widget.dart';
 import '../auth/login_screen.dart';
 import '../language/language_selection_screen.dart';
-import '../profile/profile_screen.dart';
 import '../writing/writing_history_screen.dart';
 import '../../services/language_service.dart';
 
@@ -27,14 +26,27 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _nameController;
   final AuthService _authService = AuthService();
-  String _liveTamilPreview = '';
+  final WritingPracticeRepository _writingRepo = LocalWritingPracticeRepository();
+  int _practicedLetters = 0;
+  int _totalPractices = 0;
 
   @override
   void initState() {
     super.initState();
     _authService.loadSession();
     _nameController = TextEditingController(text: widget.progressService.childName);
-    _liveTamilPreview = TamilTransliterationService.toTamil(widget.progressService.childName);
+    _loadWritingStats();
+  }
+
+  Future<void> _loadWritingStats() async {
+    final practiced = await _writingRepo.getPracticedLettersCount();
+    final total = await _writingRepo.getTotalPracticesCount();
+    if (mounted) {
+      setState(() {
+        _practicedLetters = practiced;
+        _totalPractices = total;
+      });
+    }
   }
 
   @override
@@ -50,10 +62,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         name: text,
         avatarIndex: widget.progressService.avatarIndex,
       );
-      final converted = TamilTransliterationService.toTamil(text);
-      setState(() {
-        _liveTamilPreview = converted;
-      });
+      FocusScope.of(context).unfocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Profile saved successfully!'),
@@ -69,7 +78,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final progress = widget.progressService;
 
-    return Scaffold(
+    // Rebuild when stars / avatar / age change so the profile card stays current
+    return ListenableBuilder(
+      listenable: progress,
+      builder: (context, _) => Scaffold(
       appBar: KidAppBar(
         title: 'Settings',
         starCount: progress.stars,
@@ -84,36 +96,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 1. Profile Section with Character Avatars
-                    _buildSectionHeader('My Profile', Icons.person_rounded),
-                    Container(
+                    // 2. Edit Profile: avatar, name, age
+                    _buildSectionHeader('Edit Profile', Icons.person_rounded),
+                    _buildCard(
                       padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Avatar Selection Header
-                          Text(
-                            'Choose Avatar',
-                            style: AppTextStyles.cardSubtitle.copyWith(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textDark,
-                            ),
-                          ),
+                          _buildFieldLabel('Choose Avatar'),
                           const SizedBox(height: 12),
-
-                          // Character Avatar Horizontal List
                           SizedBox(
                             height: 94,
                             child: ListView.separated(
@@ -173,30 +164,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               },
                             ),
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 20),
 
-                          // Name TextField (with live Tamil transliteration)
+                          _buildFieldLabel('Child Name'),
+                          const SizedBox(height: 8),
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Expanded(
-                                child: TextField(
-                                  controller: _nameController,
-                                  style: AppTextStyles.bodyTextBold.copyWith(fontSize: 18),
-                                  onChanged: (val) {
-                                    setState(() {
-                                      _liveTamilPreview = TamilTransliterationService.toTamil(val);
-                                    });
-                                  },
-                                  decoration: InputDecoration(
-                                    labelText: 'Child Name (e.g. Alex)',
-                                    labelStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-                                    filled: true,
-                                    fillColor: AppColors.background,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(18),
-                                      borderSide: BorderSide.none,
+                                child: SizedBox(
+                                  height: 54,
+                                  child: TextField(
+                                    controller: _nameController,
+                                    style: AppTextStyles.bodyTextBold.copyWith(fontSize: 18),
+                                    textInputAction: TextInputAction.done,
+                                    onSubmitted: (_) => _saveName(),
+                                    decoration: InputDecoration(
+                                      hintText: 'e.g. Alex',
+                                      filled: true,
+                                      fillColor: AppColors.background,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(18),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      prefixIcon: const Icon(Icons.edit_rounded, color: AppColors.primary),
                                     ),
-                                    prefixIcon: const Icon(Icons.edit_rounded, color: AppColors.primary),
                                   ),
                                 ),
                               ),
@@ -204,7 +197,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               BouncyButton(
                                 onPressed: _saveName,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                                  height: 54,
+                                  padding: const EdgeInsets.symmetric(horizontal: 22),
+                                  alignment: Alignment.center,
                                   decoration: BoxDecoration(
                                     gradient: const LinearGradient(colors: AppColors.orangeGradient),
                                     borderRadius: BorderRadius.circular(18),
@@ -224,138 +219,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                             ],
                           ),
-
-                          // Live Tamil name preview tag
-                          if (_liveTamilPreview.isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFF4E5),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Text('Preview: ', style: TextStyle(fontSize: 12, color: Color(0xFF78350F))),
-                                  Text(
-                                    _liveTamilPreview,
-                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFFB45309)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 16),
-
-                          // Action buttons: View Profile & Writing Records
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFFF6B6B),
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                                    elevation: 2,
-                                  ),
-                                  icon: const Icon(Icons.person_rounded, size: 18),
-                                  label: const FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      'View Profile',
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => ProfileScreen(progressService: progress),
-                                      ),
-                                    ).then((_) {
-                                      if (mounted) {
-                                        setState(() {
-                                          _nameController.text = progress.childName;
-                                          _liveTamilPreview = progress.childName;
-                                        });
-                                      }
-                                    });
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF3A86FF),
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                                    elevation: 2,
-                                  ),
-                                  icon: const Icon(Icons.history_edu_rounded, size: 18),
-                                  label: const FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      'Practice Records',
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const WritingHistoryScreen(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 24),
 
-                    // 2. Sound Settings
-                    _buildSectionHeader('Audio & Sounds', Icons.volume_up_rounded),
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
+                    // 3. Learning Progress
+                    _buildSectionHeader('Learning Progress', Icons.insights_rounded),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatCard(
+                            icon: Icons.stars_rounded,
+                            iconColor: const Color(0xFFFFB703),
+                            title: 'Total Stars',
+                            value: '${progress.stars}',
+                            bgColor: const Color(0xFFFFFBEB),
                           ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: SwitchListTile(
-                          title: Text(
-                            'Sound Effects & Music',
-                            style: AppTextStyles.cardTitle.copyWith(fontSize: 16),
-                          ),
-                          subtitle: const Text('Letter pronunciation and sound effects'),
-                          value: progress.soundEnabled,
-                          activeThumbColor: AppColors.secondary,
-                          onChanged: (val) {
-                            progress.toggleSound(val);
-                          },
                         ),
-                      ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: _buildStatCard(
+                            icon: Icons.menu_book_rounded,
+                            iconColor: const Color(0xFF3A86FF),
+                            title: 'Letters Learned',
+                            value: '${progress.completedLettersCount}',
+                            bgColor: const Color(0xFFEFF6FF),
+                          ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatCard(
+                            icon: Icons.edit_note_rounded,
+                            iconColor: const Color(0xFF06D6A0),
+                            title: 'Writing Practiced',
+                            value: '$_practicedLetters Letters',
+                            bgColor: const Color(0xFFECFDF5),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: _buildStatCard(
+                            icon: Icons.history_rounded,
+                            iconColor: const Color(0xFFFF6B6B),
+                            title: 'Total Practices',
+                            value: '$_totalPractices Times',
+                            bgColor: const Color(0xFFFFF1F2),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    _buildWritingRecordsTile(),
                     const SizedBox(height: 24),
 
                     // 2.5 Language Selection
@@ -480,9 +399,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   onPressed: () {
                                     progress.resetProgress();
                                     setState(() {
-                                      _nameController.text = 'Kid';
-                                      _liveTamilPreview = 'Kid';
+                                      _nameController.text = progress.childName;
                                     });
+                                    _loadWritingStats();
                                     Navigator.pop(ctx);
                                   },
                                   child: const Text('Yes, Reset'),
@@ -623,6 +542,148 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
+            ),
+          ),
+        ),
+      ),
+      ),
+    );
+  }
+
+  Widget _buildCard({required Widget child, EdgeInsetsGeometry? padding}) {
+    return Container(
+      width: double.infinity,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  Widget _buildFieldLabel(String text) {
+    return Text(
+      text,
+      style: AppTextStyles.cardSubtitle.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textDark,
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String value,
+    required Color bgColor,
+  }) {
+    return Container(
+      height: 128,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: iconColor.withValues(alpha: 0.25), width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 24),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWritingRecordsTile() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [Color(0xFF3A86FF), Color(0xFF4895EF)]),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF3A86FF).withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const WritingHistoryScreen()),
+            ).then((_) => _loadWritingStats());
+          },
+          child: const Padding(
+            padding: EdgeInsets.all(18),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.history_edu_rounded, color: Color(0xFF3A86FF), size: 28),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Writing Practice Records',
+                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Colors.white),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Handwriting practice history for parents',
+                        style: TextStyle(fontSize: 13, color: Color(0xFFDBEAFE)),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 18),
+              ],
             ),
           ),
         ),

@@ -1,14 +1,16 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../../models/game_content.dart';
 import '../../services/progress_service.dart';
 import '../../widgets/bouncy_button.dart';
 import 'package:flutter/services.dart';
 
 class WordNinjaGame extends StatefulWidget {
   final ProgressService progressService;
+  final GameContent content;
 
-  const WordNinjaGame({super.key, required this.progressService});
+  const WordNinjaGame({super.key, required this.progressService, required this.content});
 
   @override
   State<WordNinjaGame> createState() => _WordNinjaGameState();
@@ -155,38 +157,8 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
   final List<_FloatingFeedback> _feedbacks = [];
   final List<_BladePoint> _bladeTrail = [];
 
-  static final List<_NinjaChallenge> _challenges = [
-    _NinjaChallenge(
-      title: 'VOWEL LETTERS',
-      prompt: 'Slice only VOWEL letters (A, E, I, O, U)!',
-      targets: ['A', 'E', 'I', 'O', 'U'],
-      distractors: ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'M'],
-    ),
-    _NinjaChallenge(
-      title: 'LETTERS A TO G',
-      prompt: 'Slice only letters from A to G!',
-      targets: ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
-      distractors: ['P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'Z'],
-    ),
-    _NinjaChallenge(
-      title: 'ANIMAL WORDS',
-      prompt: 'Slice only ANIMAL Words!',
-      targets: ['Lion', 'Cat', 'Dog', 'Bear', 'Fox', 'Duck'],
-      distractors: ['Cup', 'Car', 'Pen', 'Hat', 'Sun', 'Box'],
-    ),
-    _NinjaChallenge(
-      title: 'CONSONANT LETTERS',
-      prompt: 'Slice only CONSONANT letters!',
-      targets: ['B', 'D', 'M', 'N', 'P', 'R', 'S', 'T', 'W'],
-      distractors: ['A', 'E', 'I', 'O', 'U'],
-    ),
-    _NinjaChallenge(
-      title: 'FRUIT & FOOD WORDS',
-      prompt: 'Slice only FOOD Words!',
-      targets: ['Apple', 'Mango', 'Bread', 'Cake', 'Egg', 'Milk'],
-      distractors: ['Moon', 'Star', 'Bell', 'Desk', 'Road', 'Rock'],
-    ),
-  ];
+  /// Challenges come from the levels the admin configured for this game.
+  late final List<_NinjaChallenge> _challenges;
 
   static const List<Map<String, dynamic>> _fruitCatalog = [
     {
@@ -224,6 +196,16 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
   @override
   void initState() {
     super.initState();
+    final content = widget.content;
+    _challenges = [
+      for (final level in content.levels)
+        _NinjaChallenge(
+          title: level.title.isNotEmpty ? level.title.toUpperCase() : content.game.title.toUpperCase(),
+          prompt: level.prompt.isNotEmpty ? level.prompt : content.game.prompt,
+          targets: level.targets,
+          distractors: content.distractorsFor(level),
+        ),
+    ];
     _startNinjaGame();
   }
 
@@ -258,7 +240,7 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
   void _triggerVictory() {
     _loopTimer?.cancel();
     _loopTimer = null;
-    widget.progressService.addStars(15);
+    widget.progressService.addStars(widget.content.game.starsReward);
     if (mounted) {
       setState(() {
         _gameState = 'victory';
@@ -384,7 +366,7 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
 
     for (int i = 0; i < count; i++) {
       final currentCh = _challenges[_currentChallengeIndex];
-      final isTarget = random.nextDouble() < 0.65;
+      final isTarget = currentCh.distractors.isEmpty || random.nextDouble() < 0.65;
       final text = isTarget
           ? currentCh.targets[random.nextInt(currentCh.targets.length)]
           : currentCh.distractors[random.nextInt(currentCh.distractors.length)];

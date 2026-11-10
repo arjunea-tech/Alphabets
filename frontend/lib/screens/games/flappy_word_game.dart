@@ -1,14 +1,16 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../../models/game_content.dart';
 import '../../services/progress_service.dart';
 import '../../widgets/bouncy_button.dart';
 import 'package:flutter/services.dart';
 
 class FlappyWordGame extends StatefulWidget {
   final ProgressService progressService;
+  final GameContent content;
 
-  const FlappyWordGame({super.key, required this.progressService});
+  const FlappyWordGame({super.key, required this.progressService, required this.content});
 
   @override
   State<FlappyWordGame> createState() => _FlappyWordGameState();
@@ -97,47 +99,31 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
   final List<_Particle> _particles = [];
   final List<_BgCloud> _bgClouds = [];
 
-  static final List<_CloudGateWave> _defaultWaves = [
-    _CloudGateWave(
-      question: 'Fly to the VOWEL Letter:',
-      topText: 'E',
-      topCorrect: true,
-      bottomText: 'K',
-      bottomCorrect: false,
-    ),
-    _CloudGateWave(
-      question: 'Fly to the LETTER AFTER "B":',
-      topText: 'D',
-      topCorrect: false,
-      bottomText: 'C',
-      bottomCorrect: true,
-    ),
-    _CloudGateWave(
-      question: 'Fly to the ANIMAL Word:',
-      topText: 'Cat',
-      topCorrect: true,
-      bottomText: 'Cup',
-      bottomCorrect: false,
-    ),
-    _CloudGateWave(
-      question: 'Fly to the VOWEL Letter:',
-      topText: 'T',
-      topCorrect: false,
-      bottomText: 'O',
-      bottomCorrect: true,
-    ),
-    _CloudGateWave(
-      question: 'Fly to the 3-LETTER Word:',
-      topText: 'Sun',
-      topCorrect: true,
-      bottomText: 'Star',
-      bottomCorrect: false,
-    ),
-  ];
+  /// One cloud gate per admin level: a random target is the correct gate,
+  /// a random distractor the wrong one, placed top/bottom at random.
+  late final List<_CloudGateWave> _defaultWaves;
 
   @override
   void initState() {
     super.initState();
+    final content = widget.content;
+    final rng = Random();
+    _defaultWaves = [
+      for (final level in content.levels)
+        () {
+          final correct = level.targets[rng.nextInt(level.targets.length)];
+          final wrongPool = content.distractorsFor(level);
+          final wrong = wrongPool.isEmpty ? '?' : wrongPool[rng.nextInt(wrongPool.length)];
+          final correctOnTop = rng.nextBool();
+          return _CloudGateWave(
+            question: level.prompt.isNotEmpty ? level.prompt : content.game.prompt,
+            topText: correctOnTop ? correct : wrong,
+            topCorrect: correctOnTop,
+            bottomText: correctOnTop ? wrong : correct,
+            bottomCorrect: !correctOnTop,
+          );
+        }(),
+    ];
     _initBgClouds();
     _startFlappyGame();
   }
@@ -188,7 +174,7 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
   void _triggerVictory() {
     _loopTimer?.cancel();
     _loopTimer = null;
-    try { widget.progressService.addStars(15); } catch (_) {}
+    try { widget.progressService.addStars(widget.content.game.starsReward); } catch (_) {}
     if (mounted) {
       setState(() {
         _gameState = 'victory';
@@ -697,7 +683,7 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
                 const Icon(Icons.flight_rounded, color: Color(0xFF38BDF8), size: 14),
                 const SizedBox(width: 6),
                 Text(
-                  'TARGET: GATE ${(_currentWaveIndex.clamp(0, _defaultWaves.length - 1)) + 1}/5',
+                  'TARGET: GATE ${(_currentWaveIndex.clamp(0, _defaultWaves.length - 1)) + 1}/${_defaultWaves.length}',
                   style: const TextStyle(
                     color: Color(0xFF38BDF8),
                     fontSize: 12,

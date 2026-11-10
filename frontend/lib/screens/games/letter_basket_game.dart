@@ -1,9 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import '../../data/uyir_data.dart';
-import '../../data/mei_data.dart';
-import '../../data/english_letters_data.dart';
+import '../../models/game_content.dart';
 import '../../models/letter_model.dart';
 import '../../models/letter_basket_game_model.dart';
 import '../../services/audio_service.dart';
@@ -16,10 +14,12 @@ import '../../widgets/mascot_widget.dart';
 class LetterBasketGame extends StatefulWidget {
   final ProgressService progressService;
   final BasketGameMode mode;
+  final GameContent content;
 
   const LetterBasketGame({
     super.key,
     required this.progressService,
+    required this.content,
     this.mode = BasketGameMode.uyir,
   });
 
@@ -143,14 +143,11 @@ class LetterBasketGameState extends State<LetterBasketGame>
   }
 
   void _setupGameData() {
-    if (widget.mode == BasketGameMode.mei) {
-      _letterPool = List<LetterModel>.from(englishVowelsList);
-    } else {
-      _letterPool = List<LetterModel>.from(englishLettersList);
-    }
+    // Targets and falling wrong letters come from the admin's levels for this game
+    _letterPool = widget.content.mixPoolLetters;
 
-    // Select 10 distinct rounds from the letter pool (guarantees different targets)
-    _roundQueue = List<LetterModel>.from(_letterPool)..shuffle(_rng);
+    // Select 10 distinct rounds from the admin's targets (guarantees different targets)
+    _roundQueue = List<LetterModel>.from(widget.content.targetLetters)..shuffle(_rng);
     if (_roundQueue.length > 10) {
       _roundQueue = _roundQueue.sublist(0, 10);
     }

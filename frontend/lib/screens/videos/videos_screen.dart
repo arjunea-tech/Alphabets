@@ -41,7 +41,6 @@ class _VideosScreenState extends State<VideosScreen> {
 
   Future<void> _loadVideos() async {
     try {
-      DataService.instance.clearVideoCache();
       final list = await DataService.instance.getVideoLessons();
       if (mounted) {
         setState(() {
@@ -117,7 +116,10 @@ class _VideosScreenState extends State<VideosScreen> {
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 540),
                   child: RefreshIndicator(
-                    onRefresh: _loadVideos,
+                    onRefresh: () {
+                      DataService.instance.clearVideoCache(); // pull-to-refresh fetches fresh
+                      return _loadVideos();
+                    },
                     color: AppColors.primary,
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),

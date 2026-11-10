@@ -1,9 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../models/car_racing_game_model.dart';
-import '../../models/letter_basket_game_model.dart';
-import '../../models/letter_fishing_game_model.dart';
+import '../../models/game_content.dart';
 import '../../models/game_item_model.dart';
+import '../../models/letter_model.dart';
 import '../../services/progress_service.dart';
 import '../../services/data_service.dart';
 import '../../services/api_config.dart';
@@ -36,6 +35,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
   final List<String> _categories = const ['All', 'New', 'Vowels', 'Consonants'];
   List<GameItem> _games = [];
   bool _isLoading = true;
+  bool _loadFailed = false;
 
   @override
   void initState() {
@@ -48,6 +48,12 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
   }
 
   Future<void> _loadGames() async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _loadFailed = false;
+      });
+    }
     try {
       final games = await DataService.instance.getActiveGames();
       if (mounted) {
@@ -58,7 +64,11 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       }
     } catch (_) {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _games = [];
+          _isLoading = false;
+          _loadFailed = true;
+        });
       }
     }
   }
@@ -322,6 +332,30 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       return true;
     }).toList();
 
+    if (_loadFailed) {
+      return Container(
+        padding: const EdgeInsets.all(40),
+        alignment: Alignment.center,
+        child: Column(
+          children: [
+            Icon(Icons.wifi_off_rounded, size: 54, color: Colors.grey.shade400),
+            const SizedBox(height: 12),
+            Text(
+              'Could not load games. Check your internet connection.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: _loadGames,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Try again'),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (filteredGames.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(40),
@@ -455,47 +489,53 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     }
   }
 
-  void _launchGame(BuildContext context, GameItem game) {
+  Future<void> _launchGame(BuildContext context, GameItem game) async {
+    if (!game.hasContent) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This game has no levels yet. Add them from the admin panel.')),
+      );
+      return;
+    }
+
+    // Admin letters supply images/audio for single-letter targets.
+    List<LetterModel> adminLetters = const [];
+    try {
+      adminLetters = await DataService.instance.getAllAlphabets();
+    } catch (_) {}
+    if (!context.mounted) return;
+
+    final content = GameContent(game: game, adminLetters: adminLetters);
+    final progress = widget.progressService;
     Widget targetScreen;
 
     switch (game.gameType) {
       case 'balloon':
-        targetScreen = BalloonPopGame(progressService: widget.progressService);
+        targetScreen = BalloonPopGame(progressService: progress, content: content);
         break;
       case 'flappy':
-        targetScreen = FlappyWordGame(progressService: widget.progressService);
+        targetScreen = FlappyWordGame(progressService: progress, content: content);
         break;
       case 'ninja':
-        targetScreen = WordNinjaGame(progressService: widget.progressService);
+        targetScreen = WordNinjaGame(progressService: progress, content: content);
         break;
       case 'runner':
-        targetScreen = AgaramRunGame(progressService: widget.progressService);
+        targetScreen = AgaramRunGame(progressService: progress, content: content);
         break;
       case 'candy':
-        targetScreen = TamilLetterCandyGame(progressService: widget.progressService);
+        targetScreen = TamilLetterCandyGame(progressService: progress, content: content);
         break;
       case 'racing':
-        targetScreen = CarRacingGame(
-          progressService: widget.progressService,
-          mode: RacingGameMode.uyir,
-        );
+        targetScreen = CarRacingGame(progressService: progress, content: content);
         break;
       case 'fishing':
-        targetScreen = LetterFishingGame(
-          progressService: widget.progressService,
-          mode: FishingGameMode.uyir,
-        );
+        targetScreen = LetterFishingGame(progressService: progress, content: content);
         break;
       case 'basket':
-        final isMei = game.title.toLowerCase().contains('consonant') || game.id.contains('2');
-        targetScreen = LetterBasketGame(
-          progressService: widget.progressService,
-          mode: isMei ? BasketGameMode.mei : BasketGameMode.uyir,
-        );
+        targetScreen = LetterBasketGame(progressService: progress, content: content);
         break;
       case 'puzzle':
       default:
-        targetScreen = WordPuzzleGame(progressService: widget.progressService);
+        targetScreen = WordPuzzleGame(progressService: progress, content: content);
         break;
     }
 

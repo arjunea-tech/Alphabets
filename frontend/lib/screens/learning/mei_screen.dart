@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../data/english_letters_data.dart';
 import '../../models/letter_model.dart';
 import '../../services/data_service.dart';
 import '../../services/progress_service.dart';
@@ -19,7 +18,7 @@ class MeiScreen extends StatefulWidget {
 }
 
 class _MeiScreenState extends State<MeiScreen> {
-  List<LetterModel> _letters = englishConsonantsList;
+  List<LetterModel> _letters = const []; // admin letters only
 
   @override
   void initState() {
@@ -29,7 +28,6 @@ class _MeiScreenState extends State<MeiScreen> {
 
   Future<void> _loadConsonants() async {
     try {
-      DataService.instance.invalidateCache();
       final letters = await DataService.instance.getMeiLetters();
       if (mounted && letters.isNotEmpty) {
         setState(() {
@@ -52,7 +50,10 @@ class _MeiScreenState extends State<MeiScreen> {
           body: KidScaffoldBackground(
             child: SafeArea(
               child: RefreshIndicator(
-                onRefresh: _loadConsonants,
+                onRefresh: () {
+                  DataService.instance.invalidateCache(); // pull-to-refresh fetches fresh
+                  return _loadConsonants();
+                },
                 color: AppColors.meiColor,
                 child: LayoutBuilder(
                   builder: (context, constraints) {

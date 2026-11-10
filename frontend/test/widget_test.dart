@@ -5,12 +5,12 @@ import 'package:tamil/main.dart';
 import 'package:tamil/models/letter_model.dart';
 import 'package:tamil/models/writing_practice_model.dart';
 import 'package:tamil/models/user_profile_model.dart';
-import 'package:tamil/screens/profile/profile_screen.dart';
+import 'package:tamil/screens/settings/settings_screen.dart';
+import 'package:tamil/services/progress_service.dart';
 import 'package:tamil/screens/writing/writing_history_screen.dart';
 import 'package:tamil/screens/writing/writing_practice_screen.dart';
 import 'package:tamil/services/audio_service.dart';
 import 'package:tamil/services/tamil_tts_service.dart';
-import 'package:tamil/services/progress_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tamil/widgets/letter_card.dart';
 
@@ -122,18 +122,17 @@ void main() {
     expect(find.text('Amma'), findsNothing);
   });
 
-  testWidgets('ProfileScreen and WritingHistoryScreen load smoothly', (WidgetTester tester) async {
+  testWidgets('Settings (profile) and WritingHistoryScreen load smoothly', (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
 
     await tester.pumpWidget(
-      const MaterialApp(
-        home: ProfileScreen(),
+      MaterialApp(
+        home: SettingsScreen(progressService: ProgressService()),
       ),
     );
-    await tester.pumpAndSettle();
-    expect(find.text('என் சுயவிவரம்'), findsOneWidget);
-    expect(find.text('கற்றல் முன்னேற்றம்'), findsOneWidget);
-    expect(find.text('எழுத்துப் பயிற்சி பதிவுகள்'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Learning Progress'), findsOneWidget);
+    expect(find.text('Writing Practice Records'), findsOneWidget);
 
     await tester.pumpWidget(
       const MaterialApp(

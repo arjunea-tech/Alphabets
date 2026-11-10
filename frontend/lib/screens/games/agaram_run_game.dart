@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
-import '../../data/english_letters_data.dart';
 import '../../models/agaram_run_game_model.dart';
+import '../../models/game_content.dart';
 import '../../models/letter_model.dart';
 import '../../services/progress_service.dart';
 import '../../widgets/bouncy_button.dart';
@@ -36,10 +36,12 @@ class FloatingScoreText {
 class AgaramRunGame extends StatefulWidget {
   final ProgressService? progressService;
   final int initialLevel;
+  final GameContent content;
 
   const AgaramRunGame({
     super.key,
     this.progressService,
+    required this.content,
     this.initialLevel = 1,
   });
 
@@ -71,7 +73,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
   int _currentTargetLetterIdx = 0;
   LetterModel get _currentTargetLetter {
     if (_currentLevel.targetLetters.isEmpty) {
-      return englishLettersList.first;
+      return widget.content.targetLetters.first;
     }
     return _currentLevel.targetLetters[_currentTargetLetterIdx % _currentLevel.targetLetters.length];
   }
@@ -116,7 +118,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
   @override
   void initState() {
     super.initState();
-    _currentLevelIndex = (widget.initialLevel - 1).clamp(0, 3);
+    _currentLevelIndex = 0;
 
     _pulseController = AnimationController(
       vsync: this,
@@ -127,6 +129,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     );
 
     _buildLevels();
+    _currentLevelIndex = (widget.initialLevel - 1).clamp(0, _levels.length - 1);
     _loadLevelData();
 
     _ticker = createTicker(_onTick)..start();
@@ -140,7 +143,6 @@ class _AgaramRunGameState extends State<AgaramRunGame>
   }
 
   void _buildLevels() {
-    final letters = englishLettersList;
 
     // Modern 3300px World with Variety of Floating Platforms
     final level1Platforms = <PlatformTile>[
@@ -179,25 +181,25 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     ];
 
     // Collectibles (Target Letters + Bonus Stars)
-    final level1Collectibles = <CollectibleItem>[
-      CollectibleItem(id: 1, x: 220, y: 250, type: CollectibleType.targetLetter, letterModel: letters[0]), // A
+    List<CollectibleItem> collectiblesFor(List<LetterModel> letters) => <CollectibleItem>[
+      CollectibleItem(id: 1, x: 220, y: 250, type: CollectibleType.targetLetter, letterModel: letters[0 % letters.length]), // A
       CollectibleItem(id: 2, x: 340, y: 230, type: CollectibleType.bonusStar),
 
-      CollectibleItem(id: 3, x: 570, y: 195, type: CollectibleType.targetLetter, letterModel: letters[1]), // B
-      CollectibleItem(id: 4, x: 770, y: 145, type: CollectibleType.targetLetter, letterModel: letters[2]), // C
+      CollectibleItem(id: 3, x: 570, y: 195, type: CollectibleType.targetLetter, letterModel: letters[1 % letters.length]), // B
+      CollectibleItem(id: 4, x: 770, y: 145, type: CollectibleType.targetLetter, letterModel: letters[2 % letters.length]), // C
 
-      CollectibleItem(id: 5, x: 1050, y: 245, type: CollectibleType.targetLetter, letterModel: letters[3]), // D
+      CollectibleItem(id: 5, x: 1050, y: 245, type: CollectibleType.targetLetter, letterModel: letters[3 % letters.length]), // D
       CollectibleItem(id: 6, x: 1200, y: 215, type: CollectibleType.bonusStar),
 
-      CollectibleItem(id: 7, x: 1580, y: 165, type: CollectibleType.targetLetter, letterModel: letters[4]), // E
-      CollectibleItem(id: 8, x: 1920, y: 245, type: CollectibleType.targetLetter, letterModel: letters[5]), // F
+      CollectibleItem(id: 7, x: 1580, y: 165, type: CollectibleType.targetLetter, letterModel: letters[4 % letters.length]), // E
+      CollectibleItem(id: 8, x: 1920, y: 245, type: CollectibleType.targetLetter, letterModel: letters[5 % letters.length]), // F
 
-      CollectibleItem(id: 9, x: 2175, y: 130, type: CollectibleType.targetLetter, letterModel: letters[6]), // G
-      CollectibleItem(id: 10, x: 2395, y: 90, type: CollectibleType.targetLetter, letterModel: letters[7]), // H
+      CollectibleItem(id: 9, x: 2175, y: 130, type: CollectibleType.targetLetter, letterModel: letters[6 % letters.length]), // G
+      CollectibleItem(id: 10, x: 2395, y: 90, type: CollectibleType.targetLetter, letterModel: letters[7 % letters.length]), // H
 
-      CollectibleItem(id: 11, x: 2650, y: 245, type: CollectibleType.targetLetter, letterModel: letters[8]), // I
-      CollectibleItem(id: 12, x: 2850, y: 245, type: CollectibleType.targetLetter, letterModel: letters[9]), // J
-      CollectibleItem(id: 13, x: 3020, y: 245, type: CollectibleType.targetLetter, letterModel: letters[10]), // K
+      CollectibleItem(id: 11, x: 2650, y: 245, type: CollectibleType.targetLetter, letterModel: letters[8 % letters.length]), // I
+      CollectibleItem(id: 12, x: 2850, y: 245, type: CollectibleType.targetLetter, letterModel: letters[9 % letters.length]), // J
+      CollectibleItem(id: 13, x: 3020, y: 245, type: CollectibleType.targetLetter, letterModel: letters[10 % letters.length]), // K
     ];
 
     // Modern Obstacles
@@ -216,19 +218,26 @@ class _AgaramRunGameState extends State<AgaramRunGame>
       ),
     ];
 
+    // One run per admin level, all on the same track; letters come from the admin.
+    final adminLevels = widget.content.levels;
     _levels = [
-      AgaramRunLevel(
-        levelNumber: 1,
-        title: 'Alphabet Runner',
-        subtitle: 'Sunny Meadow Run',
-        description: 'Dash, jump, and collect English letters to cross the Finish Line!',
-        targetLetters: letters.take(11).toList(),
-        worldWidth: 3300,
-        platforms: level1Platforms,
-        collectibles: level1Collectibles,
-        obstacles: level1Obstacles,
-        goalX: 3120,
-      ),
+      for (var i = 0; i < adminLevels.length; i++)
+        () {
+          final letters = widget.content.lettersFor(adminLevels[i].targets);
+          return AgaramRunLevel(
+            levelNumber: i + 1,
+            title: adminLevels[i].title.isNotEmpty ? adminLevels[i].title : widget.content.game.title,
+            subtitle: 'Level ${i + 1} of ${adminLevels.length}',
+            description: adminLevels[i].prompt.isNotEmpty ? adminLevels[i].prompt : widget.content.game.prompt,
+            // 11 letter slots on the track, filled in order from the admin's targets
+            targetLetters: [for (var k = 0; k < 11; k++) letters[k % letters.length]],
+            worldWidth: 3300,
+            platforms: level1Platforms,
+            collectibles: collectiblesFor(letters),
+            obstacles: level1Obstacles,
+            goalX: 3120,
+          );
+        }(),
     ];
   }
 
@@ -559,7 +568,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
       _resetMovementState();
     });
 
-    widget.progressService?.addStars(15);
+    widget.progressService?.addStars(widget.content.game.starsReward);
     widget.progressService?.recordGameCompleted(3);
     try { HapticFeedback.heavyImpact(); } catch (_) {}
   }
@@ -1240,14 +1249,24 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                   ),
                   const SizedBox(width: 12),
                   BouncyButton(
-                    onPressed: _startGame,
+                    onPressed: () {
+                      // Move on to the next admin level when there is one
+                      if (_currentLevelIndex < _levels.length - 1) {
+                        _currentLevelIndex++;
+                        _currentTargetLetterIdx = 0;
+                      }
+                      _startGame();
+                    },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Text('Play Again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        _currentLevelIndex < _levels.length - 1 ? 'Next Level' : 'Play Again',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],

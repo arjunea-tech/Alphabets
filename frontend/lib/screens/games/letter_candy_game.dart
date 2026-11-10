@@ -3,10 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../data/uyir_data.dart';
-import '../../data/mei_data.dart';
-import '../../data/uyirmei_data.dart';
-import '../../data/english_letters_data.dart';
+import '../../models/game_content.dart';
 import '../../models/letter_candy_game_model.dart';
 import '../../models/letter_model.dart';
 import '../../services/audio_service.dart';
@@ -15,10 +12,12 @@ import '../../services/progress_service.dart';
 class TamilLetterCandyGame extends StatefulWidget {
   final ProgressService? progressService;
   final int initialLevel;
+  final GameContent content;
 
   const TamilLetterCandyGame({
     super.key,
     this.progressService,
+    required this.content,
     this.initialLevel = 1,
   });
 
@@ -87,8 +86,8 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
   @override
   void initState() {
     super.initState();
-    _currentLevelIndex = (widget.initialLevel - 1).clamp(0, 4);
     _buildLevels();
+    _currentLevelIndex = (widget.initialLevel - 1).clamp(0, _levels.length - 1);
 
     // Setup animations
     _comboAnimController = AnimationController(
@@ -142,83 +141,31 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
   }
 
   void _buildLevels() {
-    // Level 1: Uyir Letters (Short & Long vowels)
-    final uyirPool = englishLettersList.take(6).toList();
-
-    // Level 2: Mei Letters
-    final meiPool = englishLettersList.skip(6).take(6).toList();
-
-    // Level 3: Uyirmei Letters (Ka series)
-    final kaRow = englishLettersList;
-    final uyirmeiPool = englishLettersList.skip(12).take(6).toList();
-
-    // Level 4: Mixed (Uyir + Mei)
-    final mixedPool = [
-      englishLettersList[0], //  
-      englishLettersList[1], //  
-      englishLettersList[5],  //  
-      englishLettersList[6],  //  
-      englishLettersList[4], //  
-      englishLettersList[7], //  
-    ];
-
-    // Level 5: Speed Challenge (60s countdown)
-    final speedPool = [
-      englishLettersList[0], //  
-      englishLettersList[1], //  
-      englishLettersList[2], //  
-      englishLettersList[5],  //  
-      englishLettersList[7], //  
-      englishLettersList[8],
-    ];
-
+    // Each admin level is one candy board; its targets are the candy letters.
+    final content = widget.content;
+    final filler = content.mixPoolLetters;
     _levels = [
-      CandyGameLevel(
-        levelNumber: 1,
-        title: 'Vowel Candies',
-        subtitle: 'Level 1: Vowels',
-        description: 'Match 3 or more vowel candies to pop them!',
-        letterPool: uyirPool,
-        targetScore: 800,
-        maxMoves: 22,
-      ),
-      CandyGameLevel(
-        levelNumber: 2,
-        title: 'Consonant Candies',
-        subtitle: 'Level 2: Consonants',
-        description: 'Match consonant candies to create tasty candy blasts!',
-        letterPool: meiPool,
-        targetScore: 1200,
-        maxMoves: 20,
-      ),
-      CandyGameLevel(
-        levelNumber: 3,
-        title: 'All Alphabets',
-        subtitle: 'Level 3: Full Set',
-        description: 'Match letters from A to Z for higher scores!',
-        letterPool: uyirmeiPool,
-        targetScore: 1600,
-        maxMoves: 20,
-      ),
-      CandyGameLevel(
-        levelNumber: 4,
-        title: 'Mixed Candies',
-        subtitle: 'Mega Candy Challenge',
-        description: 'A colorful mix of vowel and consonant candies!',
-        letterPool: mixedPool,
-        targetScore: 2000,
-        maxMoves: 20,
-      ),
-      CandyGameLevel(
-        levelNumber: 5,
-        title: 'Speed Challenge (60s)',
-        subtitle: 'Lightning Fast',
-        description: 'Score 2500 points before time runs out to win!',
-        letterPool: speedPool,
-        targetScore: 2500,
-        maxMoves: 99,
-        timeLimitSeconds: 60,
-      ),
+      for (var i = 0; i < content.levels.length; i++)
+        () {
+          final level = content.levels[i];
+          final pool = content.lettersFor(level.targets);
+          // Match-3 needs a few different candies; top up from other admin content.
+          for (final extra in filler) {
+            if (pool.length >= 4) break;
+            if (!pool.any((p) => p.letter.toUpperCase() == extra.letter.toUpperCase())) pool.add(extra);
+          }
+          final isSpeed = level.title.toLowerCase().contains('speed');
+          return CandyGameLevel(
+            levelNumber: i + 1,
+            title: level.title.isNotEmpty ? level.title : content.game.title,
+            subtitle: 'Level ${i + 1}',
+            description: level.prompt.isNotEmpty ? level.prompt : content.game.prompt,
+            letterPool: pool,
+            targetScore: 800 + (i * 400),
+            maxMoves: isSpeed ? 99 : (i == 0 ? 22 : 20),
+            timeLimitSeconds: isSpeed ? 60 : null,
+          );
+        }(),
     ];
   }
 

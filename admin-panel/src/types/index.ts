@@ -189,12 +189,21 @@ export interface GameItem {
   clue_image?: string | null;
   correct_index: number;
   options: string[];
+  levels?: GameLevel[];
   success_praise: string;
   stars_reward: number;
   display_order: number;
   is_active: boolean | number;
   created_at?: string;
   updated_at?: string;
+}
+
+/** One playable round/mission of a game. The app shows exactly this content. */
+export interface GameLevel {
+  title: string;
+  prompt: string;
+  targets: string[];
+  distractors: string[];
 }
 
 export interface ChildUser {

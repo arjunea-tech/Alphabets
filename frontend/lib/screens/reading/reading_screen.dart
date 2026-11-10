@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../data/story_data.dart';
 import '../../models/story_model.dart';
 import '../../services/audio_service.dart';
 import '../../services/data_service.dart';
@@ -25,7 +24,10 @@ class ReadingScreen extends StatefulWidget {
 
 class _ReadingScreenState extends State<ReadingScreen> {
   int _currentPage = 0;
-  StoryModel _story = hareAndTortoiseStory;
+  /// The story comes only from the admin panel; null until it has loaded.
+  StoryModel? _loadedStory;
+  bool _loadFailed = false;
+  StoryModel get _story => _loadedStory!;
   final AudioService _audioService = AudioService();
 
   StoryPageModel get _page => _story.pages[_currentPage];
@@ -37,19 +39,54 @@ class _ReadingScreenState extends State<ReadingScreen> {
   }
 
   Future<void> _fetchStory() async {
+    if (mounted) setState(() => _loadFailed = false);
     try {
       final story = await DataService.instance.getFeaturedStory();
-      if (mounted && story.pages.isNotEmpty) {
-        setState(() {
-          _story = story;
-          if (_currentPage >= _story.pages.length) {
-            _currentPage = 0;
-          }
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        if (story.pages.isNotEmpty) {
+          _loadedStory = story;
+          _currentPage = 0;
+        } else {
+          _loadFailed = true;
+        }
+      });
     } catch (_) {
-      // Gracefully maintain local hareAndTortoiseStory
+      if (mounted) setState(() => _loadFailed = true);
     }
+  }
+
+  Widget _buildNotLoaded() {
+    return Scaffold(
+      appBar: KidAppBar(title: 'Story Time', starCount: widget.progressService.stars),
+      body: KidScaffoldBackground(
+        child: Center(
+          child: _loadFailed
+              ? Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.menu_book_outlined, size: 54, color: Colors.grey.shade400),
+                      const SizedBox(height: 12),
+                      Text(
+                        'No story available right now. Check your internet connection.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.grey.shade600),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        onPressed: _fetchStory,
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('Try again'),
+                      ),
+                    ],
+                  ),
+                )
+              : const CircularProgressIndicator(),
+        ),
+      ),
+    );
   }
 
   void _onNext() {
@@ -432,6 +469,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_loadedStory == null) return _buildNotLoaded();
     final isLastPage = _currentPage == _story.pages.length - 1;
 
     return Scaffold(

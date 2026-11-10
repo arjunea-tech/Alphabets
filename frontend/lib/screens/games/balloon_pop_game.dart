@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../models/game_content.dart';
 import '../../services/progress_service.dart';
 import '../../widgets/bouncy_button.dart';
 
@@ -127,8 +128,9 @@ class _BalloonMission {
 
 class BalloonPopGame extends StatefulWidget {
   final ProgressService progressService;
+  final GameContent content;
 
-  const BalloonPopGame({super.key, required this.progressService});
+  const BalloonPopGame({super.key, required this.progressService, required this.content});
 
   @override
   State<BalloonPopGame> createState() => _BalloonPopGameState();
@@ -167,47 +169,25 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
     const Color(0xFFF97316), // Vivid Orange
   ];
 
-  static final List<_BalloonMission> _missions = [
-    _BalloonMission(
-      badge: 'MISSION 1/5: VOWELS',
-      title: 'VOWELS CHALLENGE',
-      prompt: 'POP ONLY VOWEL LETTERS: A, E, I, O, U',
-      targets: ['A', 'E', 'I', 'O', 'U'],
-      distractors: ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'T'],
-    ),
-    _BalloonMission(
-      badge: 'MISSION 2/5: FIRST LETTERS',
-      title: 'LETTERS A TO F',
-      prompt: 'POP LETTERS FROM A TO F: A, B, C, D, E, F',
-      targets: ['A', 'B', 'C', 'D', 'E', 'F'],
-      distractors: ['M', 'N', 'P', 'Q', 'R', 'S', 'T', 'W', 'X', 'Y', 'Z'],
-    ),
-    _BalloonMission(
-      badge: 'MISSION 3/5: ANIMAL WORDS',
-      title: 'ANIMAL EXPLORER',
-      prompt: 'POP ANIMAL WORDS: CAT, DOG, FOX, COW, PIG',
-      targets: ['Cat', 'Dog', 'Fox', 'Cow', 'Pig', 'Bat'],
-      distractors: ['Car', 'Pen', 'Cup', 'Hat', 'Sun', 'Bag', 'Bed', 'Box'],
-    ),
-    _BalloonMission(
-      badge: 'MISSION 4/5: CONSONANTS',
-      title: 'CONSONANTS CHALLENGE',
-      prompt: 'POP CONSONANTS: B, D, G, M, P, S, T',
-      targets: ['B', 'D', 'G', 'M', 'P', 'S', 'T'],
-      distractors: ['A', 'E', 'I', 'O', 'U'],
-    ),
-    _BalloonMission(
-      badge: 'MISSION 5/5: COLORS',
-      title: 'RAINBOW COLOR WORDS',
-      prompt: 'POP COLOR WORDS: RED, BLUE, PINK, GOLD',
-      targets: ['Red', 'Blue', 'Pink', 'Gold', 'Cyan'],
-      distractors: ['Run', 'Hop', 'Top', 'Key', 'Pot', 'Fan', 'Net', 'Pan'],
-    ),
-  ];
+  /// Missions come from the levels the admin configured for this game.
+  late final List<_BalloonMission> _missions;
 
   @override
   void initState() {
     super.initState();
+    final content = widget.content;
+    final levels = content.levels;
+    _missions = [
+      for (var i = 0; i < levels.length; i++)
+        _BalloonMission(
+          badge: 'MISSION ${i + 1}/${levels.length}'
+              '${levels[i].title.isNotEmpty ? ': ${levels[i].title.toUpperCase()}' : ''}',
+          title: levels[i].title.isNotEmpty ? levels[i].title : content.game.title,
+          prompt: levels[i].prompt.isNotEmpty ? levels[i].prompt : content.game.prompt,
+          targets: levels[i].targets,
+          distractors: content.distractorsFor(levels[i]),
+        ),
+    ];
     _startNewGame();
   }
 
@@ -240,7 +220,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
   void _triggerVictory() {
     _gameTimer?.cancel();
     _gameTimer = null;
-    widget.progressService.addStars(15);
+    widget.progressService.addStars(widget.content.game.starsReward);
     if (mounted) {
       setState(() {
         _gameState = 'victory';
@@ -344,7 +324,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
 
   void _spawnSingleBalloon(double w, double h, {double? initialY}) {
     final mission = _missions[_currentMissionIndex];
-    final bool isTarget = _random.nextDouble() < 0.65;
+    final bool isTarget = mission.distractors.isEmpty || _random.nextDouble() < 0.65;
     final String text = isTarget
         ? mission.targets[_random.nextInt(mission.targets.length)]
         : mission.distractors[_random.nextInt(mission.distractors.length)];

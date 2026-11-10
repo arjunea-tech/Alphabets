@@ -274,6 +274,7 @@ CREATE TABLE IF NOT EXISTS games (
   clue_image VARCHAR(255) NULL,
   correct_index INT NOT NULL DEFAULT 0,
   options_json JSON NOT NULL,
+  levels_json JSON NULL, -- [{ title, prompt, targets: [], distractors: [] }] managed from admin panel
   success_praise VARCHAR(255) DEFAULT 'சூப்பர்! ⭐',
   stars_reward INT NOT NULL DEFAULT 3,
   display_order INT NOT NULL DEFAULT 0,

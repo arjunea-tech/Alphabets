@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { gamesApi } from '../api/games';
-import { GameItem } from '../types';
+import { GameItem, GameLevel } from '../types';
 import { Modal } from '../components/common/Modal';
 import { FileUpload } from '../components/common/FileUpload';
 import { useLanguage } from '../context/LanguageContext';
-import { Plus, Edit2, Trash2, CheckCircle2, XCircle, Loader2, Gamepad2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, Gamepad2, X } from 'lucide-react';
 import { resolveMediaUrl } from '../api/client';
 
 const GAME_TYPE_LABELS: Record<string, { label: string; shortLabel: string; color: string; bg: string }> = {
@@ -20,13 +20,57 @@ const GAME_TYPE_LABELS: Record<string, { label: string; shortLabel: string; colo
   matching: { label: '🔄 Letter Matching', shortLabel: '🔄 Matching', color: '#4B5563', bg: '#F3F4F6' },
 };
 
+/** What 'targets' and 'distractors' mean for each game type, shown as help text in the level editor. */
+const LEVEL_HINTS: Record<string, { targets: string; distractors: string }> = {
+  balloon: { targets: 'Balloons the child must pop (letters or words)', distractors: 'Wrong balloons to avoid' },
+  ninja: { targets: 'Fruits the child must slice (letters or words)', distractors: 'Wrong fruits to avoid' },
+  flappy: { targets: 'Correct gate answer(s) — one is picked per gate', distractors: 'Wrong gate answer(s)' },
+  runner: { targets: 'Letters to collect along the track, in order', distractors: 'Not used' },
+  candy: { targets: 'Letters on the candy board (4–6 works best)', distractors: 'Not used' },
+  racing: { targets: 'Target letters/words, one per round', distractors: 'Extra wrong lane options (optional)' },
+  fishing: { targets: 'Target letters, one per round', distractors: 'Extra wrong fish (optional)' },
+  basket: { targets: 'Target letters, one per round', distractors: 'Extra wrong falling letters (optional)' },
+  puzzle: { targets: 'Words to spell, e.g. CAT, DOG', distractors: 'Extra decoy letter tiles (optional)' },
+  matching: { targets: 'Letters/words to match', distractors: 'Not used' },
+};
+
+interface LevelDraft {
+  title: string;
+  prompt: string;
+  targets: string;
+  distractors: string;
+}
+
+const splitList = (v: string) =>
+  v
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+const emptyLevel = (): LevelDraft => ({ title: '', prompt: '', targets: '', distractors: '' });
+
+const toDrafts = (game: Partial<GameItem>): LevelDraft[] => {
+  if (Array.isArray(game.levels) && game.levels.length > 0) {
+    return game.levels.map((l) => ({
+      title: l.title || '',
+      prompt: l.prompt || '',
+      targets: (l.targets || []).join(', '),
+      distractors: (l.distractors || []).join(', '),
+    }));
+  }
+  if (Array.isArray(game.options) && game.options.length > 0) {
+    return [{ title: game.title || '', prompt: game.prompt || '', targets: game.options.join(', '), distractors: '' }];
+  }
+  return [emptyLevel()];
+};
+
 export const GamesPage: React.FC = () => {
   const { t } = useLanguage();
   const [games, setGames] = useState<GameItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentGame, setCurrentGame] = useState<Partial<GameItem> | null>(null);
-  const [optionsStr, setOptionsStr] = useState('A, B, C, D');
+  const [levels, setLevels] = useState<LevelDraft[]>([emptyLevel()]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
 
@@ -62,13 +106,13 @@ export const GamesPage: React.FC = () => {
       display_order: games.length + 1,
       is_active: true,
     });
-    setOptionsStr('A, B, C, D');
+    setLevels([emptyLevel()]);
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (game: GameItem) => {
     setCurrentGame(game);
-    setOptionsStr(Array.isArray(game.options) ? game.options.join(', ') : '');
+    setLevels(toDrafts(game));
     setIsModalOpen(true);
   };
 
@@ -102,13 +146,17 @@ export const GamesPage: React.FC = () => {
       return;
     }
 
-    const opts = optionsStr
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
+    const parsedLevels: GameLevel[] = levels
+      .map((l) => ({
+        title: l.title.trim(),
+        prompt: l.prompt.trim(),
+        targets: splitList(l.targets),
+        distractors: splitList(l.distractors),
+      }))
+      .filter((l) => l.targets.length > 0);
 
-    if (opts.length < 2) {
-      alert('Please provide at least 2 options');
+    if (parsedLevels.length === 0) {
+      alert('Add at least one level with target letters/words');
       return;
     }
 
@@ -116,7 +164,10 @@ export const GamesPage: React.FC = () => {
     try {
       const payload = {
         ...currentGame,
-        options: opts,
+        levels: parsedLevels,
+        // Kept in sync for older app builds that only read 'options'
+        options: parsedLevels[0].targets,
+        correct_index: 0,
       };
 
       if (currentGame.id) {
@@ -188,8 +239,8 @@ export const GamesPage: React.FC = () => {
               <th>{t('games.gameType')}</th>
               <th>{t('games.title')}</th>
               <th>{t('games.prompt')}</th>
-              <th>{t('games.options')}</th>
-              <th>{t('games.correctAnswer')}</th>
+              <th>Levels</th>
+              <th>Content (Level 1)</th>
               <th>{t('games.starsReward')}</th>
               <th>Status (Click to Toggle)</th>
               <th style={{ textAlign: 'right' }}>{t('games.actions')}</th>
@@ -277,28 +328,24 @@ export const GamesPage: React.FC = () => {
                       )}
                     </td>
                     <td style={{ fontSize: '14px', maxWidth: '220px' }}>{g.prompt}</td>
+                    <td style={{ fontWeight: 700 }}>{g.levels?.length || 0}</td>
                     <td>
-                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                        {Array.isArray(g.options) &&
-                          g.options.map((opt, i) => (
-                            <span
-                              key={i}
-                              style={{
-                                padding: '2px 8px',
-                                background: i === g.correct_index ? '#DCFCE7' : 'var(--bg-muted)',
-                                border: `1px solid ${i === g.correct_index ? '#86EFAC' : 'var(--border-color)'}`,
-                                borderRadius: '4px',
-                                fontSize: '12px',
-                                fontWeight: i === g.correct_index ? 700 : 400,
-                              }}
-                            >
-                              {opt}
-                            </span>
-                          ))}
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', maxWidth: '260px' }}>
+                        {(g.levels?.[0]?.targets || g.options || []).slice(0, 8).map((opt, i) => (
+                          <span
+                            key={i}
+                            style={{
+                              padding: '2px 8px',
+                              background: '#DCFCE7',
+                              border: '1px solid #86EFAC',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                            }}
+                          >
+                            {opt}
+                          </span>
+                        ))}
                       </div>
-                    </td>
-                    <td style={{ fontWeight: 700, color: 'var(--success)' }}>
-                      {Array.isArray(g.options) ? g.options[g.correct_index] : ''}
                     </td>
                     <td style={{ color: '#EAB308', fontWeight: 700 }}>⭐ +{g.stars_reward}</td>
                     <td>
@@ -426,35 +473,81 @@ export const GamesPage: React.FC = () => {
             />
           </div>
 
+          {/* Levels / Missions editor — the mobile app plays exactly this content */}
           <div className="form-group">
-            <label className="form-label">{t('games.options')} (Comma-separated letters/words)</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="A, B, C, D"
-              value={optionsStr}
-              onChange={(e) => setOptionsStr(e.target.value)}
-              required
-            />
-            <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-              Separate choices with commas. E.g.: A, B, C, D or Apple, Ball, Cat, Dog
-            </small>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <label className="form-label" style={{ margin: 0 }}>
+                Levels / Missions ({levels.length})
+              </label>
+              <button type="button" className="btn btn-sm btn-secondary" onClick={() => setLevels([...levels, emptyLevel()])}>
+                <Plus size={14} />
+                <span>Add Level</span>
+              </button>
+            </div>
+            {levels.map((lvl, idx) => {
+              const hint = LEVEL_HINTS[currentGame?.game_type || 'balloon'] || LEVEL_HINTS.balloon;
+              const update = (patch: Partial<LevelDraft>) =>
+                setLevels(levels.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
+              return (
+                <div
+                  key={idx}
+                  style={{ border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px', marginBottom: '10px' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <strong style={{ fontSize: '13px' }}>Level {idx + 1}</strong>
+                    {levels.length > 1 && (
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-icon"
+                        title="Remove level"
+                        onClick={() => setLevels(levels.filter((_, i) => i !== idx))}
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '8px', marginBottom: '8px' }}>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Level title, e.g. VOWELS"
+                      value={lvl.title}
+                      onChange={(e) => update({ title: e.target.value })}
+                    />
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Instruction for the child, e.g. Pop only vowels!"
+                      value={lvl.prompt}
+                      onChange={(e) => update({ prompt: e.target.value })}
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Targets (comma-separated), e.g. A, E, I, O, U"
+                    value={lvl.targets}
+                    onChange={(e) => update({ targets: e.target.value })}
+                    style={{ marginBottom: '4px' }}
+                  />
+                  <small style={{ color: 'var(--text-muted)', fontSize: '12px', display: 'block', marginBottom: '8px' }}>
+                    ✅ {hint.targets}
+                  </small>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Distractors (comma-separated), e.g. B, C, D"
+                    value={lvl.distractors}
+                    onChange={(e) => update({ distractors: e.target.value })}
+                    style={{ marginBottom: '4px' }}
+                  />
+                  <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>❌ {hint.distractors}</small>
+                </div>
+              );
+            })}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div className="form-group">
-              <label className="form-label">{t('games.correctAnswer')} Index (0-indexed)</label>
-              <input
-                type="number"
-                min="0"
-                max="10"
-                className="form-control"
-                value={currentGame?.correct_index || 0}
-                onChange={(e) => setCurrentGame({ ...currentGame, correct_index: parseInt(e.target.value, 10) })}
-              />
-              <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>First option = 0, Second = 1, etc.</small>
-            </div>
-
             <div className="form-group">
               <label className="form-label">{t('games.starsReward')}</label>
               <input

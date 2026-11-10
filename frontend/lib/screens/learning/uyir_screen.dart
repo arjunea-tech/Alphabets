@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../data/english_letters_data.dart';
 import '../../models/letter_model.dart';
 import '../../services/data_service.dart';
 import '../../services/progress_service.dart';
@@ -19,7 +18,7 @@ class UyirScreen extends StatefulWidget {
 }
 
 class _UyirScreenState extends State<UyirScreen> {
-  List<LetterModel> _letters = englishVowelsList;
+  List<LetterModel> _letters = const []; // admin letters only
 
   @override
   void initState() {
@@ -36,7 +35,7 @@ class _UyirScreenState extends State<UyirScreen> {
         });
       }
     } catch (_) {
-      // Keep local fallback
+      // Server unreachable: nothing to show until it is back
     }
   }
 

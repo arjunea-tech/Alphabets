@@ -1,9 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import '../../data/uyir_data.dart';
-import '../../data/english_letters_data.dart';
 import '../../models/car_racing_game_model.dart';
+import '../../models/game_content.dart';
+import '../../models/letter_model.dart';
 import '../../services/audio_service.dart';
 import '../../services/progress_service.dart';
 import '../../theme/app_colors.dart';
@@ -14,10 +14,12 @@ import '../../widgets/mascot_widget.dart';
 class CarRacingGame extends StatefulWidget {
   final ProgressService progressService;
   final RacingGameMode mode;
+  final GameContent content;
 
   const CarRacingGame({
     super.key,
     required this.progressService,
+    required this.content,
     this.mode = RacingGameMode.uyir,
   });
 
@@ -36,6 +38,7 @@ class CarRacingGameState extends State<CarRacingGame>
 
   // Round & Target Pools
   late List<RacingTarget> _targetPool;
+  late List<RacingTarget> _distractorPool;
   late List<RacingTarget> _roundQueue;
   int _currentRoundIndex = 0;
   int _score = 0;
@@ -150,16 +153,22 @@ class CarRacingGameState extends State<CarRacingGame>
   }
 
   void _setupGameData() {
-    // Strictly Uyir Letters (12 vowels: , , , , , , , , , , , )
-    _targetPool = englishLettersList.map((u) {
-      return RacingTarget(
-        id: u.id,
-        text: u.letter,
-        clue: u.word,
-        audioPath: u.audioPath,
-        isWord: false,
-      );
-    }).toList();
+    // Targets and wrong-lane options come from the admin's levels for this game
+    RacingTarget toTarget(LetterModel u) => RacingTarget(
+          id: u.id,
+          text: u.letter,
+          clue: u.word,
+          audioPath: u.audioPath,
+          isWord: u.letter.length > 1,
+        );
+    _targetPool = widget.content.targetLetters.map(toTarget).toList();
+    _distractorPool = widget.content.distractorLetters.map(toTarget).toList();
+    if (_distractorPool.length < 2) {
+      _distractorPool = [
+        ..._distractorPool,
+        ...widget.content.lettersFor(widget.content.distractorsFor(widget.content.levels.first)).map(toTarget),
+      ];
+    }
 
     // Shuffle 10 distinct targets for 10 rounds
     _roundQueue = List<RacingTarget>.from(_targetPool)..shuffle(_rng);
@@ -206,7 +215,11 @@ class CarRacingGameState extends State<CarRacingGame>
     final target = currentTarget;
 
     // Pick 2 distinct distractors from remaining pool (excluding target)
-    final otherTargets = _targetPool.where((t) => t.text != target.text).toList()..shuffle(_rng);
+    final seen = <String>{target.text};
+    final otherTargets = [..._distractorPool, ..._targetPool]
+        .where((t) => seen.add(t.text))
+        .toList()
+      ..shuffle(_rng);
     final distractors = otherTargets.take(2).toList();
 
     // Exactly 3 unique items for the 3 lanes (1 target + 2 distractors)
@@ -215,7 +228,7 @@ class CarRacingGameState extends State<CarRacingGame>
     // Speed scales gently with round progression
     _baseSpeed = 220.0 + (_currentRoundIndex * 12.0);
 
-    for (int lane = 0; lane < 3; lane++) {
+    for (int lane = 0; lane < 3 && lane < waveItems.length; lane++) {
       final itemData = waveItems[lane];
       final colorIdx = _rng.nextInt(_bubbleColors.length);
 

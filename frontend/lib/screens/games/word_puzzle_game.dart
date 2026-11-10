@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../data/word_puzzle_data.dart';
+import '../../models/game_content.dart';
 import '../../models/letter_candy_game_model.dart';
 import '../../models/word_puzzle_game_model.dart';
 import '../../services/audio_service.dart';
@@ -12,10 +12,12 @@ import '../../services/progress_service.dart';
 class WordPuzzleGame extends StatefulWidget {
   final ProgressService? progressService;
   final int initialLevel;
+  final GameContent content;
 
   const WordPuzzleGame({
     super.key,
     this.progressService,
+    required this.content,
     this.initialLevel = 1,
   });
 
@@ -30,6 +32,8 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
 
   late int _currentLevel;
   late List<WordPuzzleModel> _levelPuzzles;
+  late final List<WordPuzzleModel> _allPuzzles;
+  int get _maxLevel => widget.content.levels.length;
   int _puzzleIndex = 0;
   WordPuzzleModel get _currentPuzzle => _levelPuzzles[_puzzleIndex];
 
@@ -61,7 +65,8 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
   @override
   void initState() {
     super.initState();
-    _currentLevel = widget.initialLevel.clamp(1, 4);
+    _allPuzzles = _buildPuzzlesFromAdmin();
+    _currentLevel = widget.initialLevel.clamp(1, _maxLevel);
 
     _shakeController = AnimationController(
       vsync: this,
@@ -96,13 +101,46 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
     super.dispose();
   }
 
+  /// Admin level N → puzzles of difficulty N. Each target word is spelled
+  /// letter by letter; decoy tiles come from the level's distractors or,
+  /// if none were entered, from other admin letters.
+  List<WordPuzzleModel> _buildPuzzlesFromAdmin() {
+    final content = widget.content;
+    final puzzles = <WordPuzzleModel>[];
+    for (var i = 0; i < content.levels.length; i++) {
+      final level = content.levels[i];
+      for (final rawWord in level.targets) {
+        final word = rawWord.trim().toUpperCase();
+        final components = word.split('').where((c) => c.trim().isNotEmpty).toList();
+        if (components.isEmpty) continue;
+        final decoys = content
+            .distractorsFor(level)
+            .expand((d) => d.toUpperCase().split(''))
+            .where((c) => c.trim().isNotEmpty && !components.contains(c))
+            .toSet()
+            .toList();
+        final admin = content.letterFor(word);
+        puzzles.add(WordPuzzleModel(
+          id: '${content.game.id}_${i}_$word',
+          word: word,
+          components: components,
+          distractorPool: decoys.isNotEmpty ? decoys : components,
+          difficultyLevel: i + 1,
+          meaning: admin.meaning.isNotEmpty ? admin.meaning : (level.prompt.isNotEmpty ? level.prompt : null),
+          audioPath: admin.audioPath,
+        ));
+      }
+    }
+    return puzzles;
+  }
+
   void _loadLevel(int level) {
     _currentLevel = level;
-    _levelPuzzles = wordPuzzleDatabase
+    _levelPuzzles = _allPuzzles
         .where((p) => p.difficultyLevel == level)
         .toList();
     if (_levelPuzzles.isEmpty) {
-      _levelPuzzles = wordPuzzleDatabase;
+      _levelPuzzles = _allPuzzles;
     }
     _puzzleIndex = 0;
     _wordsCompletedInLevel = 0;
@@ -988,7 +1026,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
               // Action buttons
               Row(
                 children: [
-                  if (_currentLevel < 4)
+                  if (_currentLevel < _maxLevel)
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
@@ -1011,7 +1049,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                         ),
                       ),
                     ),
-                  if (_currentLevel < 4) const SizedBox(width: 12),
+                  if (_currentLevel < _maxLevel) const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {

@@ -6,10 +6,7 @@ import '../models/video_model.dart';
 import '../models/quiz_model.dart';
 
 import '../data/english_letters_data.dart';
-import '../data/story_data.dart';
 import '../data/game_data.dart';
-import '../data/video_data.dart';
-import '../data/quiz_data.dart';
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -63,7 +60,7 @@ class LocalDataRepository implements IDataRepository {
 
   @override
   Future<StoryModel> getFeaturedStory() async {
-    return hareAndTortoiseStory;
+    throw Exception('Stories are admin-managed only');
   }
 
   @override
@@ -73,123 +70,28 @@ class LocalDataRepository implements IDataRepository {
 
   @override
   Future<List<VideoItem>> getVideoLessons() async {
-    return tamilVideoLessonsList;
+    return const []; // Videos are admin-managed only
   }
 
   @override
   Future<List<GameItem>> getActiveGames() async {
-    return const [
-      GameItem(
-        id: 'game_candy_1',
-        gameType: 'candy',
-        title: 'Alphabet Candy Match',
-        prompt: 'Match 3 colorful letter candies together!',
-        clueImage: 'assets/images/games/candy_match_cover.png',
-        displayOrder: 1,
-        isActive: true,
-      ),
-      GameItem(
-        id: 'game_runner_1',
-        gameType: 'runner',
-        title: 'Alphabet Runner',
-        prompt: 'Run and collect letters along the jungle trail!',
-        clueImage: 'assets/images/games/runner_cover.png',
-        displayOrder: 2,
-        isActive: true,
-      ),
-      GameItem(
-        id: 'game_balloon_1',
-        gameType: 'balloon',
-        title: 'Balloon Word Pop',
-        prompt: 'Pop the floating balloons with the target letters!',
-        clueImage: 'assets/images/games/balloon_pop_cover.png',
-        displayOrder: 3,
-        isActive: true,
-      ),
-      GameItem(
-        id: 'game_flappy_1',
-        gameType: 'flappy',
-        title: 'Flappy Word',
-        prompt: 'Flap wings and fly through the correct cloud gates!',
-        clueImage: 'assets/images/games/flappy_word_cover.png',
-        displayOrder: 4,
-        isActive: true,
-      ),
-      GameItem(
-        id: 'game_ninja_1',
-        gameType: 'ninja',
-        title: 'Word Ninja',
-        prompt: 'Slice the flying letter fruits with your katana sword!',
-        clueImage: 'assets/images/games/word_ninja_cover.png',
-        displayOrder: 5,
-        isActive: true,
-      ),
-      GameItem(
-        id: 'game_racing_1',
-        gameType: 'racing',
-        title: 'Car Racing (Vowels)',
-        prompt: 'Steer your car and drive through the target letter!',
-        clueImage: 'assets/images/games/car_racing_cover.png',
-        displayOrder: 6,
-        isActive: true,
-      ),
-      GameItem(
-        id: 'game_fishing_1',
-        gameType: 'fishing',
-        title: 'Letter Fishing',
-        prompt: 'Catch the swimming fish carrying the target letter!',
-        clueImage: 'assets/images/games/fishing_cover.png',
-        displayOrder: 7,
-        isActive: true,
-      ),
-      GameItem(
-        id: 'game_basket_1',
-        gameType: 'basket',
-        title: 'Letter Basket (Vowels)',
-        prompt: 'Catch the falling vowel letters into your basket!',
-        clueImage: 'assets/images/games/basket_vowels_cover.png',
-        displayOrder: 8,
-        isActive: true,
-      ),
-      GameItem(
-        id: 'game_basket_2',
-        gameType: 'basket',
-        title: 'Letter Basket (Consonants)',
-        prompt: 'Catch the falling consonant letters into your magical basket!',
-        clueImage: 'assets/images/games/basket_consonants_cover.png',
-        displayOrder: 9,
-        isActive: true,
-      ),
-      GameItem(
-        id: 'game_puzzle_1',
-        gameType: 'puzzle',
-        title: 'Word Puzzle',
-        prompt: 'Select the missing starting letter to complete the word!',
-        clueImage: 'assets/images/welcome.png',
-        displayOrder: 10,
-        isActive: true,
-      ),
-    ];
+    // Games are admin-managed only; there is no offline game catalog.
+    return const [];
   }
 
   @override
   Future<List<QuizCategory>> getQuizCategories() async {
-    return tamilQuizCategories;
+    return const []; // Quizzes are admin-managed only
   }
 
   @override
   Future<List<QuizQuestion>> getQuizQuestions(String categoryId) async {
-    return tamilQuizQuestionsMap[categoryId] ?? tamilQuizQuestionsMap['quiz_alphabets'] ?? [];
+    return const []; // Quizzes are admin-managed only
   }
 }
 
 class ApiDataRepository implements IDataRepository {
   final LocalDataRepository _fallback = LocalDataRepository();
-  List<LetterModel>? _cachedAll;
-  List<LetterModel>? _cachedVowels;
-  List<LetterModel>? _cachedConsonants;
-  List<VideoItem>? _cachedVideos;
-  List<GameItem>? _cachedGames;
 
   LetterModel _enrichWithLocalAssets(LetterModel letter) {
     if (letter.imagePath == null ||
@@ -221,80 +123,71 @@ class ApiDataRepository implements IDataRepository {
     return letter;
   }
 
-  @override
-  Future<List<LetterModel>> getAllAlphabets() async {
-    if (_cachedAll != null && _cachedAll!.isNotEmpty) {
-      return _cachedAll!;
-    }
-    try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/letters?all=true');
-      final res = await http.get(uri).timeout(const Duration(seconds: 4));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        if (data['success'] == true && data['data'] is List) {
-          final List list = data['data'];
-          final letters = list
-              .map((item) => _enrichWithLocalAssets(LetterModel.fromJson(item as Map<String, dynamic>)))
-              .toList();
-          if (letters.isNotEmpty) {
-            _cachedAll = letters;
-            return letters;
-          }
-        }
+  // ---------------------------------------------------------------------------
+  // Fast cache: once something has loaded, screens get it instantly. When it is
+  // older than [_freshFor] it is still returned instantly while a fresh copy is
+  // fetched in the background, so admin changes show up on the next visit.
+  // Identical requests that are already running are shared, not repeated.
+  // ---------------------------------------------------------------------------
+  static const Duration _freshFor = Duration(seconds: 30);
+  static const Duration _timeout = Duration(seconds: 8);
+  final Map<String, _CacheEntry> _cache = {};
+  final Map<String, Future<dynamic>> _inFlight = {};
+
+  Future<T> _cached<T>(String key, Future<T> Function() load) async {
+    final entry = _cache[key];
+    if (entry != null) {
+      if (DateTime.now().difference(entry.storedAt) > _freshFor) {
+        _refresh<T>(key, load).catchError((_) => entry.value as T); // background, errors ignored
       }
-    } catch (_) {}
-    return _fallback.getAllAlphabets();
+      return entry.value as T;
+    }
+    return _refresh<T>(key, load);
+  }
+
+  Future<T> _refresh<T>(String key, Future<T> Function() load) {
+    final running = _inFlight[key];
+    if (running != null) return running.then((v) => v as T);
+    final future = load().then((value) {
+      final isEmptyList = value is List && value.isEmpty;
+      if (!isEmptyList) _cache[key] = _CacheEntry(value, DateTime.now());
+      return value;
+    }).whenComplete(() => _inFlight.remove(key));
+    _inFlight[key] = future;
+    return future;
+  }
+
+  void _forget(String prefix) => _cache.removeWhere((k, _) => k.startsWith(prefix));
+
+  Future<dynamic> _getData(String path) async {
+    final res = await http.get(Uri.parse('${ApiConfig.baseUrl}$path')).timeout(_timeout);
+    if (res.statusCode != 200) throw Exception('Request failed (${res.statusCode}): $path');
+    final body = jsonDecode(res.body);
+    if (body['success'] != true) throw Exception('Unexpected response: $path');
+    return body['data'];
+  }
+
+  Future<List<LetterModel>> _letters(String key, String path) async {
+    try {
+      return await _cached(key, () async {
+        final data = await _getData(path);
+        return (data as List)
+            .map((item) => _enrichWithLocalAssets(LetterModel.fromJson(item as Map<String, dynamic>)))
+            .toList();
+      });
+    } catch (_) {
+      return const []; // Letters are admin-managed only
+    }
   }
 
   @override
-  Future<List<LetterModel>> getUyirLetters() async {
-    if (_cachedVowels != null && _cachedVowels!.isNotEmpty) {
-      return _cachedVowels!;
-    }
-    try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/letters?type=vowel&all=true');
-      final res = await http.get(uri).timeout(const Duration(seconds: 4));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        if (data['success'] == true && data['data'] is List) {
-          final List list = data['data'];
-          final letters = list
-              .map((item) => _enrichWithLocalAssets(LetterModel.fromJson(item as Map<String, dynamic>)))
-              .toList();
-          if (letters.isNotEmpty) {
-            _cachedVowels = letters;
-            return letters;
-          }
-        }
-      }
-    } catch (_) {}
-    return _fallback.getUyirLetters();
-  }
+  Future<List<LetterModel>> getAllAlphabets() => _letters('letters:all', '/letters?all=true');
 
   @override
-  Future<List<LetterModel>> getMeiLetters() async {
-    if (_cachedConsonants != null && _cachedConsonants!.isNotEmpty) {
-      return _cachedConsonants!;
-    }
-    try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/letters?type=consonant&all=true');
-      final res = await http.get(uri).timeout(const Duration(seconds: 4));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        if (data['success'] == true && data['data'] is List) {
-          final List list = data['data'];
-          final letters = list
-              .map((item) => _enrichWithLocalAssets(LetterModel.fromJson(item as Map<String, dynamic>)))
-              .toList();
-          if (letters.isNotEmpty) {
-            _cachedConsonants = letters;
-            return letters;
-          }
-        }
-      }
-    } catch (_) {}
-    return _fallback.getMeiLetters();
-  }
+  Future<List<LetterModel>> getUyirLetters() => _letters('letters:vowel', '/letters?type=vowel&all=true');
+
+  @override
+  Future<List<LetterModel>> getMeiLetters() => _letters('letters:consonant', '/letters?type=consonant&all=true');
 
   @override
   Future<LetterModel> getAythamLetter() async {
@@ -308,101 +201,93 @@ class ApiDataRepository implements IDataRepository {
   @override
   Future<List<String>> getMeiGroupBases() async => [];
 
+  /// The first admin story with its pages. Throws when none can be loaded.
   @override
-  Future<StoryModel> getFeaturedStory() async {
-    try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/stories');
-      final res = await http.get(uri).timeout(const Duration(seconds: 4));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        if (data['success'] == true && data['data'] is List && (data['data'] as List).isNotEmpty) {
-          final storyJson = (data['data'] as List).first as Map<String, dynamic>;
-          // Fetch full story details with pages
-          final storyId = storyJson['id'];
-          final detailUri = Uri.parse('${ApiConfig.baseUrl}/stories/$storyId');
-          final detailRes = await http.get(detailUri).timeout(const Duration(seconds: 4));
-          if (detailRes.statusCode == 200) {
-            final detailData = jsonDecode(detailRes.body);
-            if (detailData['success'] == true && detailData['data'] != null) {
-              return StoryModel.fromJson(detailData['data'] as Map<String, dynamic>);
-            }
-          }
-        }
-      }
-    } catch (_) {}
-    return _fallback.getFeaturedStory();
-  }
+  Future<StoryModel> getFeaturedStory() => _cached('story:featured', () async {
+        final list = await _getData('/stories') as List;
+        if (list.isEmpty) throw Exception('No story available from server');
+        final storyId = (list.first as Map<String, dynamic>)['id'];
+        final detail = await _getData('/stories/$storyId');
+        return StoryModel.fromJson(detail as Map<String, dynamic>);
+      });
 
   @override
   Future<List<GameQuestion>> getGameQuestions() => _fallback.getGameQuestions();
 
-  void clearVideoCache() {
-    _cachedVideos = null;
-  }
+  void clearVideoCache() => _forget('videos');
 
   @override
   Future<List<VideoItem>> getVideoLessons() async {
-    if (_cachedVideos != null && _cachedVideos!.isNotEmpty) {
-      return _cachedVideos!;
-    }
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/videos?all=true');
-      final res = await http.get(uri).timeout(const Duration(seconds: 4));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        if (data['success'] == true && data['data'] is List) {
-          final List list = data['data'];
-          final videos = list.map((item) => VideoItem.fromJson(item as Map<String, dynamic>)).toList();
-          if (videos.isNotEmpty) {
-            _cachedVideos = videos;
-            return videos;
-          }
-        }
-      }
-    } catch (_) {}
-    return _fallback.getVideoLessons();
-  }
-
-  void clearGamesCache() {
-    _cachedGames = null;
-  }
-
-  @override
-  Future<List<GameItem>> getActiveGames() async {
-    if (_cachedGames != null && _cachedGames!.isNotEmpty) {
-      return _cachedGames!;
+      return await _cached('videos', () async {
+        final data = await _getData('/videos?all=true') as List;
+        return data.map((item) => VideoItem.fromJson(item as Map<String, dynamic>)).toList();
+      });
+    } catch (_) {
+      return const []; // Videos are admin-managed only
     }
-    try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/games');
-      final res = await http.get(uri).timeout(const Duration(seconds: 4));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        if (data['success'] == true && data['data'] is List) {
-          final List list = data['data'];
-          final games = list.map((item) => GameItem.fromJson(item as Map<String, dynamic>)).toList();
-          if (games.isNotEmpty) {
-            _cachedGames = games;
-            return games;
-          }
-        }
-      }
-    } catch (_) {}
-    return _fallback.getActiveGames();
   }
 
-  @override
-  Future<List<QuizCategory>> getQuizCategories() => _fallback.getQuizCategories();
+  void clearGamesCache() => _forget('games');
 
+  /// Admin-managed games. Throws when the server can't be reached and nothing is cached.
   @override
-  Future<List<QuizQuestion>> getQuizQuestions(String categoryId) => _fallback.getQuizQuestions(categoryId);
+  Future<List<GameItem>> getActiveGames() => _cached('games', () async {
+        final data = await _getData('/games') as List;
+        return data.map((item) => GameItem.fromJson(item as Map<String, dynamic>)).toList();
+      });
 
-  void invalidateCache() {
-    _cachedAll = null;
-    _cachedVowels = null;
-    _cachedConsonants = null;
-    _cachedVideos = null;
-    _cachedGames = null;
+  /// Admin-managed quizzes. Throws when the server can't be reached and nothing is cached.
+  @override
+  Future<List<QuizCategory>> getQuizCategories() => _cached('quizzes', () async {
+        final data = await _getData('/quizzes') as List;
+        return data
+            .map((item) => QuizCategory.fromJson(item as Map<String, dynamic>))
+            .where((q) => q.questionCount > 0)
+            .toList();
+      });
+
+  /// Questions (with answers) for one admin quiz. Throws when the server can't be reached.
+  @override
+  Future<List<QuizQuestion>> getQuizQuestions(String categoryId) => _cached('quiz:$categoryId', () async {
+        final data = await _getData('/quizzes/$categoryId/play') as Map<String, dynamic>;
+        final questions = (data['questions'] as List?) ?? const [];
+        return questions
+            .map((q) => QuizQuestion.fromJson(q as Map<String, dynamic>, categoryId))
+            .where((q) => q.options.length >= 2)
+            .toList();
+      });
+
+  /// Loads everything in the background (after the first screen is shown) so
+  /// tapping into Letters, Games, Quiz, Stories or Videos opens instantly.
+  Future<void> prefetchAll() async {
+    Future<void> quietly(Future<dynamic> Function() f) async {
+      try {
+        await f();
+      } catch (_) {}
+    }
+
+    await Future.wait([
+      quietly(getAllAlphabets),
+      quietly(getUyirLetters),
+      quietly(getMeiLetters),
+      quietly(getActiveGames),
+      quietly(getVideoLessons),
+      quietly(getFeaturedStory),
+      quietly(() async {
+        final quizzes = await getQuizCategories();
+        await Future.wait(quizzes.map((q) => quietly(() => getQuizQuestions(q.id))));
+      }),
+    ]);
   }
+
+  void invalidateCache() => _cache.clear();
+}
+
+class _CacheEntry {
+  final dynamic value;
+  final DateTime storedAt;
+  _CacheEntry(this.value, this.storedAt);
 }
 
 class DataService {
@@ -429,6 +314,12 @@ class DataService {
   Future<List<GameItem>> getActiveGames() => _repo.getActiveGames();
   Future<List<QuizCategory>> getQuizCategories() => _repo.getQuizCategories();
   Future<List<QuizQuestion>> getQuizQuestions(String categoryId) => _repo.getQuizQuestions(categoryId);
+
+  /// Warm every screen's data in the background so navigation is instant.
+  Future<void> prefetchAll() async {
+    final repo = _repo;
+    if (repo is ApiDataRepository) await repo.prefetchAll();
+  }
 
   void clearVideoCache() {
     if (_repo is ApiDataRepository) {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../data/quiz_data.dart';
 import '../../models/quiz_model.dart';
 import '../../services/audio_service.dart';
+import '../../services/data_service.dart';
 import '../../services/progress_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -11,10 +11,117 @@ import '../../widgets/kid_scaffold_background.dart';
 import '../../widgets/mascot_widget.dart';
 import 'quiz_play_screen.dart';
 
-class QuizScreen extends StatelessWidget {
+class QuizScreen extends StatefulWidget {
   final ProgressService progressService;
 
   const QuizScreen({super.key, required this.progressService});
+
+  @override
+  State<QuizScreen> createState() => _QuizScreenState();
+}
+
+class _QuizScreenState extends State<QuizScreen> {
+  /// Quizzes come only from the admin panel.
+  late Future<List<QuizCategory>> _categoriesFuture;
+
+  ProgressService get progressService => widget.progressService;
+
+  @override
+  void initState() {
+    super.initState();
+    _categoriesFuture = DataService.instance.getQuizCategories();
+  }
+
+  void _reload() {
+    setState(() {
+      _categoriesFuture = DataService.instance.getQuizCategories();
+    });
+  }
+
+  Widget _buildCategories(BuildContext context) {
+    return FutureBuilder<List<QuizCategory>>(
+      future: _categoriesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Padding(
+            padding: EdgeInsets.all(40),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return _buildMessage(
+            icon: Icons.wifi_off_rounded,
+            text: 'Could not load quizzes. Check your internet connection.',
+            showRetry: true,
+          );
+        }
+        final categories = snapshot.data ?? const [];
+        if (categories.isEmpty) {
+          return _buildMessage(icon: Icons.quiz_outlined, text: 'No quizzes yet. Please check back soon!');
+        }
+        return Column(
+          children: [
+            for (final category in categories)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: _buildCategoryCard(context, category),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildMessage({required IconData icon, required String text, bool showRetry = false}) {
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        children: [
+          Icon(icon, size: 54, color: Colors.grey.shade400),
+          const SizedBox(height: 12),
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.grey.shade600),
+          ),
+          if (showRetry) ...[
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: _reload,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Try again'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openQuiz(BuildContext context, QuizCategory category) async {
+    final messenger = ScaffoldMessenger.of(context);
+    List<QuizQuestion> questions;
+    try {
+      questions = await DataService.instance.getQuizQuestions(category.id);
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(content: Text('Could not load this quiz. Please try again.')));
+      return;
+    }
+    if (!context.mounted) return;
+    if (questions.isEmpty) {
+      messenger.showSnackBar(const SnackBar(content: Text('This quiz has no questions yet.')));
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QuizPlayScreen(
+          category: category,
+          questions: questions,
+          progressService: progressService,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,12 +224,7 @@ class QuizScreen extends StatelessWidget {
                       const SizedBox(height: 18),
 
                       // Categories list
-                      ...tamilQuizCategories.map((category) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 14),
-                          child: _buildCategoryCard(context, category),
-                        );
-                      }),
+                      _buildCategories(context),
                       const SizedBox(height: 20),
                     ],
                   ),
@@ -154,19 +256,7 @@ class QuizScreen extends StatelessWidget {
     return BouncyButton(
       onPressed: () {
         AudioService.instance.playTamilAudio(category.title);
-        final questions = tamilQuizQuestionsMap[category.id] ?? [];
-        if (questions.isNotEmpty) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => QuizPlayScreen(
-                category: category,
-                questions: questions,
-                progressService: progressService,
-              ),
-            ),
-          );
-        }
+        _openQuiz(context, category);
       },
       child: Container(
         padding: const EdgeInsets.all(16),

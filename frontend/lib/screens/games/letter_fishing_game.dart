@@ -1,9 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import '../../data/uyir_data.dart';
-import '../../data/mei_data.dart';
-import '../../data/english_letters_data.dart';
+import '../../models/game_content.dart';
 import '../../models/letter_model.dart';
 import '../../models/letter_fishing_game_model.dart';
 import '../../services/audio_service.dart';
@@ -22,10 +20,12 @@ enum HookState {
 class LetterFishingGame extends StatefulWidget {
   final ProgressService progressService;
   final FishingGameMode mode;
+  final GameContent content;
 
   const LetterFishingGame({
     super.key,
     required this.progressService,
+    required this.content,
     this.mode = FishingGameMode.uyir,
   });
 
@@ -148,13 +148,9 @@ class _LetterFishingGameState extends State<LetterFishingGame>
   }
 
   void _setupGameData() {
-    if (widget.mode == FishingGameMode.mei) {
-      _letterPool = List<LetterModel>.from(englishVowelsList);
-    } else {
-      _letterPool = List<LetterModel>.from(englishLettersList);
-    }
-
-    _roundQueue = List<LetterModel>.from(_letterPool);
+    // Target fish and wrong fish come from the admin's levels for this game
+    _letterPool = widget.content.mixPoolLetters;
+    _roundQueue = List<LetterModel>.from(widget.content.targetLetters);
     _currentRoundIndex = 0;
     _score = 0;
     _caughtCount = 0;

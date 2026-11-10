@@ -29,7 +29,17 @@ router.post(
     }),
     body('title').trim().notEmpty().withMessage('Title is required'),
     body('prompt').trim().notEmpty().withMessage('Prompt is required'),
-    body('options').isArray({ min: 2 }).withMessage('options must be an array of choices'),
+    body('options').optional().isArray().withMessage('options must be an array of choices'),
+    body('levels').optional().isArray().withMessage('levels must be an array'),
+    body().custom((val, { req }) => {
+      const levels = Array.isArray(req.body.levels) ? req.body.levels : [];
+      const hasLevelContent = levels.some((l) => l && Array.isArray(l.targets) && l.targets.length > 0);
+      const hasOptions = Array.isArray(req.body.options) && req.body.options.length > 0;
+      if (!hasLevelContent && !hasOptions) {
+        throw new Error('Add at least one level with target letters/words');
+      }
+      return true;
+    }),
     validateRequest,
   ],
   GameController.create

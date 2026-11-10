@@ -12,6 +12,9 @@ const router = express.Router();
 // Public: List quizzes (optional query: ?category=uyir)
 router.get('/', QuizController.getAll);
 
+// Public / Child: Get quiz with questions AND answers, for the app's instant right/wrong feedback
+router.get('/:id/play', QuizController.getForPlay);
+
 // Public / Child: Get quiz with questions (answers hidden unless authenticated admin with includeAnswers=true)
 router.get('/:id', QuizController.getById);
 
