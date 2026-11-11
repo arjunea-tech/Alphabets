@@ -1,39 +1,22 @@
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'cloudinary_media.dart';
 
 class ApiConfig {
-  /// Live backend used by release builds. Debug and profile builds use the local URLs below.
+  /// Live backend. Every build (debug, profile and release) uses it by default,
+  /// so an APK works on any network, including mobile data.
   static const String productionBaseUrl = 'https://alphabets-api.macvelsoftware.com/api/v1';
 
-  // Custom server IP override if testing on a physical phone on the same Wi-Fi network
+  // Runtime override, e.g. set from a settings screen.
   static String? customServerUrl;
   static String? _discoveredBaseUrl;
 
-  /// Override without editing code:
-  ///   flutter run --dart-define=API_BASE_URL=http://192.168.1.46:5000/api/v1
+  /// To test against a backend running on your PC instead of the live server:
+  ///   Phone on the same Wi-Fi: flutter run --dart-define=API_BASE_URL=http://192.168.1.46:5000/api/v1
+  ///   Android emulator:        flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000/api/v1
+  ///   Web / desktop:           flutter run --dart-define=API_BASE_URL=http://localhost:5000/api/v1
   static const String _envBaseUrl = String.fromEnvironment('API_BASE_URL');
 
-  /// Your PC's Wi-Fi IP (run `ipconfig`). Phones on the same Wi-Fi reach the backend here.
-  static const String _lanBaseUrl = 'http://192.168.1.46:5000/api/v1';
-
-  /// Candidate backend URLs for seamless connectivity across physical devices, emulators, and web
-  static List<String> get candidateBaseUrls {
-    if (customServerUrl != null && customServerUrl!.trim().isNotEmpty) {
-      return [customServerUrl!.trim()];
-    }
-    if (_envBaseUrl.isNotEmpty) return [_envBaseUrl];
-    if (_discoveredBaseUrl != null && _discoveredBaseUrl!.isNotEmpty) {
-      return [_discoveredBaseUrl!];
-    }
-    if (kReleaseMode) return [productionBaseUrl];
-    return [
-      if (kIsWeb) 'http://localhost:5000/api/v1',
-      if (!kIsWeb && Platform.isAndroid) _lanBaseUrl, // physical phone on same Wi-Fi
-      if (!kIsWeb && Platform.isAndroid) 'http://10.0.2.2:5000/api/v1', // Android emulator
-      'http://localhost:5000/api/v1',
-    ];
-  }
+  /// Backend URLs to try, in order.
+  static List<String> get candidateBaseUrls => [baseUrl];
 
   static String get baseUrl {
     if (customServerUrl != null && customServerUrl!.trim().isNotEmpty) {
@@ -43,10 +26,7 @@ class ApiConfig {
     if (_discoveredBaseUrl != null && _discoveredBaseUrl!.isNotEmpty) {
       return _discoveredBaseUrl!;
     }
-    if (kReleaseMode) return productionBaseUrl;
-    if (kIsWeb) return 'http://localhost:5000/api/v1';
-    if (!kIsWeb && Platform.isAndroid) return _lanBaseUrl;
-    return 'http://localhost:5000/api/v1';
+    return productionBaseUrl;
   }
 
   static void setWorkingBaseUrl(String url) {
