@@ -1,7 +1,27 @@
 /**
  * Reading Stories Data Access Model
  */
-const { pool } = require('../config/db');
+const { pool, isPostgres } = require('../config/db');
+const logger = require('../utils/logger');
+
+let schemaReady = null;
+
+/** Adds the content column to databases created before it existed. Runs once per process. */
+function ensureSchema() {
+  if (!schemaReady) {
+    const sql = isPostgres
+      ? 'ALTER TABLE reading_stories ADD COLUMN IF NOT EXISTS content TEXT NULL'
+      : 'ALTER TABLE reading_stories ADD COLUMN content TEXT NULL';
+    schemaReady = pool.query(sql).catch((err) => {
+      // MySQL has no IF NOT EXISTS for columns: a duplicate-column error means it is already there.
+      if (err.code !== 'ER_DUP_FIELDNAME') {
+        logger.warn(`⚠️ Could not ensure reading_stories.content column: ${err.message}`);
+        schemaReady = null;
+      }
+    });
+  }
+  return schemaReady;
+}
 
 class StoryModel {
   static async getAll({ onlyPublished = true } = {}) {
@@ -70,6 +90,7 @@ class StoryModel {
     displayOrder = 0,
     isPublished = true,
   }) {
+    await ensureSchema();
     const storyId = id || `story_${Date.now()}`;
     await pool.query(
       `INSERT INTO reading_stories (id, title, subtitle, cover_emoji, cover_image, content, moral, display_order, is_published)
@@ -80,6 +101,7 @@ class StoryModel {
   }
 
   static async update(id, data) {
+    await ensureSchema();
     const fields = [];
     const values = [];
 

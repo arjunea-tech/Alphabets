@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   id VARCHAR(64) PRIMARY KEY,
   name VARCHAR(128) NOT NULL,
   subdomain VARCHAR(64) UNIQUE,
-  default_language VARCHAR(10) NOT NULL DEFAULT 'ta',
+  default_language VARCHAR(10) NOT NULL DEFAULT 'en',
   logo_url VARCHAR(255) NULL,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -79,6 +79,8 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_asset VARCHAR(255) NOT NULL DEFAULT 'assets/images/welcome.png',
   total_stars INT NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  language_code VARCHAR(10) NOT NULL DEFAULT 'en',
+  tenant_id VARCHAR(64) NULL DEFAULT 'default',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -100,6 +102,8 @@ CREATE TABLE IF NOT EXISTS lessons (
   route_name VARCHAR(64) DEFAULT '',
   display_order INT NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  language_code VARCHAR(10) NOT NULL DEFAULT 'en',
+  tenant_id VARCHAR(64) NULL DEFAULT 'default',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -116,6 +120,8 @@ CREATE TABLE IF NOT EXISTS letter_groups (
   letter_type VARCHAR(32) NOT NULL,
   description TEXT,
   display_order INT NOT NULL DEFAULT 0,
+  language_code VARCHAR(10) NOT NULL DEFAULT 'en',
+  tenant_id VARCHAR(64) NULL DEFAULT 'default',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -142,6 +148,8 @@ CREATE TABLE IF NOT EXISTS letters (
   uyir_base VARCHAR(32) NULL,
   display_order INT NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  language_code VARCHAR(10) NOT NULL DEFAULT 'en',
+  tenant_id VARCHAR(64) NULL DEFAULT 'default',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (group_id) REFERENCES letter_groups(id) ON DELETE SET NULL
@@ -159,9 +167,12 @@ CREATE TABLE IF NOT EXISTS reading_stories (
   subtitle VARCHAR(255) DEFAULT '',
   cover_emoji VARCHAR(32) DEFAULT '📖',
   cover_image VARCHAR(255) NULL,
+  content TEXT NULL,
   moral VARCHAR(255) DEFAULT '',
   display_order INT NOT NULL DEFAULT 0,
   is_published BOOLEAN NOT NULL DEFAULT TRUE,
+  language_code VARCHAR(10) NOT NULL DEFAULT 'en',
+  tenant_id VARCHAR(64) NULL DEFAULT 'default',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -202,6 +213,8 @@ CREATE TABLE IF NOT EXISTS videos (
   local_video_path VARCHAR(255) NULL,
   display_order INT NOT NULL DEFAULT 0,
   is_published BOOLEAN NOT NULL DEFAULT TRUE,
+  language_code VARCHAR(10) NOT NULL DEFAULT 'en',
+  tenant_id VARCHAR(64) NULL DEFAULT 'default',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -222,6 +235,8 @@ CREATE TABLE IF NOT EXISTS quizzes (
   stars_reward INT NOT NULL DEFAULT 5,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   display_order INT NOT NULL DEFAULT 0,
+  language_code VARCHAR(10) NOT NULL DEFAULT 'en',
+  tenant_id VARCHAR(64) NULL DEFAULT 'default',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -279,6 +294,8 @@ CREATE TABLE IF NOT EXISTS games (
   stars_reward INT NOT NULL DEFAULT 3,
   display_order INT NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  language_code VARCHAR(10) NOT NULL DEFAULT 'en',
+  tenant_id VARCHAR(64) NULL DEFAULT 'default',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
