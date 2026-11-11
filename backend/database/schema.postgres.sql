@@ -159,6 +159,7 @@ CREATE TABLE IF NOT EXISTS reading_stories (
   subtitle VARCHAR(255) DEFAULT '',
   cover_emoji VARCHAR(32) DEFAULT '📖',
   cover_image VARCHAR(255) NULL,
+  content TEXT NULL,
   moral VARCHAR(255) DEFAULT '',
   display_order INT NOT NULL DEFAULT 0,
   is_published BOOLEAN NOT NULL DEFAULT TRUE,
