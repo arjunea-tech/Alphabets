@@ -26,6 +26,8 @@ interface CloudinarySignatureResponse {
   uploadUrl: string;
 }
 
+const CLOUDINARY_FOLDER = import.meta.env.VITE_CLOUDINARY_FOLDER || 'alphabets_media';
+
 /**
  * Direct upload helper to Cloudinary using signed parameters
  */
@@ -37,7 +39,7 @@ async function uploadDirectToCloudinary(
 ): Promise<UploadResult> {
   // 1. Get upload signature from backend
   const sigRes = await apiClient.get<ApiResponse<CloudinarySignatureResponse>>(
-    `/admin/upload/signature?resourceType=${resourceType}&folder=agaram_media/${folderSuffix}`
+    `/admin/upload/signature?resourceType=${resourceType}&folder=${CLOUDINARY_FOLDER}/${folderSuffix}`
   );
 
   if (!sigRes.data?.success || !sigRes.data?.data) {

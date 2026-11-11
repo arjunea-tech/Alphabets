@@ -519,7 +519,10 @@ VALUES
 ('game_fishing_1', 'fishing', 'Letter Fishing', 'Catch the swimming fish with the letter B!', 'Letter Fishing', 'assets/images/welcome.png', 1, '["A", "B", "C", "D"]', 'You caught the fish! Splendid! 🎣🐟', 3, TRUE, 4),
 ('game_basket_1', 'basket', 'Letter Basket', 'Catch the falling letter C into your basket!', 'Basket Game', 'assets/images/welcome.png', 2, '["A", "B", "C", "D"]', 'Caught right in the basket! 🧺🍎', 3, TRUE, 5),
 ('game_puzzle_1', 'puzzle', 'Word Puzzle', 'Touch the starting letter of the word Apple!', 'A - pple', 'assets/images/welcome.png', 0, '["A", "B", "C", "D"]', 'Brilliant! A is for Apple! ⭐', 3, TRUE, 6),
-('game_balloon_1', 'balloon', 'Balloon Pop', 'Pop the balloon that has the letter D!', 'Dog', 'assets/images/welcome.png', 3, '["A", "B", "C", "D"]', 'POP! Wonderful job! 🎈', 3, TRUE, 7)
+('game_balloon_1', 'balloon', 'Balloon Pop', 'Pop the balloon that has the letter D!', 'Dog', 'assets/images/welcome.png', 3, '["A", "B", "C", "D"]', 'POP! Wonderful job! 🎈', 3, TRUE, 7),
+('game_flappy_1', 'flappy', 'Flappy Word', 'Flap your wings and fly through the correct cloud letter gates!', 'Fly through cloud gates with target letters', 'assets/images/games/flappy_word_cover.png', 0, '["A", "B", "C", "D"]', 'Gate Cleared! Great flying! 🕊️⭐', 5, TRUE, 8),
+('game_ninja_1', 'ninja', 'Word Ninja', 'Swipe your katana to slice the flying letter fruits in half!', 'Fruit & Word Slicing Ninja Challenge', 'assets/images/games/word_ninja_cover.png', 0, '["A", "E", "I", "O", "U"]', 'Ninja Slash! Direct hit! 🥷🍉💥', 5, TRUE, 9),
+('game_matching_1', 'matching', 'Letter Matching', 'Flip the cards and match each big letter with its small letter!', 'Big and Small Letter Memory Match', 'assets/images/games/letter_matching_cover.png', 0, '["A", "B", "C", "D"]', 'Perfect Match! Great memory! 🔄⭐', 5, TRUE, 10)
 ON DUPLICATE KEY UPDATE 
   game_type = VALUES(game_type),
   title = VALUES(title),

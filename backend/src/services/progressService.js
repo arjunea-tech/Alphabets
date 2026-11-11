@@ -47,9 +47,10 @@ class ProgressService {
     return {
       stars: user.total_stars,
       completedLetterIds,
-      completedStories: completedStories[0]?.count || 0,
+      // PostgreSQL returns COUNT() as a string; the Flutter client reads these as int.
+      completedStories: Number(completedStories[0]?.count) || 0,
       quizHighScore: quizHighScore[0]?.max_score || 0,
-      gamesPlayed: gamesPlayed[0]?.count || 0,
+      gamesPlayed: Number(gamesPlayed[0]?.count) || 0,
       childName: user.child_name,
       avatarAsset: user.avatar_asset,
       age: user.age,

@@ -145,6 +145,20 @@ async function seedGames() {
       display_order: 10,
       is_active: 1,
     },
+    {
+      id: 'game_matching_1',
+      game_type: 'matching',
+      title: 'Letter Matching',
+      prompt: 'Flip the cards and match each big letter with its small letter!',
+      clue: 'Big and Small Letter Memory Match',
+      clue_image: 'assets/images/games/letter_matching_cover.png',
+      correct_index: 0,
+      options_json: JSON.stringify(['A', 'B', 'C', 'D']),
+      success_praise: 'Perfect Match! Great memory! 🔄⭐',
+      stars_reward: 5,
+      display_order: 11,
+      is_active: 1,
+    },
   ];
 
   console.log('Seeding English Alphabet games into database...');

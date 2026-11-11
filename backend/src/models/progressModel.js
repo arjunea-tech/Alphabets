@@ -46,7 +46,7 @@ class ProgressModel {
        ON DUPLICATE KEY UPDATE 
          completion_status = VALUES(completion_status),
          completion_percentage = VALUES(completion_percentage),
-         stars_earned = GREATEST(stars_earned, VALUES(stars_earned)),
+         stars_earned = GREATEST(user_progress.stars_earned, VALUES(stars_earned)),
          last_accessed_at = CURRENT_TIMESTAMP`,
       [userId, contentType, contentId, completionStatus, completionPercentage, starsEarned]
     );
@@ -63,7 +63,7 @@ class ProgressModel {
       `INSERT INTO user_stars (user_id, total_stars, current_streak, highest_streak, last_earned_at)
        VALUES (?, ?, 1, 1, CURRENT_TIMESTAMP)
        ON DUPLICATE KEY UPDATE 
-         total_stars = total_stars + VALUES(total_stars),
+         total_stars = user_stars.total_stars + VALUES(total_stars),
          last_earned_at = CURRENT_TIMESTAMP`,
       [userId, starsToAdd]
     );

@@ -35,11 +35,11 @@ const config = {
     outputFormat: process.env.ELEVENLABS_OUTPUT_FORMAT || 'mp3_44100_128',
   },
   cloudinary: {
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME || 'dy8bu8suk',
-    apiKey: process.env.CLOUDINARY_API_KEY || '273693918865453',
-    apiSecret: process.env.CLOUDINARY_API_SECRET || 'Hn_ppRMFBcjF2k5JylDeZ0x7_wA',
-    folder: process.env.CLOUDINARY_FOLDER || 'agaram_media',
-    url: process.env.CLOUDINARY_URL || 'cloudinary://273693918865453:Hn_ppRMFBcjF2k5JylDeZ0x7_wA@dy8bu8suk',
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiKey: process.env.CLOUDINARY_API_KEY,
+    apiSecret: process.env.CLOUDINARY_API_SECRET,
+    folder: process.env.CLOUDINARY_FOLDER || 'alphabets_media',
+    url: process.env.CLOUDINARY_URL,
   },
 };
 

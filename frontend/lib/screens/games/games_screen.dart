@@ -14,6 +14,7 @@ import 'car_racing_game.dart';
 import 'letter_basket_game.dart';
 import 'letter_candy_game.dart';
 import 'letter_fishing_game.dart';
+import 'letter_matching_game.dart';
 import 'word_puzzle_game.dart';
 import 'balloon_pop_game.dart';
 import 'flappy_word_game.dart';
@@ -305,6 +306,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         return g.gameType == 'balloon' ||
             g.gameType == 'flappy' ||
             g.gameType == 'ninja' ||
+            g.gameType == 'matching' ||
             g.gameType == 'runner' ||
             g.gameType == 'candy';
       }
@@ -432,11 +434,11 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
   }
 
   String _resolveCoverAsset(GameItem game) {
-    if (game.clueImage != null && game.clueImage!.isNotEmpty) {
-      if (game.clueImage!.startsWith('assets/')) {
-        return game.clueImage!;
-      }
-      return game.clueImage!;
+    // welcome.png is the seeded placeholder, not a real cover, so skip it and
+    // use the per-game cover below. Covers set from the admin panel still win.
+    final clueImage = game.clueImage?.trim() ?? '';
+    if (clueImage.isNotEmpty && !clueImage.endsWith('/welcome.png')) {
+      return clueImage;
     }
 
     switch (game.gameType) {
@@ -446,6 +448,8 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         return 'assets/images/games/flappy_word_cover.png';
       case 'ninja':
         return 'assets/images/games/word_ninja_cover.png';
+      case 'matching':
+        return 'assets/images/games/letter_matching_cover.png';
       case 'candy':
         return 'assets/images/games/candy_match_cover.png';
       case 'runner':
@@ -460,6 +464,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         }
         return 'assets/images/games/basket_vowels_cover.png';
       case 'puzzle':
+        return 'assets/images/games/word_puzzle_cover.png';
       default:
         return 'assets/images/welcome.png';
     }
@@ -473,6 +478,8 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         return Icons.flight_rounded;
       case 'ninja':
         return Icons.sports_kabaddi_rounded;
+      case 'matching':
+        return Icons.compare_arrows_rounded;
       case 'candy':
         return Icons.grid_view_rounded;
       case 'runner':
@@ -517,6 +524,9 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         break;
       case 'ninja':
         targetScreen = WordNinjaGame(progressService: progress, content: content);
+        break;
+      case 'matching':
+        targetScreen = LetterMatchingGame(progressService: widget.progressService);
         break;
       case 'runner':
         targetScreen = AgaramRunGame(progressService: progress, content: content);
