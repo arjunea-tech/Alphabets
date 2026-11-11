@@ -21,7 +21,7 @@ const MULTI_LANGUAGE_TABLES = [
 ];
 
 const COLUMN_PATCHES = MULTI_LANGUAGE_TABLES.flatMap((table) => [
-  { table, column: 'language_code', definition: "VARCHAR(10) NOT NULL DEFAULT 'ta'" },
+  { table, column: 'language_code', definition: "VARCHAR(10) NOT NULL DEFAULT 'en'" },
   { table, column: 'tenant_id', definition: "VARCHAR(64) NULL DEFAULT 'default'" },
 ]);
 

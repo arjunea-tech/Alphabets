@@ -176,7 +176,7 @@ class LetterModel {
     return rows;
   }
 
-  static async createGroup({ id, name, displayTitle, letterType, description = '', displayOrder = 0, languageCode = 'ta', tenantId = 'default' }) {
+  static async createGroup({ id, name, displayTitle, letterType, description = '', displayOrder = 0, languageCode = 'en', tenantId = 'default' }) {
     const groupId = id || `group_${letterType}_${Date.now()}`;
     await pool.query(
       `INSERT INTO letter_groups (id, name, display_title, letter_type, description, display_order, language_code, tenant_id)
