@@ -11,6 +11,7 @@ import '../../widgets/celebration_dialog.dart';
 import '../../widgets/custom_audio_button.dart';
 import '../../widgets/kid_app_bar.dart';
 import '../../widgets/kid_scaffold_background.dart';
+import '../../widgets/letter_media_image.dart';
 import '../../widgets/mascot_widget.dart';
 
 class ReadingScreen extends StatefulWidget {
@@ -198,25 +199,15 @@ class _ReadingScreenState extends State<ReadingScreen> {
                         borderRadius: BorderRadius.circular(22),
                         border: Border.all(color: AppColors.storyColor.withValues(alpha: 0.2), width: 2),
                       ),
-                      child: word.imagePath != null && word.imagePath!.isNotEmpty
-                          ? (word.imagePath!.startsWith('http://') || word.imagePath!.startsWith('https://')
-                              ? Image.network(
-                                  word.imagePath!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => const Center(
-                                    child: Icon(Icons.image_rounded, size: 48, color: AppColors.storyColor),
-                                  ),
-                                )
-                              : Image.asset(
-                                  word.imagePath!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => const Center(
-                                    child: Icon(Icons.image_rounded, size: 48, color: AppColors.storyColor),
-                                  ),
-                                ))
-                          : const Center(
-                              child: Icon(Icons.image_rounded, size: 48, color: AppColors.storyColor),
-                            ),
+                      // Resolves Cloudinary URLs, backend `uploads/...` paths and
+                      // bundled assets; falls back to the word's emoji.
+                      child: LetterMediaImage(
+                        imagePath: word.imagePath,
+                        iconEmoji: word.emoji ?? '',
+                        fit: BoxFit.cover,
+                        height: 200,
+                        emojiSize: 96,
+                      ),
                     ),
                   ),
                 ),
@@ -442,25 +433,13 @@ class _ReadingScreenState extends State<ReadingScreen> {
               color: AppColors.surfaceLight,
               borderRadius: BorderRadius.circular(26),
             ),
-            child: _page.imagePath != null && _page.imagePath!.isNotEmpty
-                ? (_page.imagePath!.startsWith('http://') || _page.imagePath!.startsWith('https://')
-                    ? Image.network(
-                        _page.imagePath!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const Center(
-                          child: Icon(Icons.auto_stories_rounded, size: 48, color: AppColors.storyColor),
-                        ),
-                      )
-                    : Image.asset(
-                        _page.imagePath!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const Center(
-                          child: Icon(Icons.auto_stories_rounded, size: 48, color: AppColors.storyColor),
-                        ),
-                      ))
-                : const Center(
-                    child: Icon(Icons.auto_stories_rounded, size: 48, color: AppColors.storyColor),
-                  ),
+            child: LetterMediaImage(
+              imagePath: _page.imagePath,
+              iconEmoji: _page.emojiIllustration,
+              fit: BoxFit.cover,
+              height: 190,
+              emojiSize: 56,
+            ),
           ),
         ),
       ),

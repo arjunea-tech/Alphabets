@@ -91,7 +91,6 @@ class HomeScreen extends StatelessWidget {
                         _buildKidWorldCard(
                           title: 'Learn Alphabets',
                           subtitle: 'Explore all 26 letters A to Z with fun phonics!',
-                          badges: const ['🔤 26 Letters', '🍎 Phonics & Words'],
                           buttonLabel: "LET'S LEARN",
                           imageAsset: 'assets/images/learn.png',
                           gradient: const [Color(0xFFFF8A00), Color(0xFFFF5252)],
@@ -103,7 +102,6 @@ class HomeScreen extends StatelessWidget {
                         _buildKidWorldCard(
                           title: 'Play & Learn',
                           subtitle: 'Exciting racing, balloon popping & word ninja!',
-                          badges: const ['🚗 Car Racing', '🎈 Balloon Pop', '⚔️ Ninja'],
                           buttonLabel: 'PLAY GAMES',
                           imageAsset: 'assets/images/game.png',
                           gradient: const [Color(0xFF8338EC), Color(0xFF3A86FF)],
@@ -115,7 +113,6 @@ class HomeScreen extends StatelessWidget {
                         _buildKidWorldCard(
                           title: 'Writing Practice',
                           subtitle: 'Trace letters A to Z with magic finger guide!',
-                          badges: const ['✍️ Finger Tracing', '⭐ 70% Star Check'],
                           buttonLabel: 'START WRITING',
                           imageAsset: 'assets/images/writing.png',
                           gradient: const [Color(0xFFFF006E), Color(0xFFFF5252)],
@@ -135,7 +132,6 @@ class HomeScreen extends StatelessWidget {
                         _buildKidWorldCard(
                           title: 'Educational Videos',
                           subtitle: 'Watch and sing along with ABC phonics songs!',
-                          badges: const ['🎵 Phonics Songs', '📺 ABC Rhymes'],
                           buttonLabel: 'WATCH VIDEOS',
                           imageAsset: 'assets/images/video.png',
                           gradient: const [Color(0xFF00B4D8), Color(0xFF06D6A0)],
@@ -147,7 +143,6 @@ class HomeScreen extends StatelessWidget {
                         _buildKidWorldCard(
                           title: 'Alphabet Quizzes',
                           subtitle: 'Show how smart you are and collect golden stars!',
-                          badges: const ['🏆 Star Quiz', '🌟 Badges & Rewards'],
                           buttonLabel: 'START QUIZ',
                           imageAsset: 'assets/images/quiz.png',
                           gradient: const [Color(0xFF4361EE), Color(0xFF7209B7)],
@@ -427,7 +422,6 @@ class HomeScreen extends StatelessWidget {
   Widget _buildKidWorldCard({
     required String title,
     required String subtitle,
-    required List<String> badges,
     required String buttonLabel,
     required String imageAsset,
     required List<Color> gradient,
@@ -531,34 +525,6 @@ class HomeScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Badges Row
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 4,
-                            children: badges.map((badge) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: gradient[0].withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: gradient[0].withValues(alpha: 0.25),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  badge,
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: accentColor,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                          const SizedBox(height: 6),
-
                           // Title
                           Text(
                             title,

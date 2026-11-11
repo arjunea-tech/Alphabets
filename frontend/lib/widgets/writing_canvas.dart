@@ -132,9 +132,12 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
     super.didUpdateWidget(oldWidget);
     WritingEngine.activeLetter = widget.letter;
     if (oldWidget.letter != widget.letter || oldWidget.mode != widget.mode) {
-      _activeStepIndex = 0;
-      clearCanvas();
-      setState(() {});
+      // didUpdateWidget runs while the parent is building, so only reset local
+      // state here. Calling clearCanvas() would fire onEvaluationChanged and
+      // make the parent call setState() during build (red error screen).
+      // The parent calls clearCanvas() itself after switching letters, which
+      // sends the reset evaluation and starts the guide demo.
+      _resetLocalState();
     }
   }
 
@@ -200,16 +203,22 @@ class WritingCanvasState extends State<WritingCanvas> with TickerProviderStateMi
     }
   }
 
+  void _resetLocalState() {
+    _strokes.clear();
+    _currentStroke.clear();
+    _activeStepIndex = 0;
+    _isDemoActive = false;
+    _demoController?.stop();
+    _failedAttempts = 0;
+    _hintText = null;
+  }
+
   void clearCanvas() {
-    setState(() {
-      _strokes.clear();
-      _currentStroke.clear();
-      _activeStepIndex = 0;
-      _isDemoActive = false;
-      _demoController?.stop();
-      _failedAttempts = 0;
-      _hintText = null;
-    });
+    setState(_resetLocalState);
+    _notifyCleared();
+  }
+
+  void _notifyCleared() {
     widget.onStrokeUpdated?.call(0);
     widget.onStrokesChanged?.call([]);
     widget.onEvaluationChanged?.call(const HandwritingEvaluationResult(
