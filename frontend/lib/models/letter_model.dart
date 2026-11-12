@@ -8,6 +8,7 @@ enum LetterType {
   consonant,
 }
 
+
 class LetterModel {
   final String id;
   final String letter;

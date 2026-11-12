@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/language_service.dart';
 import '../../services/progress_service.dart';
+import '../../services/cloudinary_media.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/bouncy_button.dart';
@@ -130,8 +131,9 @@ class LearningScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            const MascotWidget(
+                            MascotWidget(
                               pose: MascotPose.learn,
+                              customAssetOrUrl: CloudinaryMedia.getUrl('assets/gifs/reading.gif') ?? 'assets/gifs/reading.gif',
                               size: MascotSize.small,
                               customHeight: 110,
                               showGlow: false,

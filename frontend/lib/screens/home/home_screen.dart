@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../services/cloudinary_media.dart';
 import '../../services/progress_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/bouncy_button.dart';
-import '../../widgets/gentle_bob.dart';
 import '../../widgets/kid_scaffold_background.dart';
 import '../../widgets/mascot_widget.dart';
 import '../../widgets/star_counter.dart';
@@ -93,7 +93,7 @@ class HomeScreen extends StatelessWidget {
                           subtitle: 'Explore all 26 letters A to Z with fun phonics!',
                           badges: const ['🔤 26 Letters', '🍎 Phonics & Words'],
                           buttonLabel: "LET'S LEARN",
-                          imageAsset: 'assets/images/learn.png',
+                          imageAsset: 'assets/gifs/reading.gif',
                           gradient: const [Color(0xFFFF8A00), Color(0xFFFF5252)],
                           accentColor: const Color(0xFFE65100),
                           onTap: () => onTabSelect(1),
@@ -105,7 +105,7 @@ class HomeScreen extends StatelessWidget {
                           subtitle: 'Exciting racing, balloon popping & word ninja!',
                           badges: const ['🚗 Car Racing', '🎈 Balloon Pop', '⚔️ Ninja'],
                           buttonLabel: 'PLAY GAMES',
-                          imageAsset: 'assets/images/game.png',
+                          imageAsset: 'assets/gifs/games.gif',
                           gradient: const [Color(0xFF8338EC), Color(0xFF3A86FF)],
                           accentColor: const Color(0xFF6A00F4),
                           onTap: () => onTabSelect(2),
@@ -117,7 +117,7 @@ class HomeScreen extends StatelessWidget {
                           subtitle: 'Trace letters A to Z with magic finger guide!',
                           badges: const ['✍️ Finger Tracing', '⭐ 70% Star Check'],
                           buttonLabel: 'START WRITING',
-                          imageAsset: 'assets/images/writing.png',
+                          imageAsset: 'assets/gifs/writing.gif',
                           gradient: const [Color(0xFFFF006E), Color(0xFFFF5252)],
                           accentColor: const Color(0xFFD90429),
                           onTap: () {
@@ -137,7 +137,7 @@ class HomeScreen extends StatelessWidget {
                           subtitle: 'Watch and sing along with ABC phonics songs!',
                           badges: const ['🎵 Phonics Songs', '📺 ABC Rhymes'],
                           buttonLabel: 'WATCH VIDEOS',
-                          imageAsset: 'assets/images/video.png',
+                          imageAsset: 'assets/gifs/video.gif',
                           gradient: const [Color(0xFF00B4D8), Color(0xFF06D6A0)],
                           accentColor: const Color(0xFF00897B),
                           onTap: () => onTabSelect(3),
@@ -149,7 +149,7 @@ class HomeScreen extends StatelessWidget {
                           subtitle: 'Show how smart you are and collect golden stars!',
                           badges: const ['🏆 Star Quiz', '🌟 Badges & Rewards'],
                           buttonLabel: 'START QUIZ',
-                          imageAsset: 'assets/images/quiz.png',
+                          imageAsset: 'assets/gifs/question.gif',
                           gradient: const [Color(0xFF4361EE), Color(0xFF7209B7)],
                           accentColor: const Color(0xFF3F51B5),
                           onTap: () => onTabSelect(4),
@@ -407,11 +407,12 @@ class HomeScreen extends StatelessWidget {
           ),
 
           // Mascot Character
-          const Positioned(
+          Positioned(
             right: 8,
             bottom: -6,
             child: MascotWidget(
               pose: MascotPose.welcome,
+              customAssetOrUrl: CloudinaryMedia.getUrl('assets/gifs/vanakam.gif'),
               size: MascotSize.medium,
               customHeight: 145,
               showGlow: true,
@@ -508,21 +509,8 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      padding: const EdgeInsets.all(8),
-                      // Light looping motion so the character feels alive (like a GIF)
-                      child: GentleBob(
-                        // Different start point per card so they don't all move together
-                        phase: (imageAsset.hashCode % 100) / 100,
-                        child: Image.asset(
-                          imageAsset,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            Icons.stars_rounded,
-                            size: 38,
-                            color: accentColor,
-                          ),
-                        ),
-                      ),
+                      padding: const EdgeInsets.all(6),
+                      child: _buildMediaImage(imageAsset, accentColor),
                     ),
                     const SizedBox(width: 14),
 
@@ -796,6 +784,31 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// Builds the animated GIF visual pulling from Cloudinary CDN.
+  Widget _buildMediaImage(String imageAsset, Color accentColor) {
+    final cloudinaryUrl = CloudinaryMedia.getUrl(imageAsset);
+    final hasNetwork = cloudinaryUrl != null &&
+        (cloudinaryUrl.startsWith('http://') || cloudinaryUrl.startsWith('https://'));
+
+    if (hasNetwork) {
+      return Image.network(
+        cloudinaryUrl,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => Icon(
+          Icons.stars_rounded,
+          size: 38,
+          color: accentColor,
+        ),
+      );
+    }
+
+    return Icon(
+      Icons.stars_rounded,
+      size: 38,
+      color: accentColor,
     );
   }
 }

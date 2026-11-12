@@ -6,6 +6,7 @@ import '../../models/letter_model.dart';
 import '../../services/progress_service.dart';
 import '../../services/data_service.dart';
 import '../../services/api_config.dart';
+import '../../services/cloudinary_media.dart';
 import '../../widgets/bouncy_button.dart';
 import '../../widgets/kid_scaffold_background.dart';
 import '../../widgets/animated_game_card_art.dart';
@@ -18,7 +19,7 @@ import 'letter_matching_game.dart';
 import 'word_puzzle_game.dart';
 import 'balloon_pop_game.dart';
 import 'flappy_word_game.dart';
-import 'word_ninja_game.dart';
+import 'fruit_cutter_game.dart';
 
 class GamesScreen extends StatefulWidget {
   final ProgressService progressService;
@@ -154,14 +155,17 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
             ],
           ),
           child: ClipOval(
-            child: Image.asset(
-              'assets/images/welcome.png',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: const Color(0xFFFFF3CD),
-                child: const Icon(Icons.face_rounded, color: Color(0xFFFF9F1C), size: 30),
-              ),
-            ),
+            child: (CloudinaryMedia.getUrl('assets/gifs/games.gif') != null &&
+                    CloudinaryMedia.getUrl('assets/gifs/games.gif')!.isNotEmpty)
+                ? Image.network(
+                    CloudinaryMedia.getUrl('assets/gifs/games.gif')!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/welcome.png'),
+                  )
+                : Image.asset(
+                    'assets/images/welcome.png',
+                    fit: BoxFit.cover,
+                  ),
           ),
         ),
         const SizedBox(width: 12),
@@ -305,7 +309,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         // New Games
         return g.gameType == 'balloon' ||
             g.gameType == 'flappy' ||
-            g.gameType == 'ninja' ||
+            g.gameType == 'ninja' || g.gameType == 'fruit_cutter' ||
             g.gameType == 'matching' ||
             g.gameType == 'runner' ||
             g.gameType == 'candy';
@@ -447,7 +451,10 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       case 'flappy':
         return 'assets/images/games/flappy_word_cover.png';
       case 'ninja':
-        return 'assets/images/games/word_ninja_cover.png';
+      case 'fruit_cutter':
+      case 'cutter':
+      case 'fruit':
+        return 'assets/images/games/fruit_cutter.jpg';
       case 'matching':
         return 'assets/images/games/letter_matching_cover.png';
       case 'candy':
@@ -477,7 +484,10 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       case 'flappy':
         return Icons.flight_rounded;
       case 'ninja':
-        return Icons.sports_kabaddi_rounded;
+      case 'fruit_cutter':
+      case 'cutter':
+      case 'fruit':
+        return Icons.restaurant_rounded;
       case 'matching':
         return Icons.compare_arrows_rounded;
       case 'candy':
@@ -523,7 +533,10 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         targetScreen = FlappyWordGame(progressService: progress, content: content);
         break;
       case 'ninja':
-        targetScreen = WordNinjaGame(progressService: progress, content: content);
+      case 'fruit_cutter':
+      case 'cutter':
+      case 'fruit':
+        targetScreen = FruitCutterGame(progressService: progress, content: content);
         break;
       case 'matching':
         targetScreen = LetterMatchingGame(progressService: widget.progressService);
@@ -800,16 +813,12 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       );
     }
 
-    final resolvedUrl = ApiConfig.resolveMediaUrl(coverAsset);
+    final resolvedUrl = CloudinaryMedia.getUrl(coverAsset) ?? ApiConfig.resolveMediaUrl(coverAsset);
     if (resolvedUrl != null && (resolvedUrl.startsWith('http://') || resolvedUrl.startsWith('https://'))) {
       return Image.network(
         resolvedUrl,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Image.asset(
-          coverAsset,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => _buildFallbackCover(fallbackIcon),
-        ),
+        errorBuilder: (context, error, stackTrace) => _buildFallbackCover(fallbackIcon),
       );
     }
 

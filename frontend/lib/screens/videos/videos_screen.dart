@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/video_model.dart';
 import '../../services/data_service.dart';
 import '../../services/progress_service.dart';
+import '../../services/cloudinary_media.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/bouncy_button.dart';
@@ -248,8 +249,9 @@ class _VideosScreenState extends State<VideosScreen> {
               ],
             ),
           ),
-          const MascotWidget(
+          MascotWidget(
             pose: MascotPose.video,
+            customAssetOrUrl: CloudinaryMedia.getUrl('assets/gifs/video.gif') ?? 'assets/gifs/video.gif',
             size: MascotSize.small,
             customHeight: 110,
             showGlow: true,

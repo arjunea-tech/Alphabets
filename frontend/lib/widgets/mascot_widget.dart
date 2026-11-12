@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_config.dart';
+import '../services/cloudinary_media.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
@@ -17,6 +18,25 @@ enum MascotPose {
 
 extension MascotPoseAsset on MascotPose {
   String get assetPath {
+    switch (this) {
+      case MascotPose.welcome:
+        return 'assets/gifs/vanakam.gif';
+      case MascotPose.learn:
+        return 'assets/gifs/reading.gif';
+      case MascotPose.game:
+        return 'assets/gifs/games.gif';
+      case MascotPose.quiz:
+        return 'assets/gifs/question.gif';
+      case MascotPose.story:
+        return 'assets/gifs/reading.gif';
+      case MascotPose.video:
+        return 'assets/gifs/video.gif';
+      case MascotPose.writing:
+        return 'assets/gifs/writing.gif';
+    }
+  }
+
+  String get fallbackPngAsset {
     switch (this) {
       case MascotPose.welcome:
         return 'assets/images/welcome.png';
@@ -44,6 +64,7 @@ class MascotWidget extends StatefulWidget {
   final VoidCallback? onTap;
   final bool showGlow;
   final bool animate;
+  final String? customAssetOrUrl;
 
   const MascotWidget({
     super.key,
@@ -54,6 +75,7 @@ class MascotWidget extends StatefulWidget {
     this.onTap,
     this.showGlow = false,
     this.animate = true,
+    this.customAssetOrUrl,
   });
 
   @override
@@ -112,18 +134,62 @@ class _MascotWidgetState extends State<MascotWidget> with SingleTickerProviderSt
   }
 
   Widget _buildMascotImage(double height) {
-    final rawPath = widget.pose.assetPath;
-    final resolvedUrl = ApiConfig.resolveMediaUrl(rawPath);
+    final custom = widget.customAssetOrUrl;
+    if (custom != null && custom.isNotEmpty) {
+      if (custom.startsWith('http://') || custom.startsWith('https://')) {
+        return Image.network(
+          custom,
+          height: height,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.medium,
+          errorBuilder: (context, error, stackTrace) {
+            return Image.asset(
+              widget.pose.fallbackPngAsset,
+              height: height,
+              fit: BoxFit.contain,
+              errorBuilder: (c, e, s) => _buildFallbackIcon(height),
+            );
+          },
+        );
+      }
+      final cUrl = CloudinaryMedia.getUrl(custom);
+      if (cUrl != null && (cUrl.startsWith('http://') || cUrl.startsWith('https://'))) {
+        return Image.network(
+          cUrl,
+          height: height,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.medium,
+          errorBuilder: (context, error, stackTrace) {
+            return Image.asset(
+              widget.pose.fallbackPngAsset,
+              height: height,
+              fit: BoxFit.contain,
+              errorBuilder: (c, e, s) => _buildFallbackIcon(height),
+            );
+          },
+        );
+      }
+      return Image.asset(
+        widget.pose.fallbackPngAsset,
+        height: height,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.medium,
+        errorBuilder: (ctx, err, stack) => _buildFallbackIcon(height),
+      );
+    }
 
-    if (resolvedUrl != null && (resolvedUrl.startsWith('http://') || resolvedUrl.startsWith('https://'))) {
+    final rawPath = widget.pose.assetPath;
+    final cloudinaryUrl = CloudinaryMedia.getUrl(rawPath) ?? ApiConfig.resolveMediaUrl(rawPath);
+
+    if (cloudinaryUrl != null && (cloudinaryUrl.startsWith('http://') || cloudinaryUrl.startsWith('https://'))) {
       return Image.network(
-        resolvedUrl,
+        cloudinaryUrl,
         height: height,
         fit: BoxFit.contain,
         filterQuality: FilterQuality.medium,
         errorBuilder: (context, error, stackTrace) {
           return Image.asset(
-            rawPath,
+            widget.pose.fallbackPngAsset,
             height: height,
             fit: BoxFit.contain,
             errorBuilder: (ctx, err, stack) => _buildFallbackIcon(height),
@@ -133,10 +199,9 @@ class _MascotWidgetState extends State<MascotWidget> with SingleTickerProviderSt
     }
 
     return Image.asset(
-      rawPath,
+      widget.pose.fallbackPngAsset,
       height: height,
       fit: BoxFit.contain,
-      filterQuality: FilterQuality.medium,
       errorBuilder: (context, error, stackTrace) => _buildFallbackIcon(height),
     );
   }
