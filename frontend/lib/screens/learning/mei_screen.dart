@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../data/english_letters_data.dart';
 import '../../models/letter_model.dart';
 import '../../services/data_service.dart';
 import '../../services/progress_service.dart';
@@ -18,7 +19,9 @@ class MeiScreen extends StatefulWidget {
 }
 
 class _MeiScreenState extends State<MeiScreen> {
-  List<LetterModel> _letters = const []; // admin letters only
+  // Bundled letters (same ids/images as the server) render instantly;
+  // admin data replaces them as soon as the request returns.
+  List<LetterModel> _letters = englishConsonantsList;
 
   @override
   void initState() {

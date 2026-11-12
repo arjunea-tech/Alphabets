@@ -55,6 +55,7 @@ class AuthService extends ChangeNotifier {
 
     final candidates = ApiConfig.candidateBaseUrls;
     http.Response? response;
+    String? lastError;
 
     for (final base in candidates) {
       try {
@@ -72,11 +73,8 @@ class AuthService extends ChangeNotifier {
         ApiConfig.setWorkingBaseUrl(base);
         response = res;
         break;
-      } on SocketException catch (_) {
-        continue;
-      } on TimeoutException catch (_) {
-        continue;
-      } catch (_) {
+      } catch (e) {
+        lastError = _describeConnectionError(base, e);
         continue;
       }
     }
@@ -85,7 +83,8 @@ class AuthService extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return AuthResult.failure(
-        'Could not connect to server. Please check internet connection.',
+        'Could not connect to server. Please check internet connection.'
+        '${lastError != null ? '\n($lastError)' : ''}',
       );
     }
 
@@ -132,6 +131,7 @@ class AuthService extends ChangeNotifier {
 
     final candidates = ApiConfig.candidateBaseUrls;
     http.Response? response;
+    String? lastError;
 
     for (final base in candidates) {
       try {
@@ -148,11 +148,8 @@ class AuthService extends ChangeNotifier {
         ApiConfig.setWorkingBaseUrl(base);
         response = res;
         break;
-      } on SocketException catch (_) {
-        continue;
-      } on TimeoutException catch (_) {
-        continue;
-      } catch (_) {
+      } catch (e) {
+        lastError = _describeConnectionError(base, e);
         continue;
       }
     }
@@ -161,7 +158,8 @@ class AuthService extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return AuthResult.failure(
-        'Could not connect to server. Please check internet connection.',
+        'Could not connect to server. Please check internet connection.'
+        '${lastError != null ? '\n($lastError)' : ''}',
       );
     }
 
@@ -217,6 +215,27 @@ class AuthService extends ChangeNotifier {
     await prefs.setString(_keyUser, jsonEncode(user.toJson()));
     _token = token;
     _currentUser = user;
+  }
+
+  /// Short, human-readable reason a request never got a response, shown under
+  /// the generic message so connection problems can be diagnosed from a screenshot.
+  String _describeConnectionError(String base, Object e) {
+    final host = Uri.tryParse(base)?.host ?? base;
+    String reason;
+    if (e is TimeoutException) {
+      reason = 'timed out';
+    } else if (e is HandshakeException || e is TlsException) {
+      reason = 'secure connection (SSL) failed: ${e.toString().split('\n').first}';
+    } else if (e is SocketException) {
+      final socketError = e;
+      reason = 'network error: ${socketError.osError?.message ?? socketError.message}';
+    } else if (e is http.ClientException) {
+      reason = 'client error: ${e.message}';
+    } else {
+      reason = '${e.runtimeType}: $e';
+    }
+    final text = '$host – $reason';
+    return text.length > 160 ? '${text.substring(0, 160)}…' : text;
   }
 
   String _translateError(String raw) {

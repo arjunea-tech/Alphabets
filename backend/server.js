@@ -13,6 +13,7 @@ const cors = require('cors');
 const config = require('./src/config/env');
 const corsOptions = require('./src/config/cors');
 const { testConnection } = require('./src/config/db');
+const { applySchemaPatches } = require('./src/config/schemaPatches');
 const apiV1Router = require('./src/routes');
 const { notFoundHandler, globalErrorHandler } = require('./src/middleware/errorMiddleware');
 const { successResponse } = require('./src/utils/apiResponse');
@@ -79,8 +80,10 @@ app.use(globalErrorHandler);
 const PORT = config.port;
 
 async function startServer() {
-  // Test MySQL connection
-  await testConnection();
+  // Test database connection, then add any columns older databases are missing
+  if (await testConnection()) {
+    await applySchemaPatches();
+  }
 
   const server = app.listen(PORT, () => {
     logger.info(`====================================================`);
