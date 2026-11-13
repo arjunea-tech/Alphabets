@@ -152,7 +152,11 @@ class ApiDataRepository implements IDataRepository {
       final isEmptyList = value is List && value.isEmpty;
       if (!isEmptyList) _cache[key] = _CacheEntry(value, DateTime.now());
       return value;
-    }).whenComplete(() => _inFlight.remove(key));
+    }).whenComplete(() {
+      // Block body on purpose: `remove` returns this same future, and if the
+      // callback returned it, whenComplete would wait on itself forever.
+      _inFlight.remove(key);
+    });
     _inFlight[key] = future;
     return future;
   }
