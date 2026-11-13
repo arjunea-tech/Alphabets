@@ -244,7 +244,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                   child: Container(
                     width: double.infinity,
                     constraints: const BoxConstraints(maxWidth: 380),
-                    padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(36),
@@ -262,10 +262,12 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                         // Illustration Image or Emoji Icon (Tappable to hear letter sound)
                         BouncyButton(
                           onPressed: _playAudio,
+                          // Full card width (minus the card's padding) so the
+                          // picture is big and easy to see.
                           child: Container(
-                            width: 150,
-                            height: 150,
-                            margin: const EdgeInsets.symmetric(vertical: 6),
+                            width: double.infinity,
+                            height: 200,
+                            margin: const EdgeInsets.symmetric(vertical: 2),
                             decoration: BoxDecoration(
                               color: letter.imagePath != null ? Colors.white : color.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(24),
@@ -287,7 +289,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                                 imagePath: letter.imagePath,
                                 iconEmoji: letter.iconEmoji,
                                 fit: BoxFit.contain,
-                                emojiSize: 60,
+                                emojiSize: 96,
                               ),
                             ),
                           ),
