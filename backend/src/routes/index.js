@@ -15,11 +15,15 @@ const dashboardRoutes = require('./dashboardRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const audioRoutes = require('./audioRoutes');
 const languageRoutes = require('./languageRoutes');
+const { cachePublicGet, invalidateOnWrite } = require('../middleware/responseCache');
 
 const router = express.Router();
 
+// Any successful admin write clears the shared response cache (edits show instantly)
+router.use(invalidateOnWrite);
+
 // Supported Languages (/api/v1/languages)
-router.use('/languages', languageRoutes);
+router.use('/languages', cachePublicGet, languageRoutes);
 
 // Admin Authentication (/api/v1/auth/admin or /api/v1/admin)
 router.use('/auth/admin', adminAuthRoutes);
@@ -36,27 +40,27 @@ router.use('/admin', (req, res, next) => {
 router.use('/users', userAuthRoutes);
 
 // Educational Modules & Lessons (/api/v1/lessons and /api/v1/admin/lessons)
-router.use('/lessons', lessonRoutes);
+router.use('/lessons', cachePublicGet, lessonRoutes);
 router.use('/admin/lessons', lessonRoutes);
 
 // Letters & Letter Groups (/api/v1/letters and /api/v1/admin/letters)
-router.use('/letters', letterRoutes);
+router.use('/letters', cachePublicGet, letterRoutes);
 router.use('/admin/letters', letterRoutes);
 
 // Reading Stories (/api/v1/stories and /api/v1/admin/stories)
-router.use('/stories', storyRoutes);
+router.use('/stories', cachePublicGet, storyRoutes);
 router.use('/admin/stories', storyRoutes);
 
 // Educational Videos (/api/v1/videos and /api/v1/admin/videos)
-router.use('/videos', videoRoutes);
+router.use('/videos', cachePublicGet, videoRoutes);
 router.use('/admin/videos', videoRoutes);
 
 // Quizzes & Evaluation (/api/v1/quizzes and /api/v1/admin/quizzes)
-router.use('/quizzes', quizRoutes);
+router.use('/quizzes', cachePublicGet, quizRoutes);
 router.use('/admin/quizzes', quizRoutes);
 
 // Games (/api/v1/games and /api/v1/admin/games)
-router.use('/games', gameRoutes);
+router.use('/games', cachePublicGet, gameRoutes);
 router.use('/admin/games', gameRoutes);
 
 // Progress & Stars (/api/v1/progress)

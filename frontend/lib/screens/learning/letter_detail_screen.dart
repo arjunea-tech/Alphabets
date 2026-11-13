@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../models/letter_model.dart';
 import '../../models/video_model.dart';
+import '../../services/api_config.dart';
 import '../../services/audio_service.dart';
+import '../../services/cloudinary_media.dart';
 import '../../services/progress_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -70,6 +72,25 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
     widget.progressService.markLetterCompleted(_currentLetter.id);
   }
 
+  /// Download the previous/next letters' pictures in the background so tapping
+  /// Next/Previous shows the image instantly instead of waiting for the network.
+  void _precacheNeighbours() {
+    for (final i in [_currentIndex + 1, _currentIndex + 2, _currentIndex - 1]) {
+      if (i < 0 || i >= widget.letterList.length) continue;
+      final url = ApiConfig.resolveMediaUrl(widget.letterList[i].imagePath);
+      if (url == null) continue;
+      final ImageProvider provider =
+          url.startsWith('http') ? NetworkImage(url) : AssetImage(url);
+      precacheImage(provider, context, onError: (_, _) {});
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _precacheNeighbours();
+  }
+
   void _playAudio() { return; }
 
   void _goToPrevious() {
@@ -80,6 +101,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
       });
       _animController.forward(from: 0.0);
       _markCompleted();
+      _precacheNeighbours();
     }
   }
 
@@ -91,6 +113,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
       });
       _animController.forward(from: 0.0);
       _markCompleted();
+      _precacheNeighbours();
     }
   }
 
@@ -179,16 +202,12 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Top Mascot Companion (writing.png)
+                // Top Mascot Companion — kids holding slates that show the
+                // current English letter (instead of the Tamil "அ" in the GIF).
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const MascotWidget(
-                      pose: MascotPose.writing,
-                      size: MascotSize.small,
-                      customHeight: 115,
-                      showGlow: true,
-                    ),
+                    _EnglishSlateKids(letter: letter.letter, height: 115),
                     const SizedBox(width: 12),
                     Flexible(
                       child: Container(
@@ -516,6 +535,136 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The "writing" kids holding up their slates, with the current English
+/// [letter] chalked on both slates.
+///
+/// writing.gif has the Tamil letter "அ" drawn into every frame, and the slates
+/// move while the kids write, so a text overlay can't follow them. Instead we
+/// use one still frame of the GIF where both slates face the viewer (frame 60,
+/// served by Cloudinary as a PNG) and paint the letter over the slate centres.
+class _EnglishSlateKids extends StatefulWidget {
+  final String letter;
+  final double height;
+
+  const _EnglishSlateKids({required this.letter, required this.height});
+
+  // Source frame is 246 x 243 px. Slate interiors (inside the hands), as
+  // fractions of the frame: left = girl, right = boy.
+  static const double _frameAspect = 246 / 243;
+  static const List<Rect> _slates = [
+    Rect.fromLTWH(32 / 246, 101 / 243, 44 / 246, 37 / 243),
+    Rect.fromLTWH(163 / 246, 101 / 243, 46 / 246, 37 / 243),
+  ];
+
+  static String? get _frameUrl {
+    final gif = CloudinaryMedia.getUrl('assets/gifs/writing.gif');
+    if (gif == null || !gif.contains('/upload/')) return null;
+    return gif.replaceFirst('/upload/', '/upload/pg_60/').replaceFirst(RegExp(r'\.gif$'), '.png');
+  }
+
+  @override
+  State<_EnglishSlateKids> createState() => _EnglishSlateKidsState();
+}
+
+class _EnglishSlateKidsState extends State<_EnglishSlateKids> with SingleTickerProviderStateMixin {
+  late final AnimationController _bounce =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _bounce.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final url = _EnglishSlateKids._frameUrl;
+    final fallback = MascotWidget(
+      pose: MascotPose.welcome,
+      size: MascotSize.small,
+      customHeight: widget.height,
+      showGlow: true,
+    );
+    if (url == null) return fallback;
+
+    final h = widget.height;
+    final w = h * _EnglishSlateKids._frameAspect;
+
+    return AnimatedBuilder(
+      animation: _bounce,
+      builder: (context, child) => Transform.translate(
+        offset: Offset(0, -6 * Curves.easeInOut.transform(_bounce.value)),
+        child: child,
+      ),
+      child: SizedBox(
+        width: w,
+        height: h,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Soft glow, like the other mascots
+            Container(
+              width: h * 0.9,
+              height: h * 0.9,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFFFFD166).withValues(alpha: 0.45),
+                    const Color(0xFFFFD166).withValues(alpha: 0.0),
+                  ],
+                  radius: 0.7,
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: Image.network(
+                url,
+                fit: BoxFit.fill,
+                filterQuality: FilterQuality.medium,
+                errorBuilder: (context, error, stackTrace) => fallback,
+                frameBuilder: (context, child, frame, wasSync) {
+                  // Only draw the chalk letters once the picture has loaded.
+                  if (frame == null && !wasSync) return const SizedBox.shrink();
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      child,
+                      for (final r in _EnglishSlateKids._slates)
+                        Positioned(
+                          left: r.left * w,
+                          top: r.top * h,
+                          width: r.width * w,
+                          height: r.height * h,
+                          child: Container(
+                            color: const Color(0xFF23262B), // slate black
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.all(1.5),
+                            child: FittedBox(
+                              fit: BoxFit.contain,
+                              child: Text(
+                                widget.letter,
+                                style: const TextStyle(
+                                  color: Color(0xFFF8F8F2), // chalk white
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.0,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

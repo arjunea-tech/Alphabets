@@ -874,7 +874,7 @@ class CarRacingGameState extends State<CarRacingGame>
                 const Text(
                   'Listen to phonics and steer your car! 🚗',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 18,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFFD84315),
                   ),
@@ -882,7 +882,7 @@ class CarRacingGameState extends State<CarRacingGame>
                 Text(
                   'Collect matching alphabet letters! 🎵',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: Colors.brown.shade600,
                   ),

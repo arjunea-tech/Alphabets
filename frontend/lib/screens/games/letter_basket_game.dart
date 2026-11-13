@@ -58,8 +58,8 @@ class LetterBasketGameState extends State<LetterBasketGame>
 
   // Basket Physics & Positioning
   double _basketXFraction = 0.5; // 0.0 (left) to 1.0 (right)
-  final double _basketWidth = 120.0;
-  final double _basketHeight = 78.0;
+  final double _basketWidth = 92.0;
+  final double _basketHeight = 60.0;
   final double _letterSize = 64.0;
 
   // Active Falling Letters in Current Wave
@@ -262,7 +262,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
     final screenHeight = size.height;
 
     // Basket top coordinate
-    final basketTop = screenHeight - 145.0;
+    final basketTop = screenHeight - 67.0 - _basketHeight; // tracks basket size
     final basketLeft = (_basketXFraction * screenWidth) - (_basketWidth / 2);
     final basketRight = basketLeft + _basketWidth;
 
@@ -734,20 +734,20 @@ class LetterBasketGameState extends State<LetterBasketGame>
         children: [
           // Letter Target Badge
           Container(
-            width: 46,
-            height: 46,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFFFF8A65), Color(0xFFFF5722)],
               ),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white, width: 2),
             ),
             child: Center(
               child: Text(
                 _currentTarget.letter,
                 style: const TextStyle(
-                  fontSize: 26,
+                  fontSize: 32,
                   fontWeight: FontWeight.w900,
                   color: Colors.white,
                 ),
@@ -766,7 +766,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
                 Text(
                   'Catch letter ${_currentTarget.letter}!',
                   style: const TextStyle(
-                    fontSize: 17,
+                    fontSize: 21,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFFD84315),
                   ),
@@ -774,7 +774,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
                 Text(
                   '${_currentTarget.word} (${_currentRoundIndex + 1}/${_roundQueue.length})',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: Colors.brown.shade600,
                   ),
@@ -864,7 +864,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
           // Basket Wicker Body with Gradient
           Container(
             width: _basketWidth,
-            height: 60,
+            height: 46,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFFFFB300), Color(0xFFFF8F00), Color(0xFFE65100)],
@@ -872,8 +872,8 @@ class LetterBasketGameState extends State<LetterBasketGame>
                 end: Alignment.bottomCenter,
               ),
               borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
                 topLeft: Radius.circular(14),
                 topRight: Radius.circular(14),
               ),
@@ -902,7 +902,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
                     children: [
                       // Left Eye
                       _buildCartoonEye(),
-                      const SizedBox(width: 24),
+                      const SizedBox(width: 18),
                       // Right Eye
                       _buildCartoonEye(),
                     ],
@@ -910,7 +910,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
                 ),
                 // Cute Smile
                 Positioned(
-                  bottom: 12,
+                  bottom: 8,
                   left: 0,
                   right: 0,
                   child: Center(
@@ -929,8 +929,8 @@ class LetterBasketGameState extends State<LetterBasketGame>
                 ),
                 // Rosy Cheeks
                 Positioned(
-                  bottom: 18,
-                  left: 20,
+                  bottom: 13,
+                  left: 14,
                   child: Container(
                     width: 10,
                     height: 6,
@@ -941,8 +941,8 @@ class LetterBasketGameState extends State<LetterBasketGame>
                   ),
                 ),
                 Positioned(
-                  bottom: 18,
-                  right: 20,
+                  bottom: 13,
+                  right: 14,
                   child: Container(
                     width: 10,
                     height: 6,
@@ -958,10 +958,10 @@ class LetterBasketGameState extends State<LetterBasketGame>
 
           // Basket Top Opening Rim
           Positioned(
-            top: 8,
+            top: 6,
             child: Container(
               width: _basketWidth + 8,
-              height: 14,
+              height: 11,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFFFFE082), Color(0xFFFFCA28)],

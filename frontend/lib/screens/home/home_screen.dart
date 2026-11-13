@@ -401,17 +401,25 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-          // Mascot Character
+          // Mascot Character — kept inside the 126px space reserved on the right
+          // of the text column so it never overlaps the title or button.
           Positioned(
             right: 8,
-            bottom: -6,
-            child: MascotWidget(
-              pose: MascotPose.welcome,
-              customAssetOrUrl: CloudinaryMedia.getUrl('assets/gifs/vanakam.gif'),
-              size: MascotSize.medium,
-              customHeight: 145,
-              showGlow: true,
-              animate: true,
+            top: 12,
+            bottom: 12,
+            width: 112,
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: MascotWidget(
+                  pose: MascotPose.welcome,
+                  customAssetOrUrl: CloudinaryMedia.getUrl('assets/gifs/vanakam.gif'),
+                  size: MascotSize.medium,
+                  customHeight: 120,
+                  showGlow: true,
+                  animate: true,
+                ),
+              ),
             ),
           ),
         ],

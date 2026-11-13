@@ -141,10 +141,11 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       children: [
         // Kid Avatar Image
         Container(
-          width: 52,
-          height: 52,
+          width: 56,
+          height: 56,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
+            color: Colors.white,
             border: Border.all(color: const Color(0xFFFFD166), width: 2.5),
             boxShadow: [
               BoxShadow(
@@ -154,18 +155,23 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
               ),
             ],
           ),
+          // vanakam.gif (kids waving), shown whole with BoxFit.contain so both
+          // kids stay visible inside the small circle instead of being cropped.
           child: ClipOval(
-            child: (CloudinaryMedia.getUrl('assets/gifs/games.gif') != null &&
-                    CloudinaryMedia.getUrl('assets/gifs/games.gif')!.isNotEmpty)
-                ? Image.network(
-                    CloudinaryMedia.getUrl('assets/gifs/games.gif')!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/welcome.png'),
-                  )
-                : Image.asset(
-                    'assets/images/welcome.png',
-                    fit: BoxFit.cover,
-                  ),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: (CloudinaryMedia.getUrl('assets/gifs/vanakam.gif') ?? '').isNotEmpty
+                  ? Image.network(
+                      CloudinaryMedia.getUrl('assets/gifs/vanakam.gif')!,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Image.asset('assets/images/welcome.png', fit: BoxFit.contain),
+                    )
+                  : Image.asset(
+                      'assets/images/welcome.png',
+                      fit: BoxFit.contain,
+                    ),
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -728,72 +734,48 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                 ),
               ),
 
-              // Top Title Badge Pill
+              // Top-Left Circular Badge Icon (same as the other game cards)
               Positioned(
                 top: 10,
                 left: 10,
-                right: 10,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  width: 34,
+                  height: 34,
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.55),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                    color: Colors.black.withValues(alpha: 0.50),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1.2),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.directions_run_rounded, size: 14, color: Colors.white),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: const Icon(Icons.directions_run_rounded, color: Colors.white, size: 18),
                 ),
               ),
 
-              // Center / Bottom Play Now Pill Button
+              // Bottom Title Pill (same as the other game cards)
               Positioned(
-                bottom: 12,
-                left: 14,
-                right: 14,
+                left: 10,
+                right: 10,
+                bottom: 10,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.25),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
+                    color: Colors.black.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.play_arrow_rounded, color: Color(0xFF16A34A), size: 18),
-                      SizedBox(width: 4),
-                      Text(
-                        'Play Now',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF1E293B),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.2,
+                      shadows: [
+                        Shadow(color: Colors.black, blurRadius: 4),
+                      ],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ),

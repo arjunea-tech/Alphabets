@@ -627,7 +627,9 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                 ),
               ),
 
-              // 4. Fisherman Boat at Water Surface
+              // 4. Fisherman Boat at Water Surface — only on the start screen;
+              // during play the HUD header sits in this exact spot.
+              if (!_isPlaying && !_isGameOver)
               Positioned(
                 top: MediaQuery.of(context).padding.top + 6,
                 left: 0,
@@ -870,7 +872,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                 child: Text(
                   target.letter,
                   style: AppTextStyles.tamilLetterMedium.copyWith(
-                    fontSize: 30,
+                    fontSize: 38,
                     fontWeight: FontWeight.w900,
                     color: const Color(0xFFD84315),
                     height: 1.0,
@@ -881,7 +883,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
               const Text(
                 'Catch Letter!',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 22,
                   fontWeight: FontWeight.w900,
                   color: Color(0xFFBF360C),
                   letterSpacing: 0.5,
@@ -894,6 +896,25 @@ class _LetterFishingGameState extends State<LetterFishingGame>
         ),
       ),
     );
+  }
+
+  /// Start-card title/description built from the admin's levels, so the card
+  /// describes the letters the game will really ask for.
+  String get _startCardTitle {
+    final levels = widget.content.levels;
+    if (levels.length == 1 && levels.first.title.trim().isNotEmpty) {
+      return levels.first.title.trim();
+    }
+    return 'Letter Fishing';
+  }
+
+  String get _startCardDescription {
+    final levels = widget.content.levels;
+    if (levels.length == 1 && levels.first.prompt.trim().isNotEmpty) {
+      return levels.first.prompt.trim();
+    }
+    return 'A letter will be shown at the top. Tap the fish with that same '
+        'letter to catch it with your hook!';
   }
 
   Widget _buildStartScreen(BuildContext context) {
@@ -1003,9 +1024,9 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                                 color: const Color(0xFFFF9800),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Text(
-                                'Level 1',
-                                style: TextStyle(
+                              child: Text(
+                                '${_roundQueue.length} Letters',
+                                style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
@@ -1015,7 +1036,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                widget.mode.title,
+                                _startCardTitle,
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w900,
@@ -1029,7 +1050,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          widget.mode.description,
+                          _startCardDescription,
                           style: const TextStyle(
                             fontSize: 13,
                             color: Color(0xFF5D4037),
@@ -1037,13 +1058,13 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                           ),
                         ),
                         const SizedBox(height: 10),
-                        // Preview Letters (, , , ...)
+                        // Preview of the actual letters this game will ask for
                         Wrap(
                           spacing: 6,
                           runSpacing: 6,
-                          children: ['A', 'B', 'C', 'D', 'E', 'F'].map((l) {
+                          children: _roundQueue.map((t) => t.letter).map((l) {
                             return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFFFF3E0),
                                 borderRadius: BorderRadius.circular(10),

@@ -39,9 +39,11 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static Media Serving for Uploaded Images, Audio, and Video files, plus default assets
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/assets', express.static(path.join(__dirname, '../frontend/assets')));
-app.use('/assets', express.static(path.join(__dirname, '../assets')));
+// maxAge lets phones/browsers keep media locally instead of re-downloading it on every screen.
+const staticCache = { maxAge: '7d', etag: true };
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), staticCache));
+app.use('/assets', express.static(path.join(__dirname, '../frontend/assets'), staticCache));
+app.use('/assets', express.static(path.join(__dirname, '../assets'), staticCache));
 
 // ---------------------------------------------------------------------
 // Health Check Endpoint

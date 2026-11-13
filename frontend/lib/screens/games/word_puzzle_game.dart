@@ -583,7 +583,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                         'Build the Word!',
                         style: TextStyle(
                           color: Color(0xFFFFD54F),
-                          fontSize: 11,
+                          fontSize: 15,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -603,7 +603,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                 Text(
                   puzzle.word,
                   style: GoogleFonts.catamaran(
-                    fontSize: 28,
+                    fontSize: 34,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
                     letterSpacing: 1.5,

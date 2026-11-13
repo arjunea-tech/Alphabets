@@ -811,7 +811,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                   const Text(
                     'TARGET: ',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 15,
                       fontWeight: FontWeight.w900,
                       color: Colors.white70,
                       letterSpacing: 0.5,
@@ -820,7 +820,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                   Text(
                     _currentTargetLetter.letter,
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 28,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
                     ),

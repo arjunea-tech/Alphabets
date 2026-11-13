@@ -741,7 +741,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Color(0xFFFDE047), // Radiant Sun Yellow for instant readability
-              fontSize: 16,
+              fontSize: 22,
               fontWeight: FontWeight.w900,
               letterSpacing: -0.2,
               height: 1.2,
@@ -760,7 +760,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
             children: mission.targets.map((target) {
               final isPopped = _poppedTargetsThisMission.contains(target.toUpperCase());
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: isPopped
                       ? const Color(0xFF10B981).withValues(alpha: 0.35)
@@ -782,7 +782,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
                       target,
                       style: TextStyle(
                         color: isPopped ? const Color(0xFF6EE7B7) : Colors.white,
-                        fontSize: 12,
+                        fontSize: 16,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
