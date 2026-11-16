@@ -18,6 +18,9 @@ const GAME_TYPE_LABELS: Record<string, { label: string; shortLabel: string; colo
   basket: { label: '🧺 Letter Basket', shortLabel: '🧺 Basket', color: '#D97706', bg: '#FEF3C7' },
   puzzle: { label: '🧩 Word Puzzle', shortLabel: '🧩 Puzzle', color: '#9333EA', bg: '#F3E8FF' },
   matching: { label: '🔄 Letter Matching', shortLabel: '🔄 Matching', color: '#4B5563', bg: '#F3F4F6' },
+  whack: { label: '🔨 Letter Whack-a-Mole', shortLabel: '🔨 Whack-a-Mole', color: '#65A30D', bg: '#ECFCCB' },
+  space: { label: '🚀 Space Letter Shooter', shortLabel: '🚀 Space Shooter', color: '#4F46E5', bg: '#E0E7FF' },
+  train: { label: '🚂 Letter Train (Missing Letter)', shortLabel: '🚂 Letter Train', color: '#DC2626', bg: '#FEE2E2' },
 };
 
 /** What 'targets' and 'distractors' mean for each game type, shown as help text in the level editor. */
@@ -32,6 +35,9 @@ const LEVEL_HINTS: Record<string, { targets: string; distractors: string }> = {
   basket: { targets: 'Target letters, one per round', distractors: 'Extra wrong falling letters (optional)' },
   puzzle: { targets: 'Words to spell, e.g. CAT, DOG', distractors: 'Extra decoy letter tiles (optional)' },
   matching: { targets: 'Letters/words to match', distractors: 'Not used' },
+  whack: { targets: 'Target letters, one per round — bonk the mole holding it', distractors: 'Wrong moles to avoid (optional)' },
+  space: { targets: 'Target letters, one per round — shoot that asteroid', distractors: 'Wrong asteroids to avoid (optional)' },
+  train: { targets: 'Letters IN ORDER (A, B, C, D) or simple words (CAT, DOG) — one wagon goes missing', distractors: 'Extra wrong letter choices (optional)' },
 };
 
 interface LevelDraft {
@@ -452,6 +458,9 @@ export const GamesPage: React.FC = () => {
                 <option value="basket">🧺 Letter Basket</option>
                 <option value="puzzle">🧩 Word Puzzle</option>
                 <option value="matching">🔄 Letter Matching</option>
+                <option value="whack">🔨 Letter Whack-a-Mole</option>
+                <option value="space">🚀 Space Letter Shooter</option>
+                <option value="train">🚂 Letter Train (Missing Letter)</option>
               </select>
             </div>
             <div className="form-group">

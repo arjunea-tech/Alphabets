@@ -148,6 +148,45 @@ const GAMES = [
       lvl('5-Letter Words', 'Spell the word!', ['APPLE', 'ZEBRA', 'TIGER', 'TRAIN']),
     ],
   },
+  {
+    id: 'game_whack_1',
+    game_type: 'whack',
+    title: 'Letter Whack-a-Mole',
+    prompt: 'Bonk the mole holding the right letter!',
+    clue_image: '',
+    display_order: 11,
+    levels: [
+      lvl('Vowel Moles', 'Bonk the vowel mole!', VOWELS, ['B', 'C', 'D', 'F', 'G']),
+      lvl('Consonant Moles', 'Bonk the consonant mole!', ['B', 'D', 'M', 'P', 'S', 'T'], ['A', 'E', 'I', 'O', 'U']),
+      lvl('Tricky Twins', 'Look closely — these letters look alike!', ['B', 'D', 'P', 'Q'], ['B', 'D', 'P', 'Q', 'R']),
+    ],
+  },
+  {
+    id: 'game_space_1',
+    game_type: 'space',
+    title: 'Space Letter Shooter',
+    prompt: 'Fly your rocket and shoot the right letter asteroid!',
+    clue_image: '',
+    display_order: 12,
+    levels: [
+      lvl('A to F', 'Shoot the letter asteroid!', ['A', 'B', 'C', 'D', 'E', 'F'], ['G', 'H', 'J', 'K']),
+      lvl('G to M', 'Shoot the letter asteroid!', ['G', 'H', 'I', 'J', 'K', 'L', 'M'], ['N', 'P', 'R', 'T']),
+      lvl('N to Z', 'Shoot the letter asteroid!', ['N', 'O', 'P', 'R', 'S', 'T', 'W', 'Z'], ['A', 'C', 'E', 'M']),
+    ],
+  },
+  {
+    id: 'game_train_1',
+    game_type: 'train',
+    title: 'Letter Train',
+    prompt: 'Which letter wagon is missing? Fill the train!',
+    clue_image: '',
+    display_order: 13,
+    levels: [
+      lvl('A to H', 'Find the missing letter wagon!', ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']),
+      lvl('3-Letter Words', 'Which letter is missing in the word?', ['CAT', 'DOG', 'SUN', 'BUS', 'CUP', 'HAT', 'PIG', 'COW']),
+      lvl('4-Letter Words', 'Which letter is missing in the word?', ['BALL', 'FISH', 'CAKE', 'DUCK', 'FROG', 'STAR', 'TREE', 'BOOK']),
+    ],
+  },
 ];
 
 async function run() {

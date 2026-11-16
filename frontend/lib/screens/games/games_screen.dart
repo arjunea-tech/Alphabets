@@ -21,6 +21,9 @@ import 'word_puzzle_game.dart';
 import 'balloon_pop_game.dart';
 import 'flappy_word_game.dart';
 import 'fruit_cutter_game.dart';
+import 'letter_whack_game.dart';
+import 'space_letter_game.dart';
+import 'letter_train_game.dart';
 
 class GamesScreen extends StatefulWidget {
   final ProgressService progressService;
@@ -319,7 +322,10 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
             g.gameType == 'ninja' || g.gameType == 'fruit_cutter' ||
             g.gameType == 'matching' ||
             g.gameType == 'runner' ||
-            g.gameType == 'candy';
+            g.gameType == 'candy' ||
+            g.gameType == 'whack' ||
+            g.gameType == 'space' ||
+            g.gameType == 'train';
       }
       if (_selectedCategoryIndex == 2) {
         // Vowels
@@ -479,6 +485,11 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         return 'assets/images/games/basket_vowels_cover.png';
       case 'puzzle':
         return 'assets/images/games/word_puzzle_cover.png';
+      // No cover image yet: a coloured backdrop + the animated card art.
+      case 'whack':
+      case 'space':
+      case 'train':
+        return '';
       default:
         return 'assets/images/welcome.png';
     }
@@ -507,6 +518,12 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         return Icons.waves_rounded;
       case 'basket':
         return Icons.shopping_basket_rounded;
+      case 'whack':
+        return Icons.touch_app_rounded;
+      case 'space':
+        return Icons.rocket_launch_rounded;
+      case 'train':
+        return Icons.train_rounded;
       case 'puzzle':
       default:
         return Icons.extension_rounded;
@@ -595,6 +612,15 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         break;
       case 'basket':
         targetScreen = LetterBasketGame(progressService: progress, content: content);
+        break;
+      case 'whack':
+        targetScreen = LetterWhackGame(progressService: progress, content: content);
+        break;
+      case 'space':
+        targetScreen = SpaceLetterGame(progressService: progress, content: content);
+        break;
+      case 'train':
+        targetScreen = LetterTrainGame(progressService: progress, content: content);
         break;
       case 'puzzle':
       default:
@@ -806,7 +832,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
             fit: StackFit.expand,
             children: [
               // 1. Background Cover Image
-              _buildCoverImage(coverAsset, badgeIcon),
+              _buildCoverImage(coverAsset, badgeIcon, gameType: gameType),
 
               // 2. Animated Living Action Canvas (Moving car, flappy bird, slicing ninja, balloons, etc.)
               AnimatedGameCardArt(
@@ -989,7 +1015,8 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildCoverImage(String coverAsset, IconData fallbackIcon) {
+  Widget _buildCoverImage(String coverAsset, IconData fallbackIcon, {String? gameType}) {
+    if (coverAsset.isEmpty) return _buildSceneCover(gameType);
     if (coverAsset.startsWith('http://') || coverAsset.startsWith('https://')) {
       return Image.network(
         coverAsset,
@@ -1011,6 +1038,26 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       coverAsset,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) => _buildFallbackCover(fallbackIcon),
+    );
+  }
+
+  /// Backdrop for games without a cover image; the animated card art draws
+  /// the scene on top of it.
+  Widget _buildSceneCover(String? gameType) {
+    final colors = switch (gameType) {
+      'whack' => const [Color(0xFF7DD3FC), Color(0xFF84CC16)],
+      'space' => const [Color(0xFF0B1033), Color(0xFF4338CA)],
+      'train' => const [Color(0xFF38BDF8), Color(0xFF86EFAC)],
+      _ => const [Color(0xFF8338EC), Color(0xFF3A86FF)],
+    };
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: colors,
+        ),
+      ),
     );
   }
 

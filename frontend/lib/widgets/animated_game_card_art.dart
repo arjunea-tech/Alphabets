@@ -70,6 +70,15 @@ class _GameCardArtPainter extends CustomPainter {
       case 'matching':
         _paintMatching(canvas, size);
         break;
+      case 'whack':
+        _paintWhack(canvas, size);
+        break;
+      case 'space':
+        _paintSpace(canvas, size);
+        break;
+      case 'train':
+        _paintTrain(canvas, size);
+        break;
       case 'puzzle':
       default:
         _paintPuzzle(canvas, size);
@@ -973,6 +982,170 @@ class _GameCardArtPainter extends CustomPainter {
     drawCard(Offset(w * 0.80 - 30 - slide, h * 0.30), 'a', const Color(0xFFEC4899));
 
     _drawSparkleStar(canvas, Offset(w * 0.50, h * 0.30), 6.0, const Color(0xFFFBBF24));
+  }
+
+  void _drawLabel(Canvas canvas, String text, Offset center, double fontSize, Color color) {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(color: color, fontSize: fontSize, fontWeight: FontWeight.w900),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, center - Offset(tp.width / 2, tp.height / 2));
+  }
+
+  // =========================================================================
+  // 11. LETTER WHACK-A-MOLE: Moles bobbing out of three holes with letters
+  // =========================================================================
+  void _paintWhack(Canvas canvas, Size size) {
+    final t = time * 2 * math.pi;
+    final w = size.width;
+    final h = size.height;
+    const letters = ['A', 'B', 'C'];
+
+    for (var i = 0; i < 3; i++) {
+      final cx = w * (0.22 + i * 0.28);
+      final holeY = h * 0.52;
+      final rise = math.max(0.0, math.sin(t * 1.5 + i * 2.1)) * 22.0;
+
+      // Mole (drawn first, then the front lip of the hole hides its bottom)
+      canvas.save();
+      canvas.clipRect(Rect.fromLTRB(0, 0, w, holeY));
+      final headCenter = Offset(cx, holeY + 10 - rise);
+      canvas.drawCircle(headCenter, 13, Paint()..color = const Color(0xFFA16207));
+      canvas.drawCircle(headCenter + const Offset(-4, -3), 2, Paint()..color = Colors.black);
+      canvas.drawCircle(headCenter + const Offset(4, -3), 2, Paint()..color = Colors.black);
+      canvas.drawCircle(headCenter + const Offset(0, 3), 2.5, Paint()..color = const Color(0xFFF472B6));
+      // Letter sign
+      final sign = RRect.fromRectAndRadius(
+        Rect.fromCenter(center: headCenter - const Offset(0, 22), width: 22, height: 18),
+        const Radius.circular(4),
+      );
+      canvas.drawRRect(sign, Paint()..color = Colors.white);
+      _drawLabel(canvas, letters[i], sign.center, 13, const Color(0xFF365314));
+      canvas.restore();
+
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset(cx, holeY), width: 36, height: 11),
+        Paint()..color = const Color(0xFF3F2A14),
+      );
+    }
+
+    // Hammer swinging over the middle hole
+    final swing = math.sin(t * 3.0) * 0.5;
+    canvas.save();
+    canvas.translate(w * 0.80, h * 0.18);
+    canvas.rotate(swing);
+    canvas.drawRect(const Rect.fromLTWH(-2, 0, 4, 22), Paint()..color = const Color(0xFF92400E));
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(const Rect.fromLTWH(-10, -6, 20, 10), const Radius.circular(3)),
+      Paint()..color = const Color(0xFFDC2626),
+    );
+    canvas.restore();
+  }
+
+  // =========================================================================
+  // 12. SPACE LETTER SHOOTER: Rocket firing lasers at drifting letter rocks
+  // =========================================================================
+  void _paintSpace(Canvas canvas, Size size) {
+    final t = time * 2 * math.pi;
+    final w = size.width;
+    final h = size.height;
+
+    // Twinkling stars
+    for (var i = 0; i < 14; i++) {
+      final sx = (i * 37 % 100) / 100 * w;
+      final sy = ((i * 53 % 100) / 100 + time * 0.3) % 1.0 * h * 0.7;
+      final a = 0.4 + 0.6 * math.sin(t * 2 + i).abs();
+      canvas.drawCircle(Offset(sx, sy), 1.3, Paint()..color = Colors.white.withValues(alpha: a));
+    }
+
+    // Asteroids with letters
+    const rocks = [('A', Color(0xFFF472B6)), ('M', Color(0xFFFBBF24))];
+    for (var i = 0; i < rocks.length; i++) {
+      final c = Offset(w * (0.30 + i * 0.40), h * 0.22 + math.sin(t + i * 2) * 6);
+      canvas.drawCircle(c, 15, Paint()..color = rocks[i].$2);
+      _drawLabel(canvas, rocks[i].$1, c, 15, Colors.white);
+    }
+
+    // Rocket sliding side to side
+    final rx = w * 0.5 + math.sin(t) * w * 0.22;
+    final ry = h * 0.50;
+    final body = Path()
+      ..moveTo(rx, ry - 16)
+      ..quadraticBezierTo(rx + 9, ry - 4, rx + 7, ry + 10)
+      ..lineTo(rx - 7, ry + 10)
+      ..quadraticBezierTo(rx - 9, ry - 4, rx, ry - 16);
+    canvas.drawPath(body, Paint()..color = Colors.white);
+    canvas.drawCircle(Offset(rx, ry - 3), 3.5, Paint()..color = const Color(0xFF38BDF8));
+    final flame = 6 + math.sin(t * 8).abs() * 6;
+    canvas.drawPath(
+      Path()
+        ..moveTo(rx - 5, ry + 10)
+        ..lineTo(rx, ry + 10 + flame)
+        ..lineTo(rx + 5, ry + 10),
+      Paint()..color = const Color(0xFFF97316),
+    );
+
+    // Laser bolt travelling up
+    final laserY = ry - 20 - ((time * 3) % 1.0) * h * 0.30;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(rx - 1.5, laserY, 3, 10), const Radius.circular(2)),
+      Paint()..color = const Color(0xFF67E8F9),
+    );
+  }
+
+  // =========================================================================
+  // 13. LETTER TRAIN: Train with letter wagons chugging across the card
+  // =========================================================================
+  void _paintTrain(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final railY = h * 0.56;
+
+    canvas.drawRect(Rect.fromLTWH(0, railY, w, 3), Paint()..color = const Color(0xFF57534E));
+
+    const wagons = [('A', Color(0xFF3B82F6)), ('B', Color(0xFF22C55E)), ('?', Color(0xFFF59E0B))];
+    const wagonW = 26.0;
+    const gap = 4.0;
+    final trainW = wagons.length * (wagonW + gap) + 30;
+    final x0 = ((time * 0.6) % 1.0) * (w + trainW) - trainW;
+    final bounce = math.sin(time * 2 * math.pi * 6).abs() * 1.5;
+
+    for (var i = 0; i < wagons.length; i++) {
+      final left = x0 + i * (wagonW + gap);
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(left, railY - 30 - bounce, wagonW, 24),
+        const Radius.circular(4),
+      );
+      canvas.drawRRect(rect, Paint()..color = wagons[i].$2);
+      _drawLabel(canvas, wagons[i].$1, rect.center, 14, Colors.white);
+      for (final dx in [6.0, wagonW - 6]) {
+        canvas.drawCircle(Offset(left + dx, railY - 4), 4, Paint()..color = const Color(0xFF1F2937));
+      }
+    }
+
+    // Engine
+    final ex = x0 + wagons.length * (wagonW + gap);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(ex, railY - 30 - bounce, 30, 24), const Radius.circular(4)),
+      Paint()..color = const Color(0xFFDC2626),
+    );
+    canvas.drawRect(Rect.fromLTWH(ex + 4, railY - 42 - bounce, 8, 12), Paint()..color = const Color(0xFF1F2937));
+    canvas.drawRect(Rect.fromLTWH(ex + 16, railY - 26 - bounce, 9, 8), Paint()..color = const Color(0xFFBAE6FD));
+    for (final dx in [7.0, 23.0]) {
+      canvas.drawCircle(Offset(ex + dx, railY - 4), 4.5, Paint()..color = const Color(0xFF1F2937));
+    }
+    // Smoke puffs
+    for (var i = 0; i < 3; i++) {
+      final p = ((time * 3) + i / 3) % 1.0;
+      canvas.drawCircle(
+        Offset(ex + 8 - p * 20, railY - 46 - p * 22),
+        3 + p * 5,
+        Paint()..color = Colors.white.withValues(alpha: 0.8 * (1 - p)),
+      );
+    }
   }
 
   @override
