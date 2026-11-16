@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { gamesApi } from '../api/games';
-import { GameItem, GameLevel } from '../types';
+import { GameItem, GameLevel, LevelDifficulty } from '../types';
 import { Modal } from '../components/common/Modal';
 import { FileUpload } from '../components/common/FileUpload';
 import { useLanguage } from '../context/LanguageContext';
@@ -39,7 +39,18 @@ interface LevelDraft {
   prompt: string;
   targets: string;
   distractors: string;
+  difficulty: LevelDifficulty;
 }
+
+const DIFFICULTY_OPTIONS: { value: LevelDifficulty; label: string }[] = [
+  { value: 'easy', label: '🟢 Easy — slow' },
+  { value: 'medium', label: '🟡 Medium — faster' },
+  { value: 'hard', label: '🔴 Hard — fastest' },
+];
+
+/** Default difficulty by position: Level 1 easy, Level 2 medium, Level 3+ hard. */
+const difficultyForIndex = (idx: number): LevelDifficulty =>
+  idx <= 0 ? 'easy' : idx === 1 ? 'medium' : 'hard';
 
 const splitList = (v: string) =>
   v
@@ -47,21 +58,40 @@ const splitList = (v: string) =>
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 
-const emptyLevel = (): LevelDraft => ({ title: '', prompt: '', targets: '', distractors: '' });
+const emptyLevel = (idx = 0): LevelDraft => ({
+  title: `Level ${idx + 1}`,
+  prompt: '',
+  targets: '',
+  distractors: '',
+  difficulty: difficultyForIndex(idx),
+});
+
+/** New games start with 3 levels (easy → medium → hard). */
+const DEFAULT_LEVEL_COUNT = 3;
+const defaultLevels = () => Array.from({ length: DEFAULT_LEVEL_COUNT }, (_, i) => emptyLevel(i));
 
 const toDrafts = (game: Partial<GameItem>): LevelDraft[] => {
   if (Array.isArray(game.levels) && game.levels.length > 0) {
-    return game.levels.map((l) => ({
+    return game.levels.map((l, i) => ({
       title: l.title || '',
       prompt: l.prompt || '',
       targets: (l.targets || []).join(', '),
       distractors: (l.distractors || []).join(', '),
+      difficulty: l.difficulty || difficultyForIndex(i),
     }));
   }
   if (Array.isArray(game.options) && game.options.length > 0) {
-    return [{ title: game.title || '', prompt: game.prompt || '', targets: game.options.join(', '), distractors: '' }];
+    return [
+      {
+        title: game.title || '',
+        prompt: game.prompt || '',
+        targets: game.options.join(', '),
+        distractors: '',
+        difficulty: 'easy',
+      },
+    ];
   }
-  return [emptyLevel()];
+  return defaultLevels();
 };
 
 export const GamesPage: React.FC = () => {
@@ -106,7 +136,7 @@ export const GamesPage: React.FC = () => {
       display_order: games.length + 1,
       is_active: true,
     });
-    setLevels([emptyLevel()]);
+    setLevels(defaultLevels());
     setIsModalOpen(true);
   };
 
@@ -152,11 +182,19 @@ export const GamesPage: React.FC = () => {
         prompt: l.prompt.trim(),
         targets: splitList(l.targets),
         distractors: splitList(l.distractors),
+        difficulty: l.difficulty,
       }))
       .filter((l) => l.targets.length > 0);
 
     if (parsedLevels.length === 0) {
       alert('Add at least one level with target letters/words');
+      return;
+    }
+
+    // A level with no targets would be silently dropped by the server — say so.
+    const emptyIdx = levels.findIndex((l) => splitList(l.targets).length === 0);
+    if (emptyIdx !== -1) {
+      alert(`Level ${emptyIdx + 1} has no targets. Fill in its targets or remove the level.`);
       return;
     }
 
@@ -479,7 +517,7 @@ export const GamesPage: React.FC = () => {
               <label className="form-label" style={{ margin: 0 }}>
                 Levels / Missions ({levels.length})
               </label>
-              <button type="button" className="btn btn-sm btn-secondary" onClick={() => setLevels([...levels, emptyLevel()])}>
+              <button type="button" className="btn btn-sm btn-secondary" onClick={() => setLevels([...levels, emptyLevel(levels.length)])}>
                 <Plus size={14} />
                 <span>Add Level</span>
               </button>
@@ -506,7 +544,7 @@ export const GamesPage: React.FC = () => {
                       </button>
                     )}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '8px', marginBottom: '8px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
                     <input
                       type="text"
                       className="form-control"
@@ -514,6 +552,20 @@ export const GamesPage: React.FC = () => {
                       value={lvl.title}
                       onChange={(e) => update({ title: e.target.value })}
                     />
+                    <select
+                      className="form-control"
+                      title="Difficulty — controls how fast the game plays"
+                      value={lvl.difficulty}
+                      onChange={(e) => update({ difficulty: e.target.value as LevelDifficulty })}
+                    >
+                      {DIFFICULTY_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ marginBottom: '8px' }}>
                     <input
                       type="text"
                       className="form-control"

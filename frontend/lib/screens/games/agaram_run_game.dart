@@ -8,6 +8,7 @@ import '../../models/game_content.dart';
 import '../../models/letter_model.dart';
 import '../../services/progress_service.dart';
 import '../../widgets/bouncy_button.dart';
+import '../../widgets/next_level_button.dart';
 
 enum MovementDirection {
   idle,
@@ -227,7 +228,9 @@ class _AgaramRunGameState extends State<AgaramRunGame>
           return AgaramRunLevel(
             levelNumber: i + 1,
             title: adminLevels[i].title.isNotEmpty ? adminLevels[i].title : widget.content.game.title,
-            subtitle: 'Level ${i + 1} of ${adminLevels.length}',
+            subtitle: widget.content.isLevelMode
+                ? 'Level ${widget.content.levelIndex! + 1} of ${widget.content.game.playableLevels.length}'
+                : 'Level ${i + 1} of ${adminLevels.length}',
             description: adminLevels[i].prompt.isNotEmpty ? adminLevels[i].prompt : widget.content.game.prompt,
             // 11 letter slots on the track, filled in order from the admin's targets
             targetLetters: [for (var k = 0; k < 11; k++) letters[k % letters.length]],
@@ -569,6 +572,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     });
 
     widget.progressService?.addStars(widget.content.game.starsReward);
+    widget.progressService?.completeActiveGameLevel();
     widget.progressService?.recordGameCompleted(3);
     try { HapticFeedback.heavyImpact(); } catch (_) {}
   }
@@ -1233,6 +1237,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
               ),
               const SizedBox(height: 22),
 
+              NextLevelButton(content: widget.content, expand: false),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

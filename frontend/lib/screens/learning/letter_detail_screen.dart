@@ -131,7 +131,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
             text: word.substring(0, index),
             style: AppTextStyles.wordLarge.copyWith(
               color: AppColors.textDark,
-              fontSize: 28,
+              fontSize: 26,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -183,6 +183,89 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
     );
   }
 
+  Widget _buildPrevNextBar(bool hasPrev, bool hasNext, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        if (hasPrev)
+          Flexible(
+            child: BouncyButton(
+              onPressed: _goToPrevious,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: AppColors.borderLight, width: 2),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
+                      const SizedBox(width: 6),
+                      Text('Previous', style: AppTextStyles.bodyTextBold.copyWith(fontSize: 15)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          )
+        else
+          const SizedBox(width: 48),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6.0),
+          child: Text(
+            '${_currentIndex + 1} / ${widget.letterList.length}',
+            style: AppTextStyles.bodyTextBold.copyWith(
+              color: AppColors.textMuted,
+              fontSize: 15,
+            ),
+          ),
+        ),
+        if (hasNext)
+          Flexible(
+            child: BouncyButton(
+              onPressed: _goToNext,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [color, color.withValues(alpha: 0.85)],
+                  ),
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Next',
+                        style: AppTextStyles.bodyTextBold.copyWith(color: Colors.white, fontSize: 15),
+                      ),
+                      const SizedBox(width: 6),
+                      const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          )
+        else
+          const SizedBox(width: 48),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final letter = _currentLetter;
@@ -207,7 +290,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _EnglishSlateKids(letter: letter.letter, height: 115),
+                    _EnglishSlateKids(letter: letter.letter, height: 92),
                     const SizedBox(width: 12),
                     Flexible(
                       child: Container(
@@ -236,7 +319,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 10),
 
                 // Giant Collectible Letter Card
                 ScaleTransition(
@@ -244,7 +327,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                   child: Container(
                     width: double.infinity,
                     constraints: const BoxConstraints(maxWidth: 380),
-                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(36),
@@ -266,7 +349,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                           // picture is big and easy to see.
                           child: Container(
                             width: double.infinity,
-                            height: 200,
+                            height: 165,
                             margin: const EdgeInsets.symmetric(vertical: 2),
                             decoration: BoxDecoration(
                               color: letter.imagePath != null ? Colors.white : color.withValues(alpha: 0.08),
@@ -294,7 +377,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 6),
 
                         // Large Tamil Letter (Tappable to hear letter sound)
                         BouncyButton(
@@ -304,7 +387,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                             child: Text(
                               letter.letter,
                               style: AppTextStyles.tamilLetterLarge.copyWith(
-                                fontSize: 84,
+                                fontSize: 64,
                                 color: color,
                                 fontWeight: FontWeight.w900,
                                 height: 1.0,
@@ -315,11 +398,11 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
 
                         // Example Word with target letter highlighted - Tappable to hear WORD sound
                         if (letter.word.isNotEmpty) ...[
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 8),
                           BouncyButton(
                             onPressed: () {},
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
                               decoration: BoxDecoration(
                                 color: color.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(22),
@@ -342,7 +425,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                     ),
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
 
 
                 // Direct Writing Practice Shortcut
@@ -358,7 +441,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                     );
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFFFF006E), Color(0xFFFF70A6)],
@@ -415,7 +498,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                       );
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFF7B1FA2), Color(0xFFAB47BC)],
@@ -450,90 +533,11 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                     ),
                   ),
                 ],
-                const SizedBox(height: 18),
-
-                // Previous / Next Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (hasPrev)
-                      Flexible(
-                        child: BouncyButton(
-                          onPressed: _goToPrevious,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(22),
-                              border: Border.all(color: AppColors.borderLight, width: 2),
-                            ),
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
-                                  const SizedBox(width: 6),
-                                  Text('Previous', style: AppTextStyles.bodyTextBold.copyWith(fontSize: 15)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      const SizedBox(width: 48),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                      child: Text(
-                        '${_currentIndex + 1} / ${widget.letterList.length}',
-                        style: AppTextStyles.bodyTextBold.copyWith(
-                          color: AppColors.textMuted,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                    if (hasNext)
-                      Flexible(
-                        child: BouncyButton(
-                          onPressed: _goToNext,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [color, color.withValues(alpha: 0.85)],
-                              ),
-                              borderRadius: BorderRadius.circular(22),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: color.withValues(alpha: 0.35),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Next',
-                                    style: AppTextStyles.bodyTextBold.copyWith(color: Colors.white, fontSize: 15),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      const SizedBox(width: 48),
-                  ],
-                ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
+                // Previous / Next — right under the buttons above, not stuck to the
+                // screen bottom (that left a big empty gap on tall phones).
+                _buildPrevNextBar(hasPrev, hasNext, color),
+                const SizedBox(height: 12),
               ],
             ),
           ),

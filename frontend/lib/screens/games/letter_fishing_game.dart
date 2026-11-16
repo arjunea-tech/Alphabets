@@ -9,6 +9,7 @@ import '../../services/progress_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/bouncy_button.dart';
+import '../../widgets/next_level_button.dart';
 import '../../widgets/mascot_widget.dart';
 
 enum HookState {
@@ -150,7 +151,10 @@ class _LetterFishingGameState extends State<LetterFishingGame>
   void _setupGameData() {
     // Target fish and wrong fish come from the admin's levels for this game
     _letterPool = widget.content.mixPoolLetters;
-    _roundQueue = List<LetterModel>.from(widget.content.targetLetters);
+    // A picked level asks exactly 5 rounds; otherwise every target, in order.
+    _roundQueue = widget.content.isLevelMode
+        ? widget.content.roundsFrom(widget.content.targetLetters, _rng)
+        : List<LetterModel>.from(widget.content.targetLetters);
     _currentRoundIndex = 0;
     _score = 0;
     _caughtCount = 0;
@@ -462,6 +466,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
       // LEVEL COMPLETED! 🎉
       // -------------------------------------------------------------
       const earnedStars = 3;
+      widget.progressService.completeActiveGameLevel();
       widget.progressService.recordGameCompleted(earnedStars);
 
       setState(() {
@@ -1025,7 +1030,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                '${_roundQueue.length} Letters',
+                                '${_roundQueue.length} Rounds',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -1062,7 +1067,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                         Wrap(
                           spacing: 6,
                           runSpacing: 6,
-                          children: _roundQueue.map((t) => t.letter).map((l) {
+                          children: {..._roundQueue.map((t) => t.letter)}.map((l) {
                             return Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
@@ -1230,6 +1235,8 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                     ),
                   ),
                   const SizedBox(height: 24),
+
+                  NextLevelButton(content: widget.content),
 
                   // Play Again Button
                   BouncyButton(

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'game_item_model.dart';
 import 'letter_model.dart';
 
@@ -12,7 +14,49 @@ class GameContent {
   final List<GameLevel> levels;
   final List<LetterModel> adminLetters;
 
-  GameContent({required this.game, required this.adminLetters}) : levels = game.playableLevels;
+  /// Index of the level being played when the child picked one level from the
+  /// level-select screen; null when the game plays all levels together.
+  final int? levelIndex;
+
+  GameContent({required this.game, required this.adminLetters})
+      : levels = game.playableLevels,
+        levelIndex = null;
+
+  /// Content for just one level ([index] into [GameItem.playableLevels]).
+  GameContent.forLevel({required this.game, required this.adminLetters, required int index})
+      : levels = [game.playableLevels[index]],
+        levelIndex = index;
+
+  /// Speed multiplier from the level's difficulty (1.0 easy, 1.3 medium,
+  /// 1.6 hard). 1.0 when several levels are played together.
+  double get speedFactor => levelIndex == null ? 1.0 : levels.first.speedFactor;
+
+  /// Every picked level asks this many questions (rounds / gates / pops /
+  /// correct cuts) before it is complete — the same in every game.
+  static const int questionsPerLevel = 5;
+
+  /// True while playing one level picked from the level-select screen.
+  bool get isLevelMode => levelIndex != null;
+
+  /// A picked level that has another level after it.
+  bool get hasNextLevel => levelIndex != null && levelIndex! + 1 < game.playableLevels.length;
+
+  /// Rounds for a game that asks one target per round. In level mode this is
+  /// exactly [questionsPerLevel] rounds: the targets shuffled, repeated when
+  /// there are fewer than 5 (e.g. a level with only O and U → O U U O U).
+  /// Outside level mode the targets are shuffled and capped at [maxRounds].
+  List<T> roundsFrom<T>(List<T> targets, Random rng, {int maxRounds = 10}) {
+    if (targets.isEmpty) return [];
+    if (!isLevelMode) {
+      final all = List<T>.from(targets)..shuffle(rng);
+      return all.length > maxRounds ? all.sublist(0, maxRounds) : all;
+    }
+    final rounds = <T>[];
+    while (rounds.length < questionsPerLevel) {
+      rounds.addAll(List<T>.from(targets)..shuffle(rng));
+    }
+    return rounds.sublist(0, questionsPerLevel);
+  }
 
   bool get isEmpty => levels.isEmpty;
 

@@ -1,4 +1,13 @@
 /**
+ * Level difficulty (controls game speed in the app). When missing (levels saved
+ * before this field existed) it follows the level's position: 1st easy,
+ * 2nd medium, 3rd and later hard.
+ */
+function normalizeDifficulty(value, index = 0) {
+  const d = String(value || '').trim().toLowerCase();
+  if (DIFFICULTIES.includes(d)) return d;
+  return DIFFICULTIES[Math.min(index, DIFFICULTIES.length - 1)];
+}/**
  * Games Data Access Model
  *
  * Every piece of game content (missions, target letters/words, distractors)
@@ -6,7 +15,7 @@
  * renders exactly what is stored here — it has no hardcoded game content.
  *
  * levels_json shape:
- *   [{ "title": "Vowels", "prompt": "Pop only vowels", "targets": ["A","E"], "distractors": ["B","C"] }]
+ *   [{ "title": "Vowels", "prompt": "Pop only vowels", "targets": ["A","E"], "distractors": ["B","C"], "difficulty": "easy" }]
  */
 const { pool, isPostgres } = require('../config/db');
 const logger = require('../utils/logger');
@@ -50,25 +59,100 @@ function toStringList(value) {
   return [];
 }
 
+const DIFFICULTIES = ['easy', 'medium', 'hard'];
+
+/**
+ * Level difficulty (controls game speed in the app). When missing (levels saved
+ * before this field existed) it follows the level's position: 1st easy,
+ * 2nd medium, 3rd and later hard.
+ */
+function normalizeDifficulty(value, index = 0) {
+  const d = String(value || '').trim().toLowerCase();
+  if (DIFFICULTIES.includes(d)) return d;
+  return DIFFICULTIES[Math.min(index, DIFFICULTIES.length - 1)];
+}
+
 /** Normalises admin input into a clean list of levels; drops levels with no targets. */
 function normalizeLevels(levels) {
   if (!Array.isArray(levels)) return [];
   return levels
-    .map((lvl) => ({
+    .map((lvl, index) => ({
       title: String(lvl?.title || '').trim(),
       prompt: String(lvl?.prompt || '').trim(),
       targets: toStringList(lvl?.targets),
       distractors: toStringList(lvl?.distractors),
+      difficulty: normalizeDifficulty(lvl?.difficulty, index),
     }))
     .filter((lvl) => lvl.targets.length > 0);
 }
 
+/** Every game offers at least this many levels (easy → medium → hard). */
+const MIN_LEVELS = 3;
+
+function dedupeCaseInsensitive(list) {
+  const seen = new Set();
+  return list.filter((v) => {
+    const key = v.toUpperCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
+ * Tops a game up to MIN_LEVELS levels so every game has Level 1/2/3 in the app
+ * and in the admin editor (where they can be edited and saved like any level).
+ *   1 level  → Part 1 (first half of its targets, easy), Part 2 (second half,
+ *              medium), All (every target, hard). Fewer than 2 targets → the
+ *              same targets three times, only faster.
+ *   2 levels → kept, plus a 3rd "All" level with both levels' targets (hard).
+ * Games that already have 3+ levels are returned unchanged.
+ * Mirrored in the app: frontend/lib/models/game_item_model.dart (ensureMinLevels).
+ */
+function ensureMinLevels(levels, gameTitle = '') {
+  if (levels.length === 0 || levels.length >= MIN_LEVELS) return levels;
+
+  if (levels.length === 1) {
+    const base = levels[0];
+    const name = base.title || gameTitle || 'Level';
+    const t = base.targets;
+    const half = Math.ceil(t.length / 2);
+    const parts = t.length >= 2 ? [t.slice(0, half), t.slice(half), t] : [t, t, t];
+    const suffixes = ['Part 1', 'Part 2', 'All'];
+    return parts.map((targets, i) => ({
+      title: `${name} — ${suffixes[i]}`,
+      prompt: base.prompt,
+      targets,
+      distractors: base.distractors,
+      difficulty: DIFFICULTIES[i],
+    }));
+  }
+
+  // 2 levels: add a combined, hard 3rd level
+  return [
+    ...levels,
+    {
+      title: 'All Together',
+      prompt: levels[0].prompt,
+      targets: dedupeCaseInsensitive([...levels[0].targets, ...levels[1].targets]),
+      distractors: dedupeCaseInsensitive([...levels[0].distractors, ...levels[1].distractors]),
+      difficulty: 'hard',
+    },
+  ];
+}
+
 function mapRow(row) {
   if (!row) return null;
+  let levels = normalizeLevels(parseJson(row.levels_json, []));
+  const options = parseJson(row.options_json, []);
+  // Old games stored their content only in options_json
+  if (levels.length === 0 && Array.isArray(options) && options.length > 0) {
+    levels = normalizeLevels([{ title: row.title, prompt: row.prompt, targets: options }]);
+  }
   return {
     ...row,
-    options: parseJson(row.options_json, []),
-    levels: normalizeLevels(parseJson(row.levels_json, [])),
+    options,
+    levels: ensureMinLevels(levels, row.title),
   };
 }
 

@@ -8,6 +8,10 @@ class UserProgressModel {
   final int avatarIndex;
   final bool soundEnabled;
 
+  /// Game id -> how many levels of that game the child has completed.
+  /// Level N+1 unlocks once N levels are completed.
+  final Map<String, int> gameLevelsCompleted;
+
   const UserProgressModel({
     this.stars = 15,
     this.completedLetterIds = const [],
@@ -17,6 +21,7 @@ class UserProgressModel {
     this.childName = 'Kid',
     this.avatarIndex = 0,
     this.soundEnabled = true,
+    this.gameLevelsCompleted = const {},
   });
 
   UserProgressModel copyWith({
@@ -28,6 +33,7 @@ class UserProgressModel {
     String? childName,
     int? avatarIndex,
     bool? soundEnabled,
+    Map<String, int>? gameLevelsCompleted,
   }) {
     return UserProgressModel(
       stars: stars ?? this.stars,
@@ -38,6 +44,7 @@ class UserProgressModel {
       childName: childName ?? this.childName,
       avatarIndex: avatarIndex ?? this.avatarIndex,
       soundEnabled: soundEnabled ?? this.soundEnabled,
+      gameLevelsCompleted: gameLevelsCompleted ?? this.gameLevelsCompleted,
     );
   }
 
@@ -50,6 +57,7 @@ class UserProgressModel {
         'childName': childName,
         'avatarIndex': avatarIndex,
         'soundEnabled': soundEnabled,
+        'gameLevelsCompleted': gameLevelsCompleted,
       };
 
   factory UserProgressModel.fromJson(Map<String, dynamic> json) {
@@ -65,6 +73,9 @@ class UserProgressModel {
       childName: json['childName'] as String? ?? 'Kid',
       avatarIndex: json['avatarIndex'] as int? ?? 0,
       soundEnabled: json['soundEnabled'] as bool? ?? true,
+      gameLevelsCompleted: (json['gameLevelsCompleted'] as Map<String, dynamic>?)
+              ?.map((k, v) => MapEntry(k, (v as num).toInt())) ??
+          const {},
     );
   }
 }

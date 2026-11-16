@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../models/game_content.dart';
 import '../../services/progress_service.dart';
 import '../../widgets/bouncy_button.dart';
+import '../../widgets/next_level_button.dart';
 import 'package:flutter/services.dart';
 
 class FlappyWordGame extends StatefulWidget {
@@ -101,6 +102,7 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
 
   /// One cloud gate per admin level: a random target is the correct gate,
   /// a random distractor the wrong one, placed top/bottom at random.
+  /// A picked level (level mode) gets 5 gates from that one level instead.
   late final List<_CloudGateWave> _defaultWaves;
 
   @override
@@ -109,7 +111,9 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
     final content = widget.content;
     final rng = Random();
     _defaultWaves = [
-      for (final level in content.levels)
+      for (final level in content.isLevelMode
+          ? List.filled(GameContent.questionsPerLevel, content.levels.first)
+          : content.levels)
         () {
           final correct = level.targets[rng.nextInt(level.targets.length)];
           final wrongPool = content.distractorsFor(level);
@@ -174,6 +178,7 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
   void _triggerVictory() {
     _loopTimer?.cancel();
     _loopTimer = null;
+    widget.progressService.completeActiveGameLevel();
     try { widget.progressService.addStars(widget.content.game.starsReward); } catch (_) {}
     if (mounted) {
       setState(() {
@@ -315,7 +320,7 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
     }
 
     // 3. Cloud Gate Movement (Slow, Relaxing Pace)
-    _gateX -= _gateSpeed * dt;
+    _gateX -= _gateSpeed * widget.content.speedFactor * dt; // faster on medium/hard levels
 
     // Deterministic in-frame gate advancement
     if (_isAdvancingGate) {
@@ -733,10 +738,10 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
                   style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'You navigated all 5 cloud gates successfully!',
+                Text(
+                  'You flew through all ${_defaultWaves.length} cloud gates!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
                 const SizedBox(height: 22),
                 Container(
@@ -752,6 +757,7 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
                   ),
                 ),
                 const SizedBox(height: 24),
+                NextLevelButton(content: widget.content, expand: false),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

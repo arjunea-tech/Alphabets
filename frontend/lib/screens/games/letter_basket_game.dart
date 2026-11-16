@@ -9,6 +9,7 @@ import '../../services/progress_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/bouncy_button.dart';
+import '../../widgets/next_level_button.dart';
 import '../../widgets/mascot_widget.dart';
 
 class LetterBasketGame extends StatefulWidget {
@@ -146,11 +147,8 @@ class LetterBasketGameState extends State<LetterBasketGame>
     // Targets and falling wrong letters come from the admin's levels for this game
     _letterPool = widget.content.mixPoolLetters;
 
-    // Select 10 distinct rounds from the admin's targets (guarantees different targets)
-    _roundQueue = List<LetterModel>.from(widget.content.targetLetters)..shuffle(_rng);
-    if (_roundQueue.length > 10) {
-      _roundQueue = _roundQueue.sublist(0, 10);
-    }
+    // Up to 10 distinct rounds from the admin's targets; a picked level asks exactly 5.
+    _roundQueue = widget.content.roundsFrom(widget.content.targetLetters, _rng);
 
     _currentRoundIndex = 0;
     _score = 0;
@@ -202,7 +200,8 @@ class LetterBasketGameState extends State<LetterBasketGame>
     lanes.shuffle(_rng);
 
     // Base falling speed scales smoothly with round index
-    final double baseSpeed = 125.0 + (_currentRoundIndex * 7.0);
+    // ... and with the level difficulty (x1.0 easy, x1.3 medium, x1.6 hard)
+    final double baseSpeed = (125.0 + (_currentRoundIndex * 7.0)) * widget.content.speedFactor;
 
     for (int i = 0; i < waveLetters.length; i++) {
       final letterData = waveLetters[i];
@@ -375,7 +374,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
       _playTargetSound();
       setState(() {});
     } else {
-      // Completed all 10 rounds!
+      // Completed all rounds!
       _isGameCompleted = true;
       _isRoundTransitioning = false;
       _ticker.stop();
@@ -383,6 +382,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
 
       // Award 1-3 stars based on score
       final stars = _score >= 80 ? 3 : (_score >= 50 ? 2 : 1);
+      widget.progressService.completeActiveGameLevel();
       widget.progressService.recordGameCompleted(stars);
 
       // Full celebration confetti explosion
@@ -1231,6 +1231,8 @@ class LetterBasketGameState extends State<LetterBasketGame>
             ),
 
             const SizedBox(height: 22),
+
+            NextLevelButton(content: widget.content),
 
             // Action Buttons
             Row(

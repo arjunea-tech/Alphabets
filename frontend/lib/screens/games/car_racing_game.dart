@@ -9,6 +9,7 @@ import '../../services/progress_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/bouncy_button.dart';
+import '../../widgets/next_level_button.dart';
 import '../../widgets/mascot_widget.dart';
 
 class CarRacingGame extends StatefulWidget {
@@ -170,11 +171,8 @@ class CarRacingGameState extends State<CarRacingGame>
       ];
     }
 
-    // Shuffle 10 distinct targets for 10 rounds
-    _roundQueue = List<RacingTarget>.from(_targetPool)..shuffle(_rng);
-    if (_roundQueue.length > 10) {
-      _roundQueue = _roundQueue.sublist(0, 10);
-    }
+    // Up to 10 distinct targets for 10 rounds; a picked level asks exactly 5.
+    _roundQueue = widget.content.roundsFrom(_targetPool, _rng);
 
     _currentRoundIndex = 0;
     _score = 0;
@@ -435,13 +433,14 @@ class CarRacingGameState extends State<CarRacingGame>
       _playTargetSound();
       setState(() {});
     } else {
-      // Completed all 10 racing targets!
+      // Completed all racing targets!
       _isGameCompleted = true;
       _isRoundTransitioning = false;
       _ticker.stop();
       _audioService.playStarReward(context);
 
       final stars = _score >= 90 ? 3 : (_score >= 60 ? 2 : 1);
+      widget.progressService.completeActiveGameLevel();
       widget.progressService.recordGameCompleted(stars);
 
       final size = MediaQuery.of(context).size;
@@ -1370,6 +1369,8 @@ class CarRacingGameState extends State<CarRacingGame>
             ),
 
             const SizedBox(height: 22),
+
+            NextLevelButton(content: widget.content),
 
             // Action Buttons
             Row(

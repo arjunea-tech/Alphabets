@@ -8,6 +8,7 @@ import '../../services/data_service.dart';
 import '../../services/api_config.dart';
 import '../../services/cloudinary_media.dart';
 import '../../widgets/bouncy_button.dart';
+import '../../widgets/next_level_button.dart';
 import '../../widgets/kid_scaffold_background.dart';
 import '../../widgets/animated_game_card_art.dart';
 import 'agaram_run_game.dart';
@@ -527,7 +528,40 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     } catch (_) {}
     if (!context.mounted) return;
 
-    final content = GameContent(game: game, adminLetters: adminLetters);
+    // Games with 2+ levels: let the child pick a level (later levels unlock one
+    // by one). Letter Matching has its own built-in levels and ignores admin ones.
+    final levels = game.playableLevels;
+    if (levels.length > 1 && game.gameType != 'matching') {
+      final picked = await _pickLevel(context, game, levels);
+      if (picked == null || !context.mounted) return;
+      await _playLevel(context, game, adminLetters, picked);
+    } else {
+      widget.progressService.startGameLevel(game.id, 0);
+      final content = GameContent(game: game, adminLetters: adminLetters);
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => _buildGameScreen(game, content)));
+    }
+  }
+
+  /// Opens one level. A game that returns 'next_level' (from its "Next Level"
+  /// button) goes straight on to the following level.
+  Future<void> _playLevel(BuildContext context, GameItem game, List<LetterModel> adminLetters, int index) async {
+    var current = index;
+    final count = game.playableLevels.length;
+    while (current < count && context.mounted) {
+      widget.progressService.startGameLevel(game.id, current);
+      final content = GameContent.forLevel(game: game, adminLetters: adminLetters, index: current);
+      final result = await Navigator.push<Object?>(
+        context,
+        MaterialPageRoute(builder: (_) => _buildGameScreen(game, content)),
+      );
+      final canGoOn = result == nextLevelResult && widget.progressService.isGameLevelUnlocked(game.id, current + 1);
+      if (!canGoOn) break;
+      current++;
+    }
+    if (mounted) setState(() {}); // refresh stars / progress on the games screen
+  }
+
+  Widget _buildGameScreen(GameItem game, GameContent content) {
     final progress = widget.progressService;
     Widget targetScreen;
 
@@ -567,10 +601,179 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         targetScreen = WordPuzzleGame(progressService: progress, content: content);
         break;
     }
+    return targetScreen;
+  }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => targetScreen),
+  /// Bottom sheet listing the game's levels. Level 1 is always open; each next
+  /// level unlocks after the previous one is won. Returns the picked index.
+  Future<int?> _pickLevel(BuildContext context, GameItem game, List<GameLevel> levels) {
+    final done = widget.progressService.completedGameLevels(game.id);
+    return showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.8),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        decoration: const BoxDecoration(
+          color: Color(0xFFFFFBF2),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(3)),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                game.title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF2D1500)),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Choose a level  •  $done / ${levels.length} done',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF7A4400)),
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: levels.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (_, i) => _buildLevelTile(
+                    ctx,
+                    level: levels[i],
+                    index: i,
+                    isDone: i < done,
+                    isUnlocked: i <= done,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLevelTile(
+    BuildContext ctx, {
+    required GameLevel level,
+    required int index,
+    required bool isDone,
+    required bool isUnlocked,
+  }) {
+    const difficultyStyles = {
+      'easy': (label: 'Easy', color: Color(0xFF16A34A)),
+      'medium': (label: 'Medium', color: Color(0xFFF59E0B)),
+      'hard': (label: 'Hard', color: Color(0xFFDC2626)),
+    };
+    final diff = difficultyStyles[level.difficulty] ?? difficultyStyles['easy']!;
+    final title = level.title.trim().isNotEmpty ? level.title.trim() : 'Level ${index + 1}';
+    final subtitle = level.prompt.trim().isNotEmpty ? level.prompt.trim() : level.targets.take(6).join('  ');
+
+    return Opacity(
+      opacity: isUnlocked ? 1.0 : 0.55,
+      child: BouncyButton(
+        onPressed: () {
+          if (isUnlocked) {
+            Navigator.pop(ctx, index);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Finish Level $index first to unlock Level ${index + 1}! 🔒')),
+            );
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDone ? const Color(0xFF22C55E) : (isUnlocked ? const Color(0xFFFFB74D) : Colors.black12),
+              width: 2.2,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDone
+                      ? const Color(0xFF22C55E)
+                      : (isUnlocked ? const Color(0xFFFF9F1C) : const Color(0xFFCBD5E1)),
+                ),
+                child: Center(
+                  child: isUnlocked
+                      ? (isDone
+                          ? const Icon(Icons.check_rounded, color: Colors.white, size: 30)
+                          : Text(
+                              '${index + 1}',
+                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white),
+                            ))
+                      : const Icon(Icons.lock_rounded, color: Colors.white, size: 26),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: diff.color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            diff.label,
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: diff.color),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                isUnlocked ? Icons.play_circle_fill_rounded : Icons.lock_outline_rounded,
+                color: isUnlocked ? const Color(0xFFFF9F1C) : Colors.black26,
+                size: 32,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

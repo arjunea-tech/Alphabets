@@ -204,7 +204,11 @@ export interface GameLevel {
   prompt: string;
   targets: string[];
   distractors: string[];
+  /** Controls game speed in the app. */
+  difficulty?: LevelDifficulty;
 }
+
+export type LevelDifficulty = 'easy' | 'medium' | 'hard';
 
 export interface ChildUser {
   id: string;
