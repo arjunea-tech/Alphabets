@@ -10,15 +10,26 @@ import 'videos/videos_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final ProgressService progressService;
+  final int initialIndex;
 
-  const MainNavigationScreen({super.key, required this.progressService});
+  const MainNavigationScreen({
+    super.key,
+    required this.progressService,
+    this.initialIndex = 2,
+  });
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
 
   void _onTabSelected(int index) {
     setState(() {

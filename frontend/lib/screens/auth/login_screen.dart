@@ -76,11 +76,12 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
 
-      // Navigate to Home / MainNavigationScreen
+      // Navigate directly to Games screen in MainNavigationScreen (index 2)
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => MainNavigationScreen(
             progressService: widget.progressService,
+            initialIndex: 2,
           ),
         ),
       );
