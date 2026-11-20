@@ -1,4 +1,6 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import '../../models/letter_model.dart';
 import '../../models/video_model.dart';
 import '../../services/api_config.dart';
@@ -39,6 +41,9 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
   final AudioService _audioService = AudioService();
+  final FlutterTts _tts = FlutterTts();
+  final AudioPlayer _recordingPlayer = AudioPlayer();
+  bool _speaking = false;
 
   LetterModel get _currentLetter => widget.letterList[_currentIndex];
 
@@ -59,11 +64,113 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
 
     _animController.forward();
     _markCompleted();
+    _initTts();
+  }
+
+  Future<void> _initTts() async {
+    _recordingPlayer.onPlayerStateChanged.listen((state) {
+      if (!mounted) return;
+      final playing = state == PlayerState.playing;
+      if (playing != _speaking) setState(() => _speaking = playing);
+    });
+    _tts.setStartHandler(() { if (mounted) setState(() => _speaking = true); });
+    _tts.setCompletionHandler(() { if (mounted) setState(() => _speaking = false); });
+    _tts.setCancelHandler(() { if (mounted) setState(() => _speaking = false); });
+    _tts.setErrorHandler((_) { if (mounted) setState(() => _speaking = false); });
+    try {
+      // Indian English accent so kids understand it clearly.
+      await _tts.setLanguage('en-IN');
+      await _pickIndianVoice();
+      // Higher pitch + female voice = cheerful, kid-like voice.
+      await _tts.setSpeechRate(0.4);
+      await _tts.setPitch(1.6);
+      await _tts.setVolume(1.0);
+    } catch (_) {}
+  }
+
+  /// Chooses an Indian English (en-IN) voice if the device/browser has one,
+  /// preferring Google / female voices which sound clearest.
+  Future<void> _pickIndianVoice() async {
+    try {
+      final voices = await _tts.getVoices;
+      if (voices is! List) return;
+      final indian = voices
+          .whereType<Map>()
+          .where((v) {
+            final locale = (v['locale'] ?? '').toString().toLowerCase().replaceAll('_', '-');
+            final name = (v['name'] ?? '').toString().toLowerCase();
+            return locale == 'en-in' || name.contains('india');
+          })
+          .toList();
+      if (indian.isEmpty) return;
+      int score(Map v) {
+        final name = (v['name'] ?? '').toString().toLowerCase();
+        var s = 0;
+        // Female voices sound closest to a child once the pitch is raised.
+        if (name.contains('female') || name.contains('heera') || name.contains('neerja') ||
+            name.contains('en-in-x-ahp') || name.contains('en-in-x-cxx')) {
+          s += 3;
+        }
+        if (name.contains('google')) s += 1;
+        if (name.contains('male') && !name.contains('female')) s -= 2;
+        return s;
+      }
+      indian.sort((a, b) => score(b).compareTo(score(a)));
+      final best = indian.first;
+      await _tts.setVoice({
+        'name': best['name'].toString(),
+        'locale': best['locale'].toString(),
+      });
+    } catch (_) {}
+  }
+
+  /// Speaks "A for Apple", "B for Ball", ... for the current letter.
+  ///
+  /// If a real recording (e.g. a child saying "A for Apple") was uploaded for
+  /// this letter in the admin panel ("Audio Pronunciation"), that is played.
+  /// Otherwise it falls back to the kid-style Indian English TTS voice.
+  Future<void> _speakLetterWord() async {
+    final letter = _currentLetter;
+    await _stopAllSpeech();
+
+    final url = ApiConfig.resolveMediaUrl(letter.audioPath);
+    if (url != null) {
+      try {
+        final Source source = url.startsWith('http')
+            ? UrlSource(url)
+            : AssetSource(url.replaceFirst('assets/', ''));
+        await _recordingPlayer.play(source, volume: 1.0);
+        return;
+      } catch (e) {
+        debugPrint('[LetterDetail] Recording failed, using TTS: $e');
+      }
+    }
+
+    final text = letter.word.isNotEmpty ? '${letter.letter}... for... ${letter.word}' : letter.letter;
+    try {
+      await _tts.speak(text);
+    } catch (_) {}
+  }
+
+  Future<void> _stopAllSpeech() async {
+    try {
+      await _tts.stop();
+    } catch (_) {}
+    try {
+      await _recordingPlayer.stop();
+    } catch (_) {}
+  }
+
+  void _stopTts() {
+    _stopAllSpeech();
+    _speaking = false;
   }
 
   @override
   void dispose() {
     _audioService.stopAll();
+    _tts.stop();
+    _recordingPlayer.dispose();
     _animController.dispose();
     super.dispose();
   }
@@ -96,6 +203,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
   void _goToPrevious() {
     if (_currentIndex > 0) {
       _audioService.stopAll();
+      _stopTts();
       setState(() {
         _currentIndex--;
       });
@@ -108,6 +216,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
   void _goToNext() {
     if (_currentIndex < widget.letterList.length - 1) {
       _audioService.stopAll();
+      _stopTts();
       setState(() {
         _currentIndex++;
       });
@@ -400,9 +509,9 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                         if (letter.word.isNotEmpty) ...[
                           const SizedBox(height: 8),
                           BouncyButton(
-                            onPressed: () {},
+                            onPressed: _speakLetterWord,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+                              padding: const EdgeInsets.fromLTRB(18, 4, 6, 4),
                               decoration: BoxDecoration(
                                 color: color.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(22),
@@ -416,6 +525,30 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   _buildHighlightedWord(letter.word, letter.letter, color),
+                                  const SizedBox(width: 10),
+                                  // Mic button — tap to hear "A for Apple"
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color: _speaking ? color : Colors.white,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: color, width: 2),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: color.withValues(alpha: 0.3),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Icon(
+                                      Icons.mic_rounded,
+                                      size: 20,
+                                      color: _speaking ? Colors.white : color,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
