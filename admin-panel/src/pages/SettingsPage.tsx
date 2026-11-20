@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../api/auth';
 import { useLanguage } from '../context/LanguageContext';
-import { ShieldCheck, Lock, CheckCircle2, AlertCircle, Server } from 'lucide-react';
+import { ShieldCheck, Lock, KeyRound, X, CheckCircle2, AlertCircle, Server } from 'lucide-react';
 import { API_BASE_URL } from '../api/client';
 
 export const SettingsPage: React.FC = () => {
@@ -13,6 +13,15 @@ export const SettingsPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+
+  const togglePasswordForm = () => {
+    setShowPasswordForm((open) => !open);
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setStatus(null);
+  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +50,7 @@ export const SettingsPage: React.FC = () => {
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
+        setShowPasswordForm(false);
       }
     } catch (err: any) {
       setStatus({
@@ -63,9 +73,9 @@ export const SettingsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Admin Profile Card */}
+      {/* Admin Profile Card + Change Password */}
       <div className="card" style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' }}>
           <div
             style={{
               width: '56px',
@@ -78,11 +88,12 @@ export const SettingsPage: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
             {(admin?.fullName || admin?.full_name || admin?.username || 'A').trim().charAt(0).toUpperCase()}
           </div>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <h3 style={{ fontSize: '18px', fontWeight: 700 }}>
               {admin?.fullName || admin?.full_name || admin?.username || 'Admin'}
             </h3>
@@ -91,6 +102,15 @@ export const SettingsPage: React.FC = () => {
               <span>{admin?.role === 'super_admin' ? t('role_super_admin') : t('role_content_admin')}</span>
             </div>
           </div>
+          <button
+            type="button"
+            className={showPasswordForm ? 'btn btn-secondary' : 'btn btn-primary'}
+            onClick={togglePasswordForm}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
+            {showPasswordForm ? <X size={16} /> : <KeyRound size={16} />}
+            <span>{showPasswordForm ? t('common.cancel') : t('settings.changePassword')}</span>
+          </button>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
@@ -103,17 +123,6 @@ export const SettingsPage: React.FC = () => {
             <div style={{ fontWeight: 600, fontSize: '15px', marginTop: '2px' }}>{admin?.email || '-'}</div>
           </div>
         </div>
-      </div>
-
-      {/* Change Password Card */}
-      <div className="card" style={{ marginBottom: '24px' }}>
-        <h3 style={{ fontSize: '17px', fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Lock size={18} color="var(--primary)" />
-          <span>{t('settings.changePassword')}</span>
-        </h3>
-        <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-          {t('settings.pageSubtitle')}
-        </p>
 
         {status && (
           <div
@@ -126,7 +135,7 @@ export const SettingsPage: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              marginBottom: '16px',
+              marginTop: '16px',
             }}
           >
             {status.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
@@ -134,48 +143,62 @@ export const SettingsPage: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handlePasswordChange}>
-          <div className="form-group">
-            <label className="form-label">{t('settings.currentPassword')}</label>
-            <input
-              type="password"
-              className="form-control"
-              placeholder="••••••••"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              required
-            />
-          </div>
+        {showPasswordForm && (
+          <form
+            onSubmit={handlePasswordChange}
+            style={{ borderTop: '1px solid var(--border-color)', marginTop: '16px', paddingTop: '16px' }}
+          >
+            <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Lock size={17} color="var(--primary)" />
+              <span>{t('settings.changePassword')}</span>
+            </h4>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div className="form-group">
-              <label className="form-label">{t('settings.newPassword')}</label>
+              <label className="form-label">{t('settings.currentPassword')}</label>
               <input
                 type="password"
                 className="form-control"
-                placeholder="Min 6 characters"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="••••••••"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                autoComplete="current-password"
+                autoFocus
                 required
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">{t('settings.confirmPassword')}</label>
-              <input
-                type="password"
-                className="form-control"
-                placeholder="Repeat password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
-          </div>
 
-          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-            {isSubmitting ? t('common.saving') : t('settings.updatePassword')}
-          </button>
-        </form>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="form-group">
+                <label className="form-label">{t('settings.newPassword')}</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  placeholder="Min 6 characters"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">{t('settings.confirmPassword')}</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  placeholder="Repeat password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
+            </div>
+
+            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+              {isSubmitting ? t('common.saving') : t('settings.updatePassword')}
+            </button>
+          </form>
+        )}
       </div>
 
       {/* Backend Connection Info */}

@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../data/tamil_stroke_data.dart';
 import '../../data/writing_data.dart';
 import '../../data/tamil_letter_outlines.dart';
 import '../../models/handwriting_ml_model.dart';
@@ -44,6 +46,12 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
   final Set<String> _awardedLetters = {};
   HandwritingEvaluationResult? _lastEvaluation;
   bool _isAutoAdvancing = false;
+
+  /// When a finished attempt scores 85% or less, the canvas is wiped after the
+  /// child stops writing for [_retryDelay] so they write the letter again.
+  static const Duration _retryDelay = Duration(seconds: 2);
+  Timer? _retryTimer;
+  int _strokesDrawn = 0;
 
 
 
@@ -149,18 +157,56 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     }
   }
 
-  /// Real-time stroke evaluation: If accuracy >= 70%, automatically advances to next letter!
+  /// Real-time stroke evaluation: If accuracy is above HandwritingValidator.passPercent (85%), automatically advances to next letter!
   void _onEvaluationChanged(HandwritingEvaluationResult eval) {
+    // Any new evaluation (new stroke, Clear, letter change) restarts the wait.
+    _retryTimer?.cancel();
     if (_isAutoAdvancing) return;
 
     setState(() {
       _lastEvaluation = eval;
     });
 
-    if (eval.isPass && eval.score >= 70.0) {
+    if (eval.isPass && eval.score > HandwritingValidator.passPercent) {
       _isAutoAdvancing = true;
       _triggerSuccessAndAutoAdvance(eval);
+      return;
     }
+
+    // Failed attempt: once the child has drawn at least as many strokes as the
+    // letter has (so a multi-stroke letter like A isn't wiped halfway) and then
+    // stops writing, clear the canvas so they write it again.
+    final expectedStrokes = TamilStrokeDataRepository.getLetter(_currentGuide.letter).strokes.length;
+    if (eval.score > 0 && _strokesDrawn >= expectedStrokes) {
+      _retryTimer = Timer(_retryDelay, _autoRetry);
+    }
+  }
+
+  void _autoRetry() {
+    if (!mounted || _isAutoAdvancing || _isCanvasDrawing) return;
+    final scorePct = _lastEvaluation?.score.round() ?? 0;
+    _canvasKey.currentState?.clearCanvas();
+    setState(() => _lastEvaluation = null);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+          backgroundColor: const Color(0xFFFF9F1C),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          content: Text(
+            '$scorePct% — need above ${HandwritingValidator.passPercent}%. Write "${_currentGuide.letter}" again! ✏️',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+        ),
+      );
+  }
+
+  @override
+  void dispose() {
+    _retryTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _triggerSuccessAndAutoAdvance(HandwritingEvaluationResult eval) async {
@@ -209,7 +255,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     }
   }
 
-  /// Handles handwriting check strictly using 80% coverage and precision evaluation
+  /// Handles handwriting check strictly using the 85% pass mark and precision evaluation
   Future<void> _handleFinishWriting() async {
     final canvasState = _canvasKey.currentState;
     final hasDrawn = canvasState?.hasContent ?? false;
@@ -233,7 +279,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
       return;
     }
 
-    // Rigorously evaluate strokes against the strict 80% coverage threshold
+    // Rigorously evaluate strokes against the 85% pass mark
     final HandwritingRecognitionResult mlResult = await canvasState!.evaluateWithML();
 
     if (mlResult.isMatch) {
@@ -576,10 +622,12 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                                 mode: _activeMode,
                                 strokeColor: _activeColor,
                                 strokeWidth: 20.0,
-                                onStrokeUpdated: (_) {},
+                                onStrokeUpdated: (count) => _strokesDrawn = count,
                                 onLetterCompleted: () {},
                                 onEvaluationChanged: _onEvaluationChanged,
                                 onDrawingStateChanged: (drawing) {
+                                  // Child started writing again — don't wipe it.
+                                  if (drawing) _retryTimer?.cancel();
                                   if (_isCanvasDrawing != drawing && mounted) {
                                     setState(() => _isCanvasDrawing = drawing);
                                   }
@@ -771,7 +819,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     final eval = _lastEvaluation;
     final int scorePct = eval != null ? eval.score.round() : 0;
     final bool hasDrawn = eval != null && scorePct > 0;
-    final bool isPassed = eval != null && eval.isPass && scorePct >= 70;
+    final bool isPassed = eval != null && eval.isPass && scorePct > HandwritingValidator.passPercent;
 
     String statusText;
     if (_isAutoAdvancing) {
@@ -779,7 +827,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     } else if (isPassed) {
       statusText = '⭐ $scorePct% - Great Job!';
     } else if (hasDrawn) {
-      statusText = '$scorePct% Correct (Need 70% to pass) ✏️';
+      statusText = '$scorePct% Correct (Need above ${HandwritingValidator.passPercent}%) ✏️';
     } else {
       statusText = 'Trace inside outlines with your finger ✍️';
     }

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../models/game_content.dart';
 import '../../services/progress_service.dart';
 import '../../widgets/bouncy_button.dart';
+import '../../widgets/next_level_button.dart';
 
 /// Interactive Balloon item floating in the sky
 class _BalloonItem {
@@ -144,7 +145,8 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
   int _lives = 5;
   int _currentMissionIndex = 0;
   int _missionPops = 0;
-  final int _popsPerMission = 4;
+  // A picked level asks the same 5 questions as every other game.
+  int get _popsPerMission => widget.content.isLevelMode ? GameContent.questionsPerLevel : 4;
   String _gameState = 'playing'; // 'playing', 'victory', 'gameover'
   bool _soundEnabled = true;
 
@@ -220,6 +222,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
   void _triggerVictory() {
     _gameTimer?.cancel();
     _gameTimer = null;
+    widget.progressService.completeActiveGameLevel();
     widget.progressService.addStars(widget.content.game.starsReward);
     if (mounted) {
       setState(() {
@@ -248,7 +251,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
     _spawnTimer -= dt;
     if (_spawnTimer <= 0 && _balloons.where((b) => !b.popped).length < 6) {
       // Slower spawn pace: kids have ample time
-      _spawnTimer = 0.85 + _random.nextDouble() * 0.45;
+      _spawnTimer = (0.85 + _random.nextDouble() * 0.45) / widget.content.speedFactor;
       _spawnSingleBalloon(w, h);
     }
 
@@ -333,7 +336,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
     final double radius = 38.0 + _random.nextDouble() * 8.0; // 38..46
 
     // Slower upward speed: 52..82 px/sec (calm, kid-friendly)
-    final double vy = 52.0 + _random.nextDouble() * 30.0;
+    final double vy = (52.0 + _random.nextDouble() * 30.0) * widget.content.speedFactor; // faster on medium/hard levels
     final double x = radius + 20.0 + _random.nextDouble() * (w - (radius * 2 + 40.0));
     final double y = initialY ?? (h + radius + 15.0);
 
@@ -741,7 +744,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Color(0xFFFDE047), // Radiant Sun Yellow for instant readability
-              fontSize: 16,
+              fontSize: 22,
               fontWeight: FontWeight.w900,
               letterSpacing: -0.2,
               height: 1.2,
@@ -760,7 +763,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
             children: mission.targets.map((target) {
               final isPopped = _poppedTargetsThisMission.contains(target.toUpperCase());
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: isPopped
                       ? const Color(0xFF10B981).withValues(alpha: 0.35)
@@ -782,7 +785,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
                       target,
                       style: TextStyle(
                         color: isPopped ? const Color(0xFF6EE7B7) : Colors.white,
-                        fontSize: 12,
+                        fontSize: 16,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -859,6 +862,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
                 ),
               ),
               const SizedBox(height: 24),
+              NextLevelButton(content: widget.content, expand: false),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

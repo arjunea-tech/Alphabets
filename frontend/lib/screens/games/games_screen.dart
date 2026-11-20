@@ -8,6 +8,7 @@ import '../../services/data_service.dart';
 import '../../services/api_config.dart';
 import '../../services/cloudinary_media.dart';
 import '../../widgets/bouncy_button.dart';
+import '../../widgets/next_level_button.dart';
 import '../../widgets/kid_scaffold_background.dart';
 import '../../widgets/animated_game_card_art.dart';
 import 'agaram_run_game.dart';
@@ -20,6 +21,9 @@ import 'word_puzzle_game.dart';
 import 'balloon_pop_game.dart';
 import 'flappy_word_game.dart';
 import 'fruit_cutter_game.dart';
+import 'letter_whack_game.dart';
+import 'space_letter_game.dart';
+import 'letter_train_game.dart';
 
 class GamesScreen extends StatefulWidget {
   final ProgressService progressService;
@@ -141,10 +145,11 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       children: [
         // Kid Avatar Image
         Container(
-          width: 52,
-          height: 52,
+          width: 56,
+          height: 56,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
+            color: Colors.white,
             border: Border.all(color: const Color(0xFFFFD166), width: 2.5),
             boxShadow: [
               BoxShadow(
@@ -154,18 +159,23 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
               ),
             ],
           ),
+          // vanakam.gif (kids waving), shown whole with BoxFit.contain so both
+          // kids stay visible inside the small circle instead of being cropped.
           child: ClipOval(
-            child: (CloudinaryMedia.getUrl('assets/gifs/games.gif') != null &&
-                    CloudinaryMedia.getUrl('assets/gifs/games.gif')!.isNotEmpty)
-                ? Image.network(
-                    CloudinaryMedia.getUrl('assets/gifs/games.gif')!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/welcome.png'),
-                  )
-                : Image.asset(
-                    'assets/images/welcome.png',
-                    fit: BoxFit.cover,
-                  ),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: (CloudinaryMedia.getUrl('assets/gifs/vanakam.gif') ?? '').isNotEmpty
+                  ? Image.network(
+                      CloudinaryMedia.getUrl('assets/gifs/vanakam.gif')!,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Image.asset('assets/images/welcome.png', fit: BoxFit.contain),
+                    )
+                  : Image.asset(
+                      'assets/images/welcome.png',
+                      fit: BoxFit.contain,
+                    ),
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -312,7 +322,10 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
             g.gameType == 'ninja' || g.gameType == 'fruit_cutter' ||
             g.gameType == 'matching' ||
             g.gameType == 'runner' ||
-            g.gameType == 'candy';
+            g.gameType == 'candy' ||
+            g.gameType == 'whack' ||
+            g.gameType == 'space' ||
+            g.gameType == 'train';
       }
       if (_selectedCategoryIndex == 2) {
         // Vowels
@@ -472,6 +485,11 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         return 'assets/images/games/basket_vowels_cover.png';
       case 'puzzle':
         return 'assets/images/games/word_puzzle_cover.png';
+      // No cover image yet: a coloured backdrop + the animated card art.
+      case 'whack':
+      case 'space':
+      case 'train':
+        return '';
       default:
         return 'assets/images/welcome.png';
     }
@@ -500,6 +518,12 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         return Icons.waves_rounded;
       case 'basket':
         return Icons.shopping_basket_rounded;
+      case 'whack':
+        return Icons.touch_app_rounded;
+      case 'space':
+        return Icons.rocket_launch_rounded;
+      case 'train':
+        return Icons.train_rounded;
       case 'puzzle':
       default:
         return Icons.extension_rounded;
@@ -521,7 +545,40 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     } catch (_) {}
     if (!context.mounted) return;
 
-    final content = GameContent(game: game, adminLetters: adminLetters);
+    // Games with 2+ levels: let the child pick a level (later levels unlock one
+    // by one). Letter Matching has its own built-in levels and ignores admin ones.
+    final levels = game.playableLevels;
+    if (levels.length > 1 && game.gameType != 'matching') {
+      final picked = await _pickLevel(context, game, levels);
+      if (picked == null || !context.mounted) return;
+      await _playLevel(context, game, adminLetters, picked);
+    } else {
+      widget.progressService.startGameLevel(game.id, 0);
+      final content = GameContent(game: game, adminLetters: adminLetters);
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => _buildGameScreen(game, content)));
+    }
+  }
+
+  /// Opens one level. A game that returns 'next_level' (from its "Next Level"
+  /// button) goes straight on to the following level.
+  Future<void> _playLevel(BuildContext context, GameItem game, List<LetterModel> adminLetters, int index) async {
+    var current = index;
+    final count = game.playableLevels.length;
+    while (current < count && context.mounted) {
+      widget.progressService.startGameLevel(game.id, current);
+      final content = GameContent.forLevel(game: game, adminLetters: adminLetters, index: current);
+      final result = await Navigator.push<Object?>(
+        context,
+        MaterialPageRoute(builder: (_) => _buildGameScreen(game, content)),
+      );
+      final canGoOn = result == nextLevelResult && widget.progressService.isGameLevelUnlocked(game.id, current + 1);
+      if (!canGoOn) break;
+      current++;
+    }
+    if (mounted) setState(() {}); // refresh stars / progress on the games screen
+  }
+
+  Widget _buildGameScreen(GameItem game, GameContent content) {
     final progress = widget.progressService;
     Widget targetScreen;
 
@@ -556,15 +613,193 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       case 'basket':
         targetScreen = LetterBasketGame(progressService: progress, content: content);
         break;
+      case 'whack':
+        targetScreen = LetterWhackGame(progressService: progress, content: content);
+        break;
+      case 'space':
+        targetScreen = SpaceLetterGame(progressService: progress, content: content);
+        break;
+      case 'train':
+        targetScreen = LetterTrainGame(progressService: progress, content: content);
+        break;
       case 'puzzle':
       default:
         targetScreen = WordPuzzleGame(progressService: progress, content: content);
         break;
     }
+    return targetScreen;
+  }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => targetScreen),
+  /// Bottom sheet listing the game's levels. Level 1 is always open; each next
+  /// level unlocks after the previous one is won. Returns the picked index.
+  Future<int?> _pickLevel(BuildContext context, GameItem game, List<GameLevel> levels) {
+    final done = widget.progressService.completedGameLevels(game.id);
+    return showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.8),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        decoration: const BoxDecoration(
+          color: Color(0xFFFFFBF2),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(3)),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                game.title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF2D1500)),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Choose a level  •  $done / ${levels.length} done',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF7A4400)),
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: levels.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (_, i) => _buildLevelTile(
+                    ctx,
+                    level: levels[i],
+                    index: i,
+                    isDone: i < done,
+                    isUnlocked: i <= done,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLevelTile(
+    BuildContext ctx, {
+    required GameLevel level,
+    required int index,
+    required bool isDone,
+    required bool isUnlocked,
+  }) {
+    const difficultyStyles = {
+      'easy': (label: 'Easy', color: Color(0xFF16A34A)),
+      'medium': (label: 'Medium', color: Color(0xFFF59E0B)),
+      'hard': (label: 'Hard', color: Color(0xFFDC2626)),
+    };
+    final diff = difficultyStyles[level.difficulty] ?? difficultyStyles['easy']!;
+    final title = level.title.trim().isNotEmpty ? level.title.trim() : 'Level ${index + 1}';
+    final subtitle = level.prompt.trim().isNotEmpty ? level.prompt.trim() : level.targets.take(6).join('  ');
+
+    return Opacity(
+      opacity: isUnlocked ? 1.0 : 0.55,
+      child: BouncyButton(
+        onPressed: () {
+          if (isUnlocked) {
+            Navigator.pop(ctx, index);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Finish Level $index first to unlock Level ${index + 1}! 🔒')),
+            );
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDone ? const Color(0xFF22C55E) : (isUnlocked ? const Color(0xFFFFB74D) : Colors.black12),
+              width: 2.2,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDone
+                      ? const Color(0xFF22C55E)
+                      : (isUnlocked ? const Color(0xFFFF9F1C) : const Color(0xFFCBD5E1)),
+                ),
+                child: Center(
+                  child: isUnlocked
+                      ? (isDone
+                          ? const Icon(Icons.check_rounded, color: Colors.white, size: 30)
+                          : Text(
+                              '${index + 1}',
+                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white),
+                            ))
+                      : const Icon(Icons.lock_rounded, color: Colors.white, size: 26),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: diff.color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            diff.label,
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: diff.color),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                isUnlocked ? Icons.play_circle_fill_rounded : Icons.lock_outline_rounded,
+                color: isUnlocked ? const Color(0xFFFF9F1C) : Colors.black26,
+                size: 32,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -597,7 +832,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
             fit: StackFit.expand,
             children: [
               // 1. Background Cover Image
-              _buildCoverImage(coverAsset, badgeIcon),
+              _buildCoverImage(coverAsset, badgeIcon, gameType: gameType),
 
               // 2. Animated Living Action Canvas (Moving car, flappy bird, slicing ninja, balloons, etc.)
               AnimatedGameCardArt(
@@ -728,72 +963,48 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                 ),
               ),
 
-              // Top Title Badge Pill
+              // Top-Left Circular Badge Icon (same as the other game cards)
               Positioned(
                 top: 10,
                 left: 10,
-                right: 10,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  width: 34,
+                  height: 34,
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.55),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                    color: Colors.black.withValues(alpha: 0.50),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1.2),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.directions_run_rounded, size: 14, color: Colors.white),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: const Icon(Icons.directions_run_rounded, color: Colors.white, size: 18),
                 ),
               ),
 
-              // Center / Bottom Play Now Pill Button
+              // Bottom Title Pill (same as the other game cards)
               Positioned(
-                bottom: 12,
-                left: 14,
-                right: 14,
+                left: 10,
+                right: 10,
+                bottom: 10,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.25),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
+                    color: Colors.black.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.play_arrow_rounded, color: Color(0xFF16A34A), size: 18),
-                      SizedBox(width: 4),
-                      Text(
-                        'Play Now',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF1E293B),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.2,
+                      shadows: [
+                        Shadow(color: Colors.black, blurRadius: 4),
+                      ],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ),
@@ -804,7 +1015,8 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildCoverImage(String coverAsset, IconData fallbackIcon) {
+  Widget _buildCoverImage(String coverAsset, IconData fallbackIcon, {String? gameType}) {
+    if (coverAsset.isEmpty) return _buildSceneCover(gameType);
     if (coverAsset.startsWith('http://') || coverAsset.startsWith('https://')) {
       return Image.network(
         coverAsset,
@@ -826,6 +1038,26 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       coverAsset,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) => _buildFallbackCover(fallbackIcon),
+    );
+  }
+
+  /// Backdrop for games without a cover image; the animated card art draws
+  /// the scene on top of it.
+  Widget _buildSceneCover(String? gameType) {
+    final colors = switch (gameType) {
+      'whack' => const [Color(0xFF7DD3FC), Color(0xFF84CC16)],
+      'space' => const [Color(0xFF0B1033), Color(0xFF4338CA)],
+      'train' => const [Color(0xFF38BDF8), Color(0xFF86EFAC)],
+      _ => const [Color(0xFF8338EC), Color(0xFF3A86FF)],
+    };
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: colors,
+        ),
+      ),
     );
   }
 

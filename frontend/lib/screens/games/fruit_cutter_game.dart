@@ -11,6 +11,7 @@ import '../../models/letter_model.dart';
 import '../../services/audio_service.dart';
 import '../../services/progress_service.dart';
 import '../../widgets/bouncy_button.dart';
+import '../../widgets/next_level_button.dart';
 
 class FruitCutterGame extends StatefulWidget {
   final ProgressService progressService;
@@ -80,7 +81,57 @@ class _FruitCutterGameState extends State<FruitCutterGame>
     super.dispose();
   }
 
+  /// True when the child opened one admin level from the level-select screen.
+  bool get _isLevelMode => widget.content?.levelIndex != null;
+
+  // ---- Question mode (one admin level picked) --------------------------------
+  // The level's prompt is shown as a question, every fruit shows a letter/word,
+  // and only fruits whose letter is one of the level's targets may be cut.
+  // [_levelGoal] correct cuts win the level and unlock the next one.
+
+  /// Correct cuts needed to win a level.
+  static const int _levelGoal = GameContent.questionsPerLevel;
+  bool _levelWon = false;
+  int _correctCuts = 0;
+
+  /// Briefly true after a wrong cut, to flash the screen red.
+  bool _wrongFlash = false;
+
+  double get _speedFactor => widget.content?.speedFactor ?? 1.0;
+
+  late final Set<String> _targetKeys = _isLevelMode
+      ? widget.content!.levels.first.targets.map((t) => t.trim().toUpperCase()).toSet()
+      : const <String>{};
+
+  late final List<LetterModel> _targetPool = _isLevelMode ? widget.content!.targetLetters : const [];
+
+  late final List<LetterModel> _wrongPool = () {
+    if (!_isLevelMode) return const <LetterModel>[];
+    bool notTarget(LetterModel l) => !_targetKeys.contains(l.letter.trim().toUpperCase());
+    final fromAdmin = widget.content!
+        .lettersFor(widget.content!.distractorsFor(widget.content!.levels.first))
+        .where(notTarget)
+        .toList();
+    // No admin distractors and admin letters couldn't load: use A–Z.
+    return fromAdmin.isNotEmpty ? fromAdmin : englishLettersList.where(notTarget).toList();
+  }();
+
+  bool _isTargetFruit(ActiveFruit fruit) => _targetKeys.contains(fruit.letterModel.letter.trim().toUpperCase());
+
+  /// Next letter for a new fruit: in question mode about half are correct
+  /// answers and half are wrong ones.
+  LetterModel _pickLetter(List<LetterModel> pool) {
+    if (_isLevelMode && _targetPool.isNotEmpty) {
+      final useTarget = _wrongPool.isEmpty || _rng.nextBool();
+      final source = useTarget ? _targetPool : _wrongPool;
+      return source[_rng.nextInt(source.length)];
+    }
+    return pool[_rng.nextInt(pool.length)];
+  }
+
   List<LetterModel> _getCurrentLetterPool() {
+    // A picked level plays that level's letters, as set in the admin panel.
+    if (_isLevelMode && _targetPool.isNotEmpty) return _targetPool;
     if (_selectedLetterMode == 0) {
       return englishVowelsList;
     } else if (_selectedLetterMode == 1) {
@@ -92,6 +143,9 @@ class _FruitCutterGameState extends State<FruitCutterGame>
 
   void _restartGame() {
     setState(() {
+      _levelWon = false; // unlocking again is harmless
+      _correctCuts = 0;
+      _wrongFlash = false;
       _score = 0;
       _cutCount = 0;
       _starsEarned = 0;
@@ -131,7 +185,7 @@ class _FruitCutterGameState extends State<FruitCutterGame>
       _timeUntilNextSpawn -= clampedDt;
       if (_timeUntilNextSpawn <= 0) {
         _spawnWave();
-        _timeUntilNextSpawn = 1.3 + _rng.nextDouble() * 1.0;
+        _timeUntilNextSpawn = (1.3 + _rng.nextDouble() * 1.0) / _speedFactor; // more fruits on medium/hard
       }
     }
 
@@ -148,7 +202,8 @@ class _FruitCutterGameState extends State<FruitCutterGame>
         // If fell below screen after rising (MISSED FRUIT)
         if (fruit.y > _canvasSize.height + 60 && fruit.vy > 0) {
           toRemoveFruits.add(fruit);
-          _handleMissedFruit();
+          // In question mode letting a WRONG fruit fall is the right move.
+          if (!_isLevelMode || _isTargetFruit(fruit)) _handleMissedFruit();
         }
       } else {
         // Sliced halves physics
@@ -242,7 +297,7 @@ class _FruitCutterGameState extends State<FruitCutterGame>
     final count = _rng.nextInt(2) + 1;
 
     for (int i = 0; i < count; i++) {
-      final letter = pool[_rng.nextInt(pool.length)];
+      final letter = _pickLetter(pool);
       final type = fruitTypes[_rng.nextInt(fruitTypes.length)];
       final meta = FruitMeta.fruitCatalog[type]!;
 
@@ -254,7 +309,10 @@ class _FruitCutterGameState extends State<FruitCutterGame>
 
       // Arc towards center
       final targetX = _canvasSize.width * 0.5 + (_rng.nextDouble() - 0.5) * (_canvasSize.width * 0.6);
-      final peakHeight = _canvasSize.height * (0.28 + _rng.nextDouble() * 0.25);
+      // Question mode keeps fruits below the question banner at the top.
+      final peakHeight = _isLevelMode
+          ? _canvasSize.height * (0.42 + _rng.nextDouble() * 0.18)
+          : _canvasSize.height * (0.28 + _rng.nextDouble() * 0.25);
       final double distanceUp = startY - peakHeight;
 
       // Physics formula for apex height: vy = -sqrt(2 * g * h)
@@ -327,9 +385,33 @@ class _FruitCutterGameState extends State<FruitCutterGame>
     return (p - projection).distance;
   }
 
+  /// Question mode: the child cut a fruit whose letter is NOT asked for.
+  void _wrongCut(ActiveFruit fruit) {
+    _comboCount = 0;
+    HapticFeedback.heavyImpact();
+    setState(() => _wrongFlash = true);
+    Future.delayed(const Duration(milliseconds: 260), () {
+      if (mounted) setState(() => _wrongFlash = false);
+    });
+    _handleMissedFruit();
+  }
+
   void _sliceFruit(ActiveFruit fruit, Offset p1, Offset p2) {
     fruit.isSliced = true;
-    _cutCount++;
+    final bool isWrong = _isLevelMode && !_isTargetFruit(fruit);
+    if (!isWrong) _cutCount++;
+    if (isWrong) {
+      _wrongCut(fruit);
+    } else if (_isLevelMode && !_levelWon) {
+      _correctCuts++;
+      if (_correctCuts >= _levelGoal) {
+        _levelWon = true;
+        _isPlaying = false; // stop spawning; the level-complete card shows
+        widget.progressService.completeActiveGameLevel();
+        widget.progressService.recordGameCompleted(_starsEarned);
+        setState(() {}); // the ticker stops refreshing once _isPlaying is false
+      }
+    }
 
     // Cut angle
     final cutAngle = atan2(p2.dy - p1.dy, p2.dx - p1.dx);
@@ -400,6 +482,9 @@ class _FruitCutterGameState extends State<FruitCutterGame>
       word: fruit.letterModel.word,
     );
 
+    // A wrong cut earns nothing (no points, combo or stars).
+    if (isWrong) return;
+
     // Combo & scoring
     final now = DateTime.now();
     if (now.difference(_lastSliceTime).inMilliseconds < 650) {
@@ -464,6 +549,7 @@ class _FruitCutterGameState extends State<FruitCutterGame>
                       splatDecals: _splatDecals,
                       letterPops: _letterPops,
                       bladePoints: _bladePoints,
+                      showLetters: _isLevelMode,
                     ),
                   ),
                 ),
@@ -483,6 +569,10 @@ class _FruitCutterGameState extends State<FruitCutterGame>
                         _buildTopHeader(isEn),
                         const SizedBox(height: 6),
                         _buildSubHeader(isEn),
+                        if (_isLevelMode) ...[
+                          const SizedBox(height: 8),
+                          _buildQuestionBanner(),
+                        ],
                       ],
                     ),
                   ),
@@ -496,6 +586,24 @@ class _FruitCutterGameState extends State<FruitCutterGame>
                   right: 20,
                   child: _buildComboBadge(),
                 ),
+
+              // Red flash after cutting a wrong fruit (question mode)
+              if (_wrongFlash)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.18),
+                        border: Border.all(color: Colors.redAccent, width: 6),
+                      ),
+                      child: const Center(child: Text('❌', style: TextStyle(fontSize: 72))),
+                    ),
+                  ),
+                ),
+
+              // Level complete (question mode: 5 correct cuts)
+              if (_levelWon && !_isGameOver)
+                Positioned.fill(child: _buildLevelCompleteOverlay()),
 
               // 5. Game Over Modal Overlay (When 10 fruits missed)
               if (_isGameOver)
@@ -681,10 +789,170 @@ class _FruitCutterGameState extends State<FruitCutterGame>
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerRight,
-            child: _buildModeSelector(isEn),
+            child: _isLevelMode ? _buildLevelGoalPill() : _buildModeSelector(isEn),
           ),
         ),
       ],
+    );
+  }
+
+  /// Shown instead of the mode selector while playing one admin level:
+  /// "Level 2 · 3/5" (correct cuts toward the level goal).
+  Widget _buildLevelGoalPill() {
+    final levelNo = (widget.content?.levelIndex ?? 0) + 1;
+    final done = _correctCuts.clamp(0, _levelGoal);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: _levelWon ? const Color(0xFF16A34A) : const Color(0xFF2E1C14).withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.2),
+      ),
+      child: Text(
+        _levelWon ? 'Level $levelNo ✓' : 'Level $levelNo · $done/$_levelGoal',
+        style: GoogleFonts.catamaran(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white),
+      ),
+    );
+  }
+
+  /// Question mode: the level's question, the letters it asks for and the
+  /// progress dots (✓ for each correct cut).
+  Widget _buildQuestionBanner() {
+    final level = widget.content!.levels.first;
+    final question = level.prompt.trim().isNotEmpty
+        ? level.prompt.trim()
+        : 'Cut only these: ${level.targets.join(', ')}';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1B4B).withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFF59E0B), width: 2.2),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            question,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.catamaran(
+              fontSize: 21,
+              fontWeight: FontWeight.w900,
+              color: const Color(0xFFFDE047),
+              height: 1.15,
+            ),
+          ),
+          const SizedBox(height: 6),
+          // The letters/words the child may cut
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 6,
+            runSpacing: 4,
+            children: [
+              for (final t in level.targets)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF4ADE80), width: 1.2),
+                  ),
+                  child: Text(
+                    t,
+                    style: GoogleFonts.catamaran(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (var i = 0; i < _levelGoal; i++)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: Icon(
+                    i < _correctCuts ? Icons.check_circle_rounded : Icons.circle_outlined,
+                    color: i < _correctCuts ? const Color(0xFF4ADE80) : Colors.white38,
+                    size: 20,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Question mode: shown after [_levelGoal] correct cuts.
+  Widget _buildLevelCompleteOverlay() {
+    final game = widget.content!.game;
+    final levelIndex = widget.content!.levelIndex ?? 0;
+    final hasNext = levelIndex + 1 < game.playableLevels.length;
+
+    Widget button(String label, Color color, VoidCallback onTap) => BouncyButton(
+          onPressed: onTap,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 13),
+            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(18)),
+            child: Center(
+              child: Text(
+                label,
+                style: GoogleFonts.catamaran(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
+              ),
+            ),
+          ),
+        );
+
+    return Container(
+      color: Colors.black.withValues(alpha: 0.65),
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 380),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF42210B), Color(0xFF2E1506)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: const Color(0xFF4ADE80), width: 2.5),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('🎉', style: TextStyle(fontSize: 52)),
+                const SizedBox(height: 8),
+                Text(
+                  'Level ${levelIndex + 1} Complete!',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.catamaran(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  hasNext ? 'Level ${levelIndex + 2} is unlocked!' : 'You finished every level! 🏆',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.catamaran(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white70),
+                ),
+                const SizedBox(height: 20),
+                if (hasNext) ...[
+                  // The games screen opens the next level when it gets this result.
+                  button('Next Level ▶', const Color(0xFF16A34A), () => Navigator.pop(context, nextLevelResult)),
+                  const SizedBox(height: 10),
+                ],
+                button('Play Again', const Color(0xFFFF9F1C), _restartGame),
+                const SizedBox(height: 10),
+                button('Back', const Color(0xFF64748B), () => Navigator.pop(context)),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1060,13 +1328,46 @@ class _FruitNinjaScenePainter extends CustomPainter {
   final List<LetterRevealPop> letterPops;
   final List<BladePoint> bladePoints;
 
+  /// Question mode: draw each whole fruit's letter/word on it so the child can
+  /// pick the right ones before cutting.
+  final bool showLetters;
+
   _FruitNinjaScenePainter({
     required this.activeFruits,
     required this.juiceDrops,
     required this.splatDecals,
     required this.letterPops,
     required this.bladePoints,
+    this.showLetters = false,
   });
+
+  /// White badge with the fruit's letter/word, drawn upright on the fruit.
+  void _drawFruitLabel(Canvas canvas, ActiveFruit fruit) {
+    final text = fruit.letterModel.letter;
+    final r = fruit.radius;
+    final fontSize = text.length <= 1 ? r * 0.95 : (r * 1.6 / text.length).clamp(12.0, r * 0.8);
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w900,
+          color: const Color(0xFF1E1B4B),
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final badge = Rect.fromCenter(
+      center: Offset(fruit.x, fruit.y),
+      width: max(tp.width + 14, fontSize * 1.3),
+      height: tp.height + 6,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(badge, Radius.circular(badge.height / 2)),
+      Paint()..color = Colors.white.withValues(alpha: 0.92),
+    );
+    tp.paint(canvas, Offset(fruit.x - tp.width / 2, fruit.y - tp.height / 2));
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1077,6 +1378,7 @@ class _FruitNinjaScenePainter extends CustomPainter {
     for (final fruit in activeFruits) {
       if (!fruit.isSliced) {
         _drawWholeFruit(canvas, fruit);
+        if (showLetters) _drawFruitLabel(canvas, fruit);
       } else {
         _drawSlicedFruit(canvas, fruit);
       }

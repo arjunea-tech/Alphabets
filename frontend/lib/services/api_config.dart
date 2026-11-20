@@ -3,8 +3,8 @@ import 'cloudinary_media.dart';
 class ApiConfig {
   /// Live backend. Every build (debug, profile and release) uses it by default,
   /// so an APK works on any network, including mobile data.
-  ///static const String productionBaseUrl = 'https://alphabets-api.macvelsoftware.com/api/v1';
-static const String productionBaseUrl = 'http://localhost:5000/api/v1';
+  static const String productionBaseUrl = 'https://alphabets-api.macvelsoftware.com/api/v1';
+
   // Runtime override, e.g. set from a settings screen.
   static String? customServerUrl;
   static String? _discoveredBaseUrl;

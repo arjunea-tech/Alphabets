@@ -121,6 +121,18 @@ class DashboardController {
       const { id } = req.params;
       const { child_name, email, age, avatar_asset, total_stars, is_active, password } = req.body;
 
+      if (child_name !== undefined && !String(child_name).trim()) {
+        return errorResponse(res, 'மாணவர் பெயர் அவசியம் (Student name is required)', null, 400);
+      }
+
+      // Another student may already own this email
+      if (email && String(email).trim()) {
+        const existing = await UserModel.findByEmail(String(email).trim());
+        if (existing && existing.id !== id) {
+          return errorResponse(res, 'இந்த மின்னஞ்சல் ஏற்கனவே உள்ளது (Email already exists)', null, 409);
+        }
+      }
+
       let passwordHash = undefined;
       if (password && password.trim().length >= 6) {
         const salt = await bcrypt.genSalt(10);

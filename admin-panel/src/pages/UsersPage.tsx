@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { dashboardApi } from '../api/dashboard';
 import { ChildUser, QuizResultRecord } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import { Modal } from '../components/common/Modal';
 import {
+  Plus,
+  Edit2,
+  Trash2,
   Users,
   Award,
   Search,
-  Star,
   Loader2,
   RefreshCw,
   X,
@@ -48,6 +51,89 @@ export const UsersPage: React.FC = () => {
     }
   };
 
+  // ---- Add / Edit / Remove student ----
+  const emptyForm = { child_name: '', email: '', password: '', confirmPassword: '', is_active: true };
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<ChildUser | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const openAdd = () => {
+    setEditingUser(null);
+    setForm(emptyForm);
+    setFormError(null);
+    setIsModalOpen(true);
+  };
+
+  const openEdit = (u: ChildUser) => {
+    setEditingUser(u);
+    setForm({
+      child_name: u.child_name || '',
+      email: u.email || '',
+      password: '',
+      confirmPassword: '',
+      is_active: u.is_active === 1 || u.is_active === true || u.is_active === undefined,
+    });
+    setFormError(null);
+    setIsModalOpen(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = form.child_name.trim();
+    const email = form.email.trim();
+    const password = form.password.trim();
+
+    if (!name) return setFormError('Student name is required.');
+    if (password && password.length < 6) return setFormError('Password must be at least 6 characters.');
+    if (password !== form.confirmPassword.trim()) return setFormError('Passwords do not match.');
+
+    setIsSubmitting(true);
+    setFormError(null);
+    try {
+      const res = editingUser
+        ? await dashboardApi.updateUser(editingUser.id, {
+            child_name: name,
+            email: email || null,
+            is_active: form.is_active,
+            ...(password ? { password } : {}),
+          })
+        : await dashboardApi.createUser({
+            child_name: name,
+            ...(email ? { email } : {}),
+            ...(password ? { password } : {}),
+          });
+      if (res.success) {
+        setIsModalOpen(false);
+        await fetchData();
+      } else {
+        setFormError(res.message || 'Save failed');
+      }
+    } catch (err: any) {
+      setFormError(err.response?.data?.message || err.message || 'Save failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (u: ChildUser) => {
+    const ok = window.confirm(
+      `Remove student "${u.child_name}"?\n\nTheir progress, stars and quiz results will also be deleted. This cannot be undone.`
+    );
+    if (!ok) return;
+    setDeletingId(u.id);
+    try {
+      await dashboardApi.deleteUser(u.id);
+      setUsers((prev) => prev.filter((x) => x.id !== u.id));
+    } catch (err: any) {
+      window.alert(err.response?.data?.message || err.message || 'Delete failed');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const filteredUsers = users.filter((u) => {
     const nameMatch = u.child_name ? u.child_name.toLowerCase().includes(searchQuery.toLowerCase()) : false;
     const emailMatch = u.email ? u.email.toLowerCase().includes(searchQuery.toLowerCase()) : false;
@@ -74,6 +160,10 @@ export const UsersPage: React.FC = () => {
           <h2>{t('users.pageTitle')}</h2>
           <p>{t('users.pageSubtitle')}</p>
         </div>
+        <button onClick={openAdd} className="btn btn-primary">
+          <Plus size={16} />
+          <span>Add Student</span>
+        </button>
       </div>
 
       {/* Tabs */}
@@ -166,23 +256,22 @@ export const UsersPage: React.FC = () => {
                 <th>{t('users.childName')}</th>
                 <th>{t('users.userId')}</th>
                 <th>{t('users.email')}</th>
-                <th>{t('users.age')}</th>
-                <th>{t('users.stars')}</th>
                 <th>{t('users.quizzesTaken')}</th>
                 <th>{t('users.status')}</th>
                 <th>{t('users.joinedDate')}</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>
                     <Loader2 className="spin" size={28} style={{ margin: '0 auto', color: 'var(--primary)' }} />
                   </td>
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                     {t('users.empty')}
                   </td>
                 </tr>
@@ -253,33 +342,6 @@ export const UsersPage: React.FC = () => {
                         )}
                       </td>
 
-                      {/* Age */}
-                      <td>
-                        <span className="badge badge-secondary" style={{ fontSize: '13px' }}>
-                          {u.age} yrs
-                        </span>
-                      </td>
-
-                      {/* Total Stars */}
-                      <td>
-                        <span
-                          style={{
-                            color: '#EAB308',
-                            fontWeight: 800,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontSize: '14px',
-                            background: '#FEFCE8',
-                            padding: '4px 10px',
-                            borderRadius: 'var(--radius-full)',
-                            border: '1px solid #FEF08A',
-                          }}
-                        >
-                          <Star size={14} fill="#EAB308" /> {u.total_stars} ⭐
-                        </span>
-                      </td>
-
                       {/* Quizzes Taken */}
                       <td>
                         <span
@@ -313,6 +375,27 @@ export const UsersPage: React.FC = () => {
                       {/* Joined Date */}
                       <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
                         {new Date(u.created_at).toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-US')}
+                      </td>
+
+                      {/* Edit / Remove */}
+                      <td style={{ textAlign: 'right' }}>
+                        <div className="action-btn-group">
+                          <button
+                            onClick={() => openEdit(u)}
+                            className="btn btn-secondary btn-icon"
+                            title={t('common.edit')}
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(u)}
+                            className="btn btn-danger btn-icon"
+                            title={t('common.delete')}
+                            disabled={deletingId === u.id}
+                          >
+                            {deletingId === u.id ? <Loader2 className="spin" size={14} /> : <Trash2 size={14} />}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -380,6 +463,106 @@ export const UsersPage: React.FC = () => {
           </table>
         )}
       </div>
+
+      {/* Add / Edit Student Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingUser ? `Edit Student — ${editingUser.child_name}` : 'Add Student'}
+      >
+        <form onSubmit={handleSave}>
+          {formError && (
+            <div
+              style={{
+                padding: '10px 14px',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--danger-light)',
+                color: 'var(--danger)',
+                fontSize: '14px',
+                marginBottom: '14px',
+              }}
+            >
+              {formError}
+            </div>
+          )}
+
+          <div className="form-group">
+            <label className="form-label">{t('users.childName')} *</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="e.g. Arjun"
+              value={form.child_name}
+              onChange={(e) => setForm({ ...form, child_name: e.target.value })}
+              required
+              autoFocus
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">{t('users.email')}</label>
+            <input
+              type="email"
+              className="form-control"
+              placeholder="Optional — needed to log in"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="form-group">
+              <label className="form-label">
+                {editingUser ? 'New Password' : 'Password'}
+              </label>
+              <input
+                type="password"
+                className="form-control"
+                placeholder={editingUser ? 'Blank = keep current' : 'Min 6 characters'}
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                autoComplete="new-password"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Confirm Password</label>
+              <input
+                type="password"
+                className="form-control"
+                placeholder="Repeat password"
+                value={form.confirmPassword}
+                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                autoComplete="new-password"
+              />
+            </div>
+          </div>
+
+          {editingUser && (
+            <div className="form-group">
+              <label className="form-label">{t('users.status')}</label>
+              <select
+                className="form-control"
+                value={form.is_active ? 'active' : 'inactive'}
+                onChange={(e) => setForm({ ...form, is_active: e.target.value === 'active' })}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          )}
+
+          {/* -22px matches .modal-body's 22px padding exactly (−24px overflowed
+              by 2px and made the modal show scrollbars). */}
+          <div className="modal-footer" style={{ margin: '20px -22px -22px', padding: '14px 22px' }}>
+            <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-secondary">
+              {t('common.cancel')}
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+              {isSubmitting ? t('common.saving') : editingUser ? t('common.save') : 'Add Student'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

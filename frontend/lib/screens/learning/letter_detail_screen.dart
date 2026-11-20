@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../models/letter_model.dart';
 import '../../models/video_model.dart';
+import '../../services/api_config.dart';
 import '../../services/audio_service.dart';
+import '../../services/cloudinary_media.dart';
 import '../../services/progress_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -70,6 +72,25 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
     widget.progressService.markLetterCompleted(_currentLetter.id);
   }
 
+  /// Download the previous/next letters' pictures in the background so tapping
+  /// Next/Previous shows the image instantly instead of waiting for the network.
+  void _precacheNeighbours() {
+    for (final i in [_currentIndex + 1, _currentIndex + 2, _currentIndex - 1]) {
+      if (i < 0 || i >= widget.letterList.length) continue;
+      final url = ApiConfig.resolveMediaUrl(widget.letterList[i].imagePath);
+      if (url == null) continue;
+      final ImageProvider provider =
+          url.startsWith('http') ? NetworkImage(url) : AssetImage(url);
+      precacheImage(provider, context, onError: (_, _) {});
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _precacheNeighbours();
+  }
+
   void _playAudio() { return; }
 
   void _goToPrevious() {
@@ -80,6 +101,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
       });
       _animController.forward(from: 0.0);
       _markCompleted();
+      _precacheNeighbours();
     }
   }
 
@@ -91,6 +113,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
       });
       _animController.forward(from: 0.0);
       _markCompleted();
+      _precacheNeighbours();
     }
   }
 
@@ -108,7 +131,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
             text: word.substring(0, index),
             style: AppTextStyles.wordLarge.copyWith(
               color: AppColors.textDark,
-              fontSize: 28,
+              fontSize: 26,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -160,6 +183,89 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
     );
   }
 
+  Widget _buildPrevNextBar(bool hasPrev, bool hasNext, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        if (hasPrev)
+          Flexible(
+            child: BouncyButton(
+              onPressed: _goToPrevious,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: AppColors.borderLight, width: 2),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
+                      const SizedBox(width: 6),
+                      Text('Previous', style: AppTextStyles.bodyTextBold.copyWith(fontSize: 15)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          )
+        else
+          const SizedBox(width: 48),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6.0),
+          child: Text(
+            '${_currentIndex + 1} / ${widget.letterList.length}',
+            style: AppTextStyles.bodyTextBold.copyWith(
+              color: AppColors.textMuted,
+              fontSize: 15,
+            ),
+          ),
+        ),
+        if (hasNext)
+          Flexible(
+            child: BouncyButton(
+              onPressed: _goToNext,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [color, color.withValues(alpha: 0.85)],
+                  ),
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Next',
+                        style: AppTextStyles.bodyTextBold.copyWith(color: Colors.white, fontSize: 15),
+                      ),
+                      const SizedBox(width: 6),
+                      const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          )
+        else
+          const SizedBox(width: 48),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final letter = _currentLetter;
@@ -179,16 +285,12 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Top Mascot Companion (writing.png)
+                // Top Mascot Companion — kids holding slates that show the
+                // current English letter (instead of the Tamil "அ" in the GIF).
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const MascotWidget(
-                      pose: MascotPose.writing,
-                      size: MascotSize.small,
-                      customHeight: 115,
-                      showGlow: true,
-                    ),
+                    _EnglishSlateKids(letter: letter.letter, height: 92),
                     const SizedBox(width: 12),
                     Flexible(
                       child: Container(
@@ -217,7 +319,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 10),
 
                 // Giant Collectible Letter Card
                 ScaleTransition(
@@ -225,7 +327,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                   child: Container(
                     width: double.infinity,
                     constraints: const BoxConstraints(maxWidth: 380),
-                    padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(36),
@@ -243,10 +345,12 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                         // Illustration Image or Emoji Icon (Tappable to hear letter sound)
                         BouncyButton(
                           onPressed: _playAudio,
+                          // Full card width (minus the card's padding) so the
+                          // picture is big and easy to see.
                           child: Container(
-                            width: 150,
-                            height: 150,
-                            margin: const EdgeInsets.symmetric(vertical: 6),
+                            width: double.infinity,
+                            height: 165,
+                            margin: const EdgeInsets.symmetric(vertical: 2),
                             decoration: BoxDecoration(
                               color: letter.imagePath != null ? Colors.white : color.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(24),
@@ -268,12 +372,12 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                                 imagePath: letter.imagePath,
                                 iconEmoji: letter.iconEmoji,
                                 fit: BoxFit.contain,
-                                emojiSize: 60,
+                                emojiSize: 96,
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 6),
 
                         // Large Tamil Letter (Tappable to hear letter sound)
                         BouncyButton(
@@ -283,7 +387,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                             child: Text(
                               letter.letter,
                               style: AppTextStyles.tamilLetterLarge.copyWith(
-                                fontSize: 84,
+                                fontSize: 64,
                                 color: color,
                                 fontWeight: FontWeight.w900,
                                 height: 1.0,
@@ -294,11 +398,11 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
 
                         // Example Word with target letter highlighted - Tappable to hear WORD sound
                         if (letter.word.isNotEmpty) ...[
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 8),
                           BouncyButton(
                             onPressed: () {},
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
                               decoration: BoxDecoration(
                                 color: color.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(22),
@@ -321,7 +425,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                     ),
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
 
 
                 // Direct Writing Practice Shortcut
@@ -337,7 +441,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                     );
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFFFF006E), Color(0xFFFF70A6)],
@@ -394,7 +498,7 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                       );
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFF7B1FA2), Color(0xFFAB47BC)],
@@ -429,93 +533,144 @@ class _LetterDetailScreenState extends State<LetterDetailScreen> with SingleTick
                     ),
                   ),
                 ],
-                const SizedBox(height: 18),
-
-                // Previous / Next Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (hasPrev)
-                      Flexible(
-                        child: BouncyButton(
-                          onPressed: _goToPrevious,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(22),
-                              border: Border.all(color: AppColors.borderLight, width: 2),
-                            ),
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
-                                  const SizedBox(width: 6),
-                                  Text('Previous', style: AppTextStyles.bodyTextBold.copyWith(fontSize: 15)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      const SizedBox(width: 48),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                      child: Text(
-                        '${_currentIndex + 1} / ${widget.letterList.length}',
-                        style: AppTextStyles.bodyTextBold.copyWith(
-                          color: AppColors.textMuted,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                    if (hasNext)
-                      Flexible(
-                        child: BouncyButton(
-                          onPressed: _goToNext,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [color, color.withValues(alpha: 0.85)],
-                              ),
-                              borderRadius: BorderRadius.circular(22),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: color.withValues(alpha: 0.35),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Next',
-                                    style: AppTextStyles.bodyTextBold.copyWith(color: Colors.white, fontSize: 15),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      const SizedBox(width: 48),
-                  ],
-                ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
+                // Previous / Next — right under the buttons above, not stuck to the
+                // screen bottom (that left a big empty gap on tall phones).
+                _buildPrevNextBar(hasPrev, hasNext, color),
+                const SizedBox(height: 12),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The "writing" kids holding up their slates, with the current English
+/// [letter] chalked on both slates.
+///
+/// writing.gif has the Tamil letter "அ" drawn into every frame, and the slates
+/// move while the kids write, so a text overlay can't follow them. Instead we
+/// use one still frame of the GIF where both slates face the viewer (frame 60,
+/// served by Cloudinary as a PNG) and paint the letter over the slate centres.
+class _EnglishSlateKids extends StatefulWidget {
+  final String letter;
+  final double height;
+
+  const _EnglishSlateKids({required this.letter, required this.height});
+
+  // Source frame is 246 x 243 px. Slate interiors (inside the hands), as
+  // fractions of the frame: left = girl, right = boy.
+  static const double _frameAspect = 246 / 243;
+  static const List<Rect> _slates = [
+    Rect.fromLTWH(32 / 246, 101 / 243, 44 / 246, 37 / 243),
+    Rect.fromLTWH(163 / 246, 101 / 243, 46 / 246, 37 / 243),
+  ];
+
+  static String? get _frameUrl {
+    final gif = CloudinaryMedia.getUrl('assets/gifs/writing.gif');
+    if (gif == null || !gif.contains('/upload/')) return null;
+    return gif.replaceFirst('/upload/', '/upload/pg_60/').replaceFirst(RegExp(r'\.gif$'), '.png');
+  }
+
+  @override
+  State<_EnglishSlateKids> createState() => _EnglishSlateKidsState();
+}
+
+class _EnglishSlateKidsState extends State<_EnglishSlateKids> with SingleTickerProviderStateMixin {
+  late final AnimationController _bounce =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _bounce.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final url = _EnglishSlateKids._frameUrl;
+    final fallback = MascotWidget(
+      pose: MascotPose.welcome,
+      size: MascotSize.small,
+      customHeight: widget.height,
+      showGlow: true,
+    );
+    if (url == null) return fallback;
+
+    final h = widget.height;
+    final w = h * _EnglishSlateKids._frameAspect;
+
+    return AnimatedBuilder(
+      animation: _bounce,
+      builder: (context, child) => Transform.translate(
+        offset: Offset(0, -6 * Curves.easeInOut.transform(_bounce.value)),
+        child: child,
+      ),
+      child: SizedBox(
+        width: w,
+        height: h,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Soft glow, like the other mascots
+            Container(
+              width: h * 0.9,
+              height: h * 0.9,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFFFFD166).withValues(alpha: 0.45),
+                    const Color(0xFFFFD166).withValues(alpha: 0.0),
+                  ],
+                  radius: 0.7,
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: Image.network(
+                url,
+                fit: BoxFit.fill,
+                filterQuality: FilterQuality.medium,
+                errorBuilder: (context, error, stackTrace) => fallback,
+                frameBuilder: (context, child, frame, wasSync) {
+                  // Only draw the chalk letters once the picture has loaded.
+                  if (frame == null && !wasSync) return const SizedBox.shrink();
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      child,
+                      for (final r in _EnglishSlateKids._slates)
+                        Positioned(
+                          left: r.left * w,
+                          top: r.top * h,
+                          width: r.width * w,
+                          height: r.height * h,
+                          child: Container(
+                            color: const Color(0xFF23262B), // slate black
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.all(1.5),
+                            child: FittedBox(
+                              fit: BoxFit.contain,
+                              child: Text(
+                                widget.letter,
+                                style: const TextStyle(
+                                  color: Color(0xFFF8F8F2), // chalk white
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.0,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -288,6 +288,40 @@ class ProgressService extends ChangeNotifier {
     _saveProgress();
   }
 
+  // ---------------------------------------------------------------------------
+  // Game levels (Level 1 → 2 → 3 …, unlocked one after another)
+  // ---------------------------------------------------------------------------
+
+  String? _activeGameId;
+  int? _activeLevelIndex;
+
+  /// How many levels of [gameId] the child has completed.
+  int completedGameLevels(String gameId) => _progress.gameLevelsCompleted[gameId] ?? 0;
+
+  /// Level [levelIndex] (0-based) is playable once every level before it is done.
+  bool isGameLevelUnlocked(String gameId, int levelIndex) => levelIndex <= completedGameLevels(gameId);
+
+  /// Called by the games screen right before launching one level.
+  void startGameLevel(String gameId, int levelIndex) {
+    _activeGameId = gameId;
+    _activeLevelIndex = levelIndex;
+  }
+
+  /// Called by a game when the child actually WINS the level (not on exit).
+  /// Unlocks the next level. Does nothing when no single level is active.
+  void completeActiveGameLevel() {
+    final gameId = _activeGameId;
+    final index = _activeLevelIndex;
+    if (gameId == null || index == null) return;
+    if (index + 1 > completedGameLevels(gameId)) {
+      _progress = _progress.copyWith(
+        gameLevelsCompleted: {..._progress.gameLevelsCompleted, gameId: index + 1},
+      );
+      notifyListeners();
+      _saveProgress();
+    }
+  }
+
   void recordGameCompleted(int starsEarned) {
     _progress = _progress.copyWith(
       gamesPlayed: _progress.gamesPlayed + 1,

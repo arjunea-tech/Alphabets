@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { gamesApi } from '../api/games';
-import { GameItem, GameLevel } from '../types';
+import { GameItem, GameLevel, LevelDifficulty } from '../types';
 import { Modal } from '../components/common/Modal';
 import { FileUpload } from '../components/common/FileUpload';
 import { useLanguage } from '../context/LanguageContext';
@@ -18,6 +18,9 @@ const GAME_TYPE_LABELS: Record<string, { label: string; shortLabel: string; colo
   basket: { label: '🧺 Letter Basket', shortLabel: '🧺 Basket', color: '#D97706', bg: '#FEF3C7' },
   puzzle: { label: '🧩 Word Puzzle', shortLabel: '🧩 Puzzle', color: '#9333EA', bg: '#F3E8FF' },
   matching: { label: '🔄 Letter Matching', shortLabel: '🔄 Matching', color: '#4B5563', bg: '#F3F4F6' },
+  whack: { label: '🔨 Letter Whack-a-Mole', shortLabel: '🔨 Whack-a-Mole', color: '#65A30D', bg: '#ECFCCB' },
+  space: { label: '🚀 Space Letter Shooter', shortLabel: '🚀 Space Shooter', color: '#4F46E5', bg: '#E0E7FF' },
+  train: { label: '🚂 Letter Train (Missing Letter)', shortLabel: '🚂 Letter Train', color: '#DC2626', bg: '#FEE2E2' },
 };
 
 /** What 'targets' and 'distractors' mean for each game type, shown as help text in the level editor. */
@@ -32,6 +35,9 @@ const LEVEL_HINTS: Record<string, { targets: string; distractors: string }> = {
   basket: { targets: 'Target letters, one per round', distractors: 'Extra wrong falling letters (optional)' },
   puzzle: { targets: 'Words to spell, e.g. CAT, DOG', distractors: 'Extra decoy letter tiles (optional)' },
   matching: { targets: 'Letters/words to match', distractors: 'Not used' },
+  whack: { targets: 'Target letters, one per round — bonk the mole holding it', distractors: 'Wrong moles to avoid (optional)' },
+  space: { targets: 'Target letters, one per round — shoot that asteroid', distractors: 'Wrong asteroids to avoid (optional)' },
+  train: { targets: 'Letters IN ORDER (A, B, C, D) or simple words (CAT, DOG) — one wagon goes missing', distractors: 'Extra wrong letter choices (optional)' },
 };
 
 interface LevelDraft {
@@ -39,7 +45,18 @@ interface LevelDraft {
   prompt: string;
   targets: string;
   distractors: string;
+  difficulty: LevelDifficulty;
 }
+
+const DIFFICULTY_OPTIONS: { value: LevelDifficulty; label: string }[] = [
+  { value: 'easy', label: '🟢 Easy — slow' },
+  { value: 'medium', label: '🟡 Medium — faster' },
+  { value: 'hard', label: '🔴 Hard — fastest' },
+];
+
+/** Default difficulty by position: Level 1 easy, Level 2 medium, Level 3+ hard. */
+const difficultyForIndex = (idx: number): LevelDifficulty =>
+  idx <= 0 ? 'easy' : idx === 1 ? 'medium' : 'hard';
 
 const splitList = (v: string) =>
   v
@@ -47,21 +64,40 @@ const splitList = (v: string) =>
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 
-const emptyLevel = (): LevelDraft => ({ title: '', prompt: '', targets: '', distractors: '' });
+const emptyLevel = (idx = 0): LevelDraft => ({
+  title: `Level ${idx + 1}`,
+  prompt: '',
+  targets: '',
+  distractors: '',
+  difficulty: difficultyForIndex(idx),
+});
+
+/** New games start with 3 levels (easy → medium → hard). */
+const DEFAULT_LEVEL_COUNT = 3;
+const defaultLevels = () => Array.from({ length: DEFAULT_LEVEL_COUNT }, (_, i) => emptyLevel(i));
 
 const toDrafts = (game: Partial<GameItem>): LevelDraft[] => {
   if (Array.isArray(game.levels) && game.levels.length > 0) {
-    return game.levels.map((l) => ({
+    return game.levels.map((l, i) => ({
       title: l.title || '',
       prompt: l.prompt || '',
       targets: (l.targets || []).join(', '),
       distractors: (l.distractors || []).join(', '),
+      difficulty: l.difficulty || difficultyForIndex(i),
     }));
   }
   if (Array.isArray(game.options) && game.options.length > 0) {
-    return [{ title: game.title || '', prompt: game.prompt || '', targets: game.options.join(', '), distractors: '' }];
+    return [
+      {
+        title: game.title || '',
+        prompt: game.prompt || '',
+        targets: game.options.join(', '),
+        distractors: '',
+        difficulty: 'easy',
+      },
+    ];
   }
-  return [emptyLevel()];
+  return defaultLevels();
 };
 
 export const GamesPage: React.FC = () => {
@@ -106,7 +142,7 @@ export const GamesPage: React.FC = () => {
       display_order: games.length + 1,
       is_active: true,
     });
-    setLevels([emptyLevel()]);
+    setLevels(defaultLevels());
     setIsModalOpen(true);
   };
 
@@ -152,11 +188,19 @@ export const GamesPage: React.FC = () => {
         prompt: l.prompt.trim(),
         targets: splitList(l.targets),
         distractors: splitList(l.distractors),
+        difficulty: l.difficulty,
       }))
       .filter((l) => l.targets.length > 0);
 
     if (parsedLevels.length === 0) {
       alert('Add at least one level with target letters/words');
+      return;
+    }
+
+    // A level with no targets would be silently dropped by the server — say so.
+    const emptyIdx = levels.findIndex((l) => splitList(l.targets).length === 0);
+    if (emptyIdx !== -1) {
+      alert(`Level ${emptyIdx + 1} has no targets. Fill in its targets or remove the level.`);
       return;
     }
 
@@ -414,6 +458,9 @@ export const GamesPage: React.FC = () => {
                 <option value="basket">🧺 Letter Basket</option>
                 <option value="puzzle">🧩 Word Puzzle</option>
                 <option value="matching">🔄 Letter Matching</option>
+                <option value="whack">🔨 Letter Whack-a-Mole</option>
+                <option value="space">🚀 Space Letter Shooter</option>
+                <option value="train">🚂 Letter Train (Missing Letter)</option>
               </select>
             </div>
             <div className="form-group">
@@ -479,7 +526,7 @@ export const GamesPage: React.FC = () => {
               <label className="form-label" style={{ margin: 0 }}>
                 Levels / Missions ({levels.length})
               </label>
-              <button type="button" className="btn btn-sm btn-secondary" onClick={() => setLevels([...levels, emptyLevel()])}>
+              <button type="button" className="btn btn-sm btn-secondary" onClick={() => setLevels([...levels, emptyLevel(levels.length)])}>
                 <Plus size={14} />
                 <span>Add Level</span>
               </button>
@@ -506,7 +553,7 @@ export const GamesPage: React.FC = () => {
                       </button>
                     )}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '8px', marginBottom: '8px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
                     <input
                       type="text"
                       className="form-control"
@@ -514,6 +561,20 @@ export const GamesPage: React.FC = () => {
                       value={lvl.title}
                       onChange={(e) => update({ title: e.target.value })}
                     />
+                    <select
+                      className="form-control"
+                      title="Difficulty — controls how fast the game plays"
+                      value={lvl.difficulty}
+                      onChange={(e) => update({ difficulty: e.target.value as LevelDifficulty })}
+                    >
+                      {DIFFICULTY_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ marginBottom: '8px' }}>
                     <input
                       type="text"
                       className="form-control"

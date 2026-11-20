@@ -8,6 +8,7 @@ import '../../models/letter_candy_game_model.dart';
 import '../../models/word_puzzle_game_model.dart';
 import '../../services/audio_service.dart';
 import '../../services/progress_service.dart';
+import '../../widgets/next_level_button.dart';
 
 class WordPuzzleGame extends StatefulWidget {
   final ProgressService? progressService;
@@ -292,6 +293,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
     setState(() {
       _gameState = 'level_complete';
     });
+    widget.progressService?.completeActiveGameLevel();
 
     if (!_isSoundMuted) {
       AudioService.instance.playStarReward(context);
@@ -583,7 +585,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                         'Build the Word!',
                         style: TextStyle(
                           color: Color(0xFFFFD54F),
-                          fontSize: 11,
+                          fontSize: 15,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -603,7 +605,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                 Text(
                   puzzle.word,
                   style: GoogleFonts.catamaran(
-                    fontSize: 28,
+                    fontSize: 34,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
                     letterSpacing: 1.5,
@@ -1022,6 +1024,8 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                 ],
               ),
               const SizedBox(height: 24),
+
+              NextLevelButton(content: widget.content),
 
               // Action buttons
               Row(

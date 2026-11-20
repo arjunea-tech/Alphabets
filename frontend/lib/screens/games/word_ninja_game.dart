@@ -782,7 +782,7 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 16,
+              fontSize: 22,
               fontWeight: FontWeight.w900,
               height: 1.25,
               shadows: [

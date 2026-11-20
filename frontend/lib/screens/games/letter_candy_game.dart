@@ -8,6 +8,7 @@ import '../../models/letter_candy_game_model.dart';
 import '../../models/letter_model.dart';
 import '../../services/audio_service.dart';
 import '../../services/progress_service.dart';
+import '../../widgets/next_level_button.dart';
 
 class TamilLetterCandyGame extends StatefulWidget {
   final ProgressService? progressService;
@@ -671,6 +672,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
     }
 
     try {
+      widget.progressService?.completeActiveGameLevel();
       widget.progressService?.recordGameCompleted(_starsEarned);
     } catch (_) {}
 
@@ -691,6 +693,11 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
   }
 
   void _nextLevel() {
+    // A picked level: "Next Level" opens the next level from the games screen.
+    if (widget.content.hasNextLevel) {
+      Navigator.pop(context, nextLevelResult);
+      return;
+    }
     if (_currentLevelIndex < _levels.length - 1) {
       _currentLevelIndex++;
     }
@@ -1610,9 +1617,12 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text(
-                      'Next Level ➜',
-                      style: TextStyle(fontWeight: FontWeight.w900),
+                    // Last level (or a single picked level with nothing after it): play again.
+                    child: Text(
+                      widget.content.hasNextLevel || _currentLevelIndex < _levels.length - 1
+                          ? 'Next Level ➜'
+                          : 'Play Again 🔄',
+                      style: const TextStyle(fontWeight: FontWeight.w900),
                     ),
                   ),
                 ),

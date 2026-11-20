@@ -7,10 +7,12 @@ import 'package:video_player_win/video_player_win.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'services/auth_service.dart';
+import 'services/cloudinary_media.dart';
 import 'services/data_service.dart';
 import 'services/progress_service.dart';
 import 'services/tamil_tts_service.dart';
 import 'theme/app_theme.dart';
+import 'widgets/mascot_widget.dart';
 
 import 'screens/language/language_selection_screen.dart';
 import 'services/language_service.dart';
@@ -107,6 +109,17 @@ class _AgaramAppState extends State<AgaramApp> {
       unawaited(DataService.instance.prefetchAll());
       for (final path in _warmImages) {
         precacheImage(AssetImage(path), context, onError: (_, _) {});
+      }
+      // Mascot GIFs (~1 MB each, from Cloudinary) appear on almost every page.
+      // Download + decode them once now so page-to-page navigation shows them instantly.
+      final gifUrls = <String>{
+        for (final pose in MascotPose.values)
+          if (CloudinaryMedia.getUrl(pose.assetPath) case final url?
+              when url.startsWith('http'))
+            url,
+      };
+      for (final url in gifUrls) {
+        precacheImage(NetworkImage(url), context, onError: (_, _) {});
       }
     });
   }

@@ -6,8 +6,14 @@ import 'writing_engine.dart';
 
 export '../models/letter_stroke_model.dart' show HandwritingEvaluationResult;
 
-/// Comprehensive multi-factor validator for handwriting evaluation (Strict 80% Requirement)
+/// Comprehensive multi-factor validator for handwriting evaluation (pass: more than [passPercent]% of the letter traced)
 class HandwritingValidator {
+  /// A trace must score MORE than this (%) to pass and move to the next letter.
+  static const int passPercent = 85;
+
+  /// Each individual stroke of the letter must be at least this much traced.
+  static const double minStrokeCoverage = 0.70;
+
   static HandwritingEvaluationResult evaluate({
     required TamilWritingLetter targetLetter,
     required List<List<Offset>> userStrokes,
@@ -31,13 +37,13 @@ class HandwritingValidator {
     final int totalUserPoints = userStrokes.fold(0, (sum, s) => sum + s.length);
     if (totalUserPoints < 8) {
       return HandwritingEvaluationResult(
-        score: 10,
+        score: 0,
         coverage: 0.1,
         precision: 0.1,
         stars: 0,
         isPass: false,
-        title: 'Incomplete Trace! (10% / 70%)',
-        message: 'Please trace the full shape of letter "${targetLetter.letter}". At least 70% is needed to pass!',
+        title: 'Incomplete Trace! (10% / 85%)',
+        message: 'Please trace the full shape of letter "${targetLetter.letter}". More than 85% is needed to pass!',
         emoji: '✏️',
         badgeColor: const Color(0xFFFF5964),
       );
@@ -69,7 +75,6 @@ class HandwritingValidator {
 
     // 2. Strict Hit Radius matching the actual letter canal track (~20px)
     final double targetHitRadius = math.max(canvasSize.width * 0.055, 20.0);
-    final List<bool> coveredTarget = List<bool>.filled(allTargetDensePoints.length, false);
     int validUserPoints = 0;
 
     // Flatten user points
@@ -78,84 +83,95 @@ class HandwritingValidator {
       allUserPoints.addAll(s);
     }
 
-    // Check each target point against user touch points
-    for (int i = 0; i < allTargetDensePoints.length; i++) {
-      final tp = allTargetDensePoints[i];
-      for (final up in allUserPoints) {
-        if ((tp - up).distance <= targetHitRadius) {
-          coveredTarget[i] = true;
-          break;
-        }
-      }
-    }
-
-    // Check user points precision (must be near letter path, not scribbled outside)
+    // Assign every finger point to the ONE target stroke it is closest to, and
+    // measure precision (must be near the letter path, not scribbled outside).
+    // Without this, tracing A's two diagonals also "covered" both ends of the
+    // short crossbar (they lie within the hit radius of the diagonals), so a
+    // letter with a missing stroke could still pass.
+    final List<List<Offset>> userPointsByStroke =
+        List.generate(targetDenseStrokes.length, (_) => <Offset>[]);
     for (final up in allUserPoints) {
       double minDist = double.infinity;
-      for (final tp in allTargetDensePoints) {
-        final d = (up - tp).distance;
-        if (d < minDist) minDist = d;
+      int nearestStroke = -1;
+      for (int s = 0; s < targetDenseStrokes.length; s++) {
+        for (final tp in targetDenseStrokes[s]) {
+          final d = (up - tp).distance;
+          if (d < minDist) {
+            minDist = d;
+            nearestStroke = s;
+          }
+        }
       }
       if (minDist <= targetHitRadius * 1.35) {
         validUserPoints++;
+        userPointsByStroke[nearestStroke].add(up);
       }
     }
 
-    // Overall Coverage: fraction of target template covered by user finger
-    final double coverage = coveredTarget.where((c) => c).length / allTargetDensePoints.length;
+    // Per-stroke coverage: a stroke's points are covered only by finger points
+    // that belong to that stroke.
+    final List<double> strokeCoverages = [];
+    for (int s = 0; s < targetDenseStrokes.length; s++) {
+      final strokePts = targetDenseStrokes[s];
+      if (strokePts.isEmpty) continue;
+      final owned = userPointsByStroke[s];
+      int coveredCount = 0;
+      for (final tp in strokePts) {
+        for (final up in owned) {
+          if ((tp - up).distance <= targetHitRadius) {
+            coveredCount++;
+            break;
+          }
+        }
+      }
+      strokeCoverages.add(coveredCount / strokePts.length);
+    }
+
+    // Overall coverage: average of the strokes, each stroke weighted equally, so
+    // skipping a short stroke (A's crossbar, E's middle bar) costs as much as
+    // skipping a long one.
+    final double coverage = strokeCoverages.isEmpty
+        ? 0.0
+        : strokeCoverages.reduce((a, b) => a + b) / strokeCoverages.length;
 
     // Precision: fraction of user points that stayed inside the letter canal
     final double precision = allUserPoints.isNotEmpty ? (validUserPoints / allUserPoints.length) : 0.0;
 
-    // Per-stroke coverage check (user must not completely skip any stroke)
-    bool allStrokesAttempted = true;
-    int offsetIndex = 0;
-    for (final strokePts in targetDenseStrokes) {
-      if (strokePts.isEmpty) continue;
-      int coveredCount = 0;
-      for (int i = 0; i < strokePts.length; i++) {
-        if (coveredTarget[offsetIndex + i]) coveredCount++;
-      }
-      final strokeCov = coveredCount / strokePts.length;
-      if (strokeCov < 0.40) {
-        allStrokesAttempted = false; // At least 40% of every individual stroke must be drawn!
-      }
-      offsetIndex += strokePts.length;
-    }
+    // Every individual stroke must be mostly traced — no skipped lines.
+    final bool allStrokesAttempted = strokeCoverages.every((c) => c >= minStrokeCoverage);
 
-    // Strict 70% Rule requested by user:
-    // 1. Overall coverage >= 0.70 (70%)
-    // 2. Precision >= 0.50 (must stay reasonably inside track)
-    // 3. All strokes attempted (no completely missing lines)
+    // Score = how much of the letter was actually traced (coverage).
+    // Staying inside the track earns no bonus; scribbling outside only lowers
+    // the score (full marks while >= 80% of the finger points are on the track).
     final int coveragePercent = (coverage * 100).round();
-    final double scaledScore = (coverage * 80.0 + precision * 20.0).clamp(0.0, 100.0);
-    final int finalScore = scaledScore.round();
-    final bool isPass = coverage >= 0.70 && precision >= 0.50 && allStrokesAttempted;
+    final double precisionFactor = (precision / 0.80).clamp(0.0, 1.0);
+    final int finalScore = (coverage * 100.0 * precisionFactor).clamp(0.0, 100.0).round();
+    final bool isPass = finalScore > passPercent && allStrokesAttempted;
 
     if (!isPass) {
       String failReason;
       if (!allStrokesAttempted) {
         failReason = 'Some parts of letter "${targetLetter.letter}" were missed! Trace along all the lines to fill it.';
-      } else if (coveragePercent < 70) {
-        failReason = 'Filled $coveragePercent%. At least 70% coverage is needed to pass!';
+      } else if (coveragePercent <= passPercent) {
+        failReason = 'Filled $coveragePercent%. More than $passPercent% is needed to pass!';
       } else {
         failReason = 'Stay inside the letter track without drawing outside!';
       }
 
       return HandwritingEvaluationResult(
-        score: finalScore.clamp(5, 69).toDouble(),
+        score: finalScore.clamp(0, passPercent).toDouble(),
         coverage: coverage,
         precision: precision,
         stars: 0,
         isPass: false,
-        title: 'Needs More Practice! ($coveragePercent% / 70%)',
+        title: 'Needs More Practice! ($finalScore% / $passPercent%)',
         message: failReason,
         emoji: '🔄',
         badgeColor: const Color(0xFFFF9F1C),
       );
     }
 
-    final int stars = finalScore >= 85 ? 3 : 2;
+    final int stars = finalScore >= 95 ? 3 : 2;
 
     return HandwritingEvaluationResult(
       score: finalScore.toDouble(),
@@ -163,7 +179,7 @@ class HandwritingValidator {
       precision: precision,
       stars: stars,
       isPass: true,
-      title: finalScore >= 85 ? 'Awesome! Perfect! ($finalScore%)' : 'Well Done! ($finalScore%)',
+      title: finalScore >= 95 ? 'Awesome! Perfect! ($finalScore%)' : 'Well Done! ($finalScore%)',
       message: 'You traced letter "${targetLetter.letter}" with $finalScore% accuracy!',
       emoji: '🌟',
       badgeColor: const Color(0xFF10B981),
