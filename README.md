@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🌟 ALPHABETS — Learn 26 Letters (A–Z)
 
 <p align="center">
@@ -199,3 +200,6 @@ This project is licensed under the **ISC License**.
 <p align="center">
   Made with ❤️ for young learners by the <b>ALPHABETS Team</b>
 </p>
+=======
+
+>>>>>>> 352fb8f8d06a1fafc74052ee0337302c5dac9dde
