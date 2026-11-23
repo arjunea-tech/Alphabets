@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -9,6 +10,7 @@ import '../../models/letter_model.dart';
 import '../../services/audio_service.dart';
 import '../../services/progress_service.dart';
 import '../../widgets/next_level_button.dart';
+import 'mini_game_kit.dart';
 
 class TamilLetterCandyGame extends StatefulWidget {
   final ProgressService? progressService;
@@ -64,6 +66,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
 
   // State flags to prevent multiple interactions while resolving matches
   bool _isProcessing = false;
+  bool _showQ = false; // question popup visible (timer paused)
   bool _isSoundMuted = false;
 
   // Combo text animation overlay
@@ -96,9 +99,27 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
       duration: const Duration(milliseconds: 900),
     );
     _comboScaleAnim = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.2, end: 1.25).chain(CurveTween(curve: Curves.easeOutBack)), weight: 40),
-      TweenSequenceItem(tween: Tween(begin: 1.25, end: 1.0).chain(CurveTween(curve: Curves.easeInOut)), weight: 20),
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.15).chain(CurveTween(curve: Curves.easeIn)), weight: 40),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 0.2,
+          end: 1.25,
+        ).chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 40,
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.25,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 20,
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.0,
+          end: 1.15,
+        ).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 40,
+      ),
     ]).animate(_comboAnimController);
 
     _comboOpacityAnim = TweenSequence<double>([
@@ -153,14 +174,19 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
           // Match-3 needs a few different candies; top up from other admin content.
           for (final extra in filler) {
             if (pool.length >= 4) break;
-            if (!pool.any((p) => p.letter.toUpperCase() == extra.letter.toUpperCase())) pool.add(extra);
+            if (!pool.any(
+              (p) => p.letter.toUpperCase() == extra.letter.toUpperCase(),
+            ))
+              pool.add(extra);
           }
           final isSpeed = level.title.toLowerCase().contains('speed');
           return CandyGameLevel(
             levelNumber: i + 1,
             title: level.title.isNotEmpty ? level.title : content.game.title,
             subtitle: 'Level ${i + 1}',
-            description: level.prompt.isNotEmpty ? level.prompt : content.game.prompt,
+            description: level.prompt.isNotEmpty
+                ? level.prompt
+                : content.game.prompt,
             letterPool: pool,
             targetScore: 800 + (i * 400),
             maxMoves: isSpeed ? 99 : (i == 0 ? 22 : 20),
@@ -230,6 +256,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
   void _startGame() {
     _initBoard();
     setState(() {
+      _showQ = true;
       _gameState = 'playing';
       _score = 0;
       _matchesCount = 0;
@@ -250,6 +277,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
           timer.cancel();
           return;
         }
+        if (_showQ) return; // wait while the question popup is open
         setState(() {
           if (_secondsLeft > 0) {
             _secondsLeft--;
@@ -347,7 +375,10 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
       targetR += _dragDelta.dy > 0 ? 1 : -1;
     }
 
-    if (targetR >= 0 && targetR < kGridRows && targetC >= 0 && targetC < kGridCols) {
+    if (targetR >= 0 &&
+        targetR < kGridRows &&
+        targetC >= 0 &&
+        targetC < kGridCols) {
       if (_selectedTile != null) {
         _selectedTile!.isSelected = false;
         _selectedTile = null;
@@ -484,13 +515,17 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
       LetterModel? specialLetterModel;
 
       if (matches.length == 4) {
-        specialTypeToSpawn = _random.nextBool() ? CandySpecialType.rowBlast : CandySpecialType.colBlast;
+        specialTypeToSpawn = _random.nextBool()
+            ? CandySpecialType.rowBlast
+            : CandySpecialType.colBlast;
         specialSpawnPoint = matches.first;
-        specialLetterModel = _board[specialSpawnPoint.x][specialSpawnPoint.y]?.letterModel;
+        specialLetterModel =
+            _board[specialSpawnPoint.x][specialSpawnPoint.y]?.letterModel;
       } else if (matches.length >= 5) {
         specialTypeToSpawn = CandySpecialType.bomb;
         specialSpawnPoint = matches.first;
-        specialLetterModel = _board[specialSpawnPoint.x][specialSpawnPoint.y]?.letterModel;
+        specialLetterModel =
+            _board[specialSpawnPoint.x][specialSpawnPoint.y]?.letterModel;
       }
 
       // Expand matches if any matched tile was already a special powerup
@@ -567,8 +602,12 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
       }
 
       // Spawn special candy if earned
-      if (specialSpawnPoint != null && specialLetterModel != null && specialTypeToSpawn != CandySpecialType.none) {
-        final style = CandyColorPalette.getStyleForLetter(specialLetterModel.letter);
+      if (specialSpawnPoint != null &&
+          specialLetterModel != null &&
+          specialTypeToSpawn != CandySpecialType.none) {
+        final style = CandyColorPalette.getStyleForLetter(
+          specialLetterModel.letter,
+        );
         _board[specialSpawnPoint.x][specialSpawnPoint.y] = CandyTile(
           id: ++_tileIdCounter,
           letterModel: specialLetterModel,
@@ -754,111 +793,132 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
   // -------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF1E1035), // Deep magical candy purple
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Background Animated Soft Candy Clouds & Sparkles
-            Positioned.fill(
-              child: _buildCandyBackground(),
-            ),
+    return QuestionPopupHost(
+      show: _showQ && _gameState == 'playing',
+      question: _currentLevel.description.trim().isNotEmpty
+          ? _currentLevel.description.trim()
+          : 'Match 3 or more same letters to pop the candies!',
+      label: 'LEVEL ${_currentLevel.levelNumber}',
+      hint: 'Swap candies to line up 3 or more same letters!',
+      emoji: '🍬',
+      onStart: () => setState(() => _showQ = false),
+      child: Scaffold(
+        backgroundColor: const Color(0xFF1E1035), // Deep magical candy purple
+        body: SafeArea(
+          child: Stack(
+            children: [
+              // Background Animated Soft Candy Clouds & Sparkles
+              Positioned.fill(child: _buildCandyBackground()),
 
-            // Particle overlay painter
-            Positioned.fill(
-              child: IgnorePointer(
-                child: CustomPaint(
-                  painter: CandyParticlePainter(particles: _particles),
-                ),
-              ),
-            ),
-
-            // Main Active View
-            if (_gameState == 'start')
-              _buildStartScreen()
-            else if (_gameState == 'playing')
-              _buildPlayingScreen()
-            else if (_gameState == 'level_complete')
-              _buildLevelCompleteScreen()
-            else if (_gameState == 'game_over')
-              _buildGameOverScreen(),
-
-            // Combo Notification Overlay
-            if (_comboText != null)
-              Center(
+              // Particle overlay painter
+              Positioned.fill(
                 child: IgnorePointer(
-                  child: AnimatedBuilder(
-                    animation: _comboAnimController,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: _comboScaleAnim.value,
-                        child: Opacity(
-                          opacity: _comboOpacityAnim.value.clamp(0.0, 1.0),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFFF1744), Color(0xFFFF9100), Color(0xFFFFD600)],
-                              ),
-                              borderRadius: BorderRadius.circular(30),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.amber.withOpacity(0.6),
-                                  blurRadius: 18,
-                                  spreadRadius: 4,
-                                ),
-                              ],
-                              border: Border.all(color: Colors.white, width: 3),
-                            ),
-                            child: Text(
-                              _comboText!,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 26,
-                                fontWeight: FontWeight.w900,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black45,
-                                    offset: Offset(2, 2),
-                                    blurRadius: 4,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
+                  child: CustomPaint(
+                    painter: CandyParticlePainter(particles: _particles),
                   ),
                 ),
               ),
 
-            // Gentle Encouragement Overlay
-            if (_encouragementText != null)
-              Positioned(
-                bottom: 24,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.75),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white38),
+              // Main Active View
+              if (_gameState == 'start')
+                _buildStartScreen()
+              else if (_gameState == 'playing')
+                _buildPlayingScreen()
+              else if (_gameState == 'level_complete')
+                _buildLevelCompleteScreen()
+              else if (_gameState == 'game_over')
+                _buildGameOverScreen(),
+
+              // Combo Notification Overlay
+              if (_comboText != null)
+                Center(
+                  child: IgnorePointer(
+                    child: AnimatedBuilder(
+                      animation: _comboAnimController,
+                      builder: (context, child) {
+                        return Transform.scale(
+                          scale: _comboScaleAnim.value,
+                          child: Opacity(
+                            opacity: _comboOpacityAnim.value.clamp(0.0, 1.0),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFFFF1744),
+                                    Color(0xFFFF9100),
+                                    Color(0xFFFFD600),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(30),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.amber.withOpacity(0.6),
+                                    blurRadius: 18,
+                                    spreadRadius: 4,
+                                  ),
+                                ],
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 3,
+                                ),
+                              ),
+                              child: Text(
+                                _comboText!,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w900,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black45,
+                                      offset: Offset(2, 2),
+                                      blurRadius: 4,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    child: Text(
-                      _encouragementText!,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+              // Gentle Encouragement Overlay
+              if (_encouragementText != null)
+                Positioned(
+                  bottom: 24,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.75),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white38),
+                      ),
+                      child: Text(
+                        _encouragementText!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -877,14 +937,13 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                ),
                 onPressed: () => Navigator.of(context).pop(),
               ),
-              Row(
-                children: [
-                  const SizedBox.shrink(),
-                ],
-              ),
+              Row(children: [const SizedBox.shrink()]),
             ],
           ),
         ),
@@ -901,7 +960,8 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                 AnimatedBuilder(
                   animation: _bgFloatController,
                   builder: (context, child) {
-                    final offsetY = sin(_bgFloatController.value * 2 * pi) * 8.0;
+                    final offsetY =
+                        sin(_bgFloatController.value * 2 * pi) * 8.0;
                     return Transform.translate(
                       offset: Offset(0, offsetY),
                       child: child,
@@ -925,10 +985,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                       border: Border.all(color: Colors.white, width: 4),
                     ),
                     child: const Center(
-                      child: Text(
-                        '🍬',
-                        style: TextStyle(fontSize: 72),
-                      ),
+                      child: Text('🍬', style: TextStyle(fontSize: 72)),
                     ),
                   ),
                 ),
@@ -982,7 +1039,11 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                     children: [
                       const Row(
                         children: [
-                          Icon(Icons.layers_rounded, color: Colors.amberAccent, size: 20),
+                          Icon(
+                            Icons.layers_rounded,
+                            color: Colors.amberAccent,
+                            size: 20,
+                          ),
                           SizedBox(width: 8),
                           Text(
                             'Select Level:',
@@ -1019,21 +1080,30 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                     colors: isSelected
-                                        ? [const Color(0xFFFF4081), const Color(0xFFFF9100)]
-                                        : [Colors.white.withOpacity(0.12), Colors.white.withOpacity(0.05)],
+                                        ? [
+                                            const Color(0xFFFF4081),
+                                            const Color(0xFFFF9100),
+                                          ]
+                                        : [
+                                            Colors.white.withOpacity(0.12),
+                                            Colors.white.withOpacity(0.05),
+                                          ],
                                   ),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: isSelected ? Colors.white : Colors.white24,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.white24,
                                     width: isSelected ? 2.5 : 1.0,
                                   ),
                                   boxShadow: isSelected
                                       ? [
                                           BoxShadow(
-                                            color: const Color(0xFFFF4081).withOpacity(0.4),
+                                            color: const Color(0xFFFF4081)
+                                                .withOpacity(0.4),
                                             blurRadius: 10,
                                             offset: const Offset(0, 4),
-                                          )
+                                          ),
                                         ]
                                       : null,
                                 ),
@@ -1044,7 +1114,9 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                                     Text(
                                       'Level ${lvl.levelNumber}',
                                       style: TextStyle(
-                                        color: isSelected ? Colors.white : Colors.amberAccent,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : Colors.amberAccent,
                                         fontWeight: FontWeight.w900,
                                         fontSize: 13,
                                       ),
@@ -1139,7 +1211,10 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(12),
@@ -1158,7 +1233,9 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                         ? '⏳ Seconds: $_secondsLeft'
                         : '🔄 Moves: $_movesLeft',
                     style: TextStyle(
-                      color: (_currentLevel.isTimed && _secondsLeft <= 10) || (!_currentLevel.isTimed && _movesLeft <= 5)
+                      color:
+                          (_currentLevel.isTimed && _secondsLeft <= 10) ||
+                              (!_currentLevel.isTimed && _movesLeft <= 5)
                           ? Colors.redAccent
                           : Colors.amberAccent,
                       fontSize: 13,
@@ -1192,7 +1269,11 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                         _gameState = 'start';
                       });
                     },
-                    icon: const Icon(Icons.arrow_back_rounded, color: Colors.white70, size: 18),
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: Colors.white70,
+                      size: 18,
+                    ),
                     label: const Text(
                       'Exit',
                       style: TextStyle(color: Colors.white70, fontSize: 13),
@@ -1202,7 +1283,11 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                   // Restart level
                   TextButton.icon(
                     onPressed: _startGame,
-                    icon: const Icon(Icons.refresh_rounded, color: Colors.amberAccent, size: 18),
+                    icon: const Icon(
+                      Icons.refresh_rounded,
+                      color: Colors.amberAccent,
+                      size: 18,
+                    ),
                     label: const Text(
                       'Restart',
                       style: TextStyle(color: Colors.amberAccent, fontSize: 13),
@@ -1227,7 +1312,10 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
       decoration: BoxDecoration(
         color: const Color(0xFF2D184E),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.purpleAccent.withOpacity(0.4), width: 1.5),
+        border: Border.all(
+          color: Colors.purpleAccent.withOpacity(0.4),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.35),
@@ -1264,10 +1352,14 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
 
                 // Moves or Timer
                 _buildHUDCard(
-                  icon: _currentLevel.isTimed ? Icons.timer_rounded : Icons.favorite_rounded,
+                  icon: _currentLevel.isTimed
+                      ? Icons.timer_rounded
+                      : Icons.favorite_rounded,
                   iconColor: Colors.pinkAccent,
                   label: _currentLevel.isTimed ? 'Time' : 'Moves',
-                  value: _currentLevel.isTimed ? '${_secondsLeft}s' : '$_movesLeft',
+                  value: _currentLevel.isTimed
+                      ? '${_secondsLeft}s'
+                      : '$_movesLeft',
                 ),
               ],
             ),
@@ -1282,7 +1374,9 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
               value: progress,
               minHeight: 8,
               backgroundColor: Colors.white12,
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00E676)),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                Color(0xFF00E676),
+              ),
             ),
           ),
         ],
@@ -1342,7 +1436,10 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
       decoration: BoxDecoration(
         color: const Color(0xFF140A26),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF9C27B0).withOpacity(0.6), width: 3),
+        border: Border.all(
+          color: const Color(0xFF9C27B0).withOpacity(0.6),
+          width: 3,
+        ),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF9C27B0).withOpacity(0.3),
@@ -1387,12 +1484,7 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
     );
   }
 
-  Widget _buildCandyTileWidget(
-    CandyTile tile,
-    int r,
-    int c,
-    double tileSize,
-  ) {
+  Widget _buildCandyTileWidget(CandyTile tile, int r, int c, double tileSize) {
     return Positioned(
       left: c * tileSize,
       top: r * tileSize,
@@ -1468,8 +1560,8 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                         tile.specialType == CandySpecialType.bomb
                             ? Icons.star_rounded
                             : (tile.specialType == CandySpecialType.rowBlast
-                                ? Icons.swap_horiz_rounded
-                                : Icons.swap_vert_rounded),
+                                  ? Icons.swap_horiz_rounded
+                                  : Icons.swap_vert_rounded),
                         size: 10,
                         color: Colors.black,
                       ),
@@ -1619,7 +1711,8 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
                     ),
                     // Last level (or a single picked level with nothing after it): play again.
                     child: Text(
-                      widget.content.hasNextLevel || _currentLevelIndex < _levels.length - 1
+                      widget.content.hasNextLevel ||
+                              _currentLevelIndex < _levels.length - 1
                           ? 'Next Level ➜'
                           : 'Play Again 🔄',
                       style: const TextStyle(fontWeight: FontWeight.w900),
@@ -1764,19 +1857,14 @@ class _TamilLetterCandyGameState extends State<TamilLetterCandyGame>
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF230D3E),
-            Color(0xFF140824),
-          ],
+          colors: [Color(0xFF230D3E), Color(0xFF140824)],
         ),
       ),
       child: AnimatedBuilder(
         animation: _bgFloatController,
         builder: (context, child) {
           final t = _bgFloatController.value;
-          return CustomPaint(
-            painter: CandyBgPainter(animationValue: t),
-          );
+          return CustomPaint(painter: CandyBgPainter(animationValue: t));
         },
       ),
     );
@@ -1811,7 +1899,11 @@ class CandyParticlePainter extends CustomPainter {
         path.close();
         canvas.drawPath(path, paint);
       } else {
-        canvas.drawCircle(Offset(p.x, p.y), p.size * (1.0 - p.progress * 0.5), paint);
+        canvas.drawCircle(
+          Offset(p.x, p.y),
+          p.size * (1.0 - p.progress * 0.5),
+          paint,
+        );
       }
     }
   }
@@ -1832,15 +1924,29 @@ class CandyBgPainter extends CustomPainter {
 
     // Draw floating bubbles
     final bubblePositions = [
-      Offset(size.width * 0.15, size.height * 0.25 + sin(animationValue * 2 * pi) * 12),
-      Offset(size.width * 0.85, size.height * 0.18 + cos(animationValue * 2 * pi) * 10),
-      Offset(size.width * 0.22, size.height * 0.75 + sin(animationValue * 2 * pi + 1) * 14),
-      Offset(size.width * 0.78, size.height * 0.82 + cos(animationValue * 2 * pi + 2) * 12),
+      Offset(
+        size.width * 0.15,
+        size.height * 0.25 + sin(animationValue * 2 * pi) * 12,
+      ),
+      Offset(
+        size.width * 0.85,
+        size.height * 0.18 + cos(animationValue * 2 * pi) * 10,
+      ),
+      Offset(
+        size.width * 0.22,
+        size.height * 0.75 + sin(animationValue * 2 * pi + 1) * 14,
+      ),
+      Offset(
+        size.width * 0.78,
+        size.height * 0.82 + cos(animationValue * 2 * pi + 2) * 12,
+      ),
     ];
 
     for (int i = 0; i < bubblePositions.length; i++) {
       final pos = bubblePositions[i];
-      paint.color = (i.isEven ? const Color(0xFFFF4081) : const Color(0xFF00E676)).withOpacity(0.07);
+      paint.color =
+          (i.isEven ? const Color(0xFFFF4081) : const Color(0xFF00E676))
+              .withOpacity(0.07);
       canvas.drawCircle(pos, 28 + (i * 4).toDouble(), paint);
     }
   }

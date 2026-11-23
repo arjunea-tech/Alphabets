@@ -31,6 +31,10 @@ void main() {
     await tester.pumpWidget(MaterialApp(
       home: FruitCutterGame(progressService: ProgressService(), content: content),
     ));
+    // The question popup shows first; close it to start the game.
+    expect(find.text("Let's Play! 🚀"), findsOneWidget);
+    await tester.tap(find.text("Let's Play! 🚀"));
+    await tester.pump();
     // Let fruits spawn and fly for a few seconds.
     for (var i = 0; i < 120; i++) {
       await tester.pump(const Duration(milliseconds: 33));

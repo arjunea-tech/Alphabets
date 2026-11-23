@@ -59,6 +59,8 @@ void main() {
     final p = ProgressService();
     final content = _content('train', level: 0);
     await tester.pumpWidget(MaterialApp(home: LetterTrainGame(progressService: p, content: content)));
+    await tester.tap(find.text("Let's Play! 🚀")); // close the question popup
+    await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     for (var round = 0; round < GameContent.questionsPerLevel; round++) {
       // Tap every answer button (skip the back button); the right one moves the train on.

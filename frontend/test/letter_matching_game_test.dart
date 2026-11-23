@@ -34,7 +34,14 @@ Future<ProgressService> _pumpGame(WidgetTester tester) async {
     MaterialApp(home: LetterMatchingGame(progressService: progressService)),
   );
   await tester.pump();
+  await _closeQuestionPopup(tester);
   return progressService;
+}
+
+/// Each level opens with a question popup; tap its button to start.
+Future<void> _closeQuestionPopup(WidgetTester tester) async {
+  await tester.tap(find.text("Let's Play! 🚀"));
+  await tester.pump(const Duration(milliseconds: 500)); // button bounce, then close
 }
 
 void main() {
@@ -74,6 +81,7 @@ void main() {
         expect(find.text('Level ${level + 1} complete!'), findsOneWidget);
         await tester.tap(find.text('Next Level'));
         await tester.pump();
+        await _closeQuestionPopup(tester);
       }
     }
 

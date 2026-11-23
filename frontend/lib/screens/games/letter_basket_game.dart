@@ -1,6 +1,8 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+
 import '../../models/game_content.dart';
 import '../../models/letter_model.dart';
 import '../../models/letter_basket_game_model.dart';
@@ -11,6 +13,7 @@ import '../../theme/app_text_styles.dart';
 import '../../widgets/bouncy_button.dart';
 import '../../widgets/next_level_button.dart';
 import '../../widgets/mascot_widget.dart';
+import 'mini_game_kit.dart';
 
 class LetterBasketGame extends StatefulWidget {
   final ProgressService progressService;
@@ -36,8 +39,10 @@ class LetterBasketGameState extends State<LetterBasketGame>
   int get score => _score;
   bool get isGameOver => _isGameOver;
   bool get isGameCompleted => _isGameCompleted;
-  void handleCorrectCatch(FallingLetter letter, double hitX, double hitY) => _handleCorrectCatch(letter, hitX, hitY);
-  void handleWrongCatch(FallingLetter letter, double hitX, double hitY) => _handleWrongCatch(letter, hitX, hitY);
+  void handleCorrectCatch(FallingLetter letter, double hitX, double hitY) =>
+      _handleCorrectCatch(letter, hitX, hitY);
+  void handleWrongCatch(FallingLetter letter, double hitX, double hitY) =>
+      _handleWrongCatch(letter, hitX, hitY);
   // Services
   final AudioService _audioService = AudioService.instance;
 
@@ -56,6 +61,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
   bool _isGameCompleted = false;
   bool _isMuted = false;
   bool _isRoundTransitioning = false;
+  bool _showQ = true; // question popup visible (game paused)
 
   // Basket Physics & Positioning
   double _basketXFraction = 0.5; // 0.0 (left) to 1.0 (right)
@@ -144,6 +150,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
   }
 
   void _setupGameData() {
+    _showQ = true;
     // Targets and falling wrong letters come from the admin's levels for this game
     _letterPool = widget.content.mixPoolLetters;
 
@@ -182,7 +189,9 @@ class LetterBasketGameState extends State<LetterBasketGame>
     final target = _currentTarget;
 
     // Pick 4 unique distractor letters from pool (excluding target)
-    final otherLetters = _letterPool.where((l) => l.letter != target.letter).toList()..shuffle(_rng);
+    final otherLetters =
+        _letterPool.where((l) => l.letter != target.letter).toList()
+          ..shuffle(_rng);
     final distractorsCount = min(4, otherLetters.length);
     final selectedDistractors = otherLetters.take(distractorsCount).toList();
 
@@ -201,14 +210,16 @@ class LetterBasketGameState extends State<LetterBasketGame>
 
     // Base falling speed scales smoothly with round index
     // ... and with the level difficulty (x1.0 easy, x1.3 medium, x1.6 hard)
-    final double baseSpeed = (125.0 + (_currentRoundIndex * 7.0)) * widget.content.speedFactor;
+    final double baseSpeed =
+        (125.0 + (_currentRoundIndex * 7.0)) * widget.content.speedFactor;
 
     for (int i = 0; i < waveLetters.length; i++) {
       final letterData = waveLetters[i];
       final colorIdx = _rng.nextInt(_bubbleColors.length);
 
       // Cascade / stagger vertical drop positions so letters do not overlap
-      final double startY = -_letterSize - (i * 70.0) - (_rng.nextDouble() * 25.0);
+      final double startY =
+          -_letterSize - (i * 70.0) - (_rng.nextDouble() * 25.0);
       final double speed = baseSpeed + (_rng.nextDouble() * 25.0);
 
       _fallingLetters.add(
@@ -245,6 +256,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
       return;
     }
 
+    if (_showQ) return;
     _updateGame(dt);
     setState(() {});
   }
@@ -279,9 +291,11 @@ class LetterBasketGameState extends State<LetterBasketGame>
       final letterTop = item.y;
 
       // Check Collision with Basket
-      final overlapsX = (letterCenterPixelX + (_letterSize / 2) >= basketLeft + 15) &&
+      final overlapsX =
+          (letterCenterPixelX + (_letterSize / 2) >= basketLeft + 15) &&
           (letterCenterPixelX - (_letterSize / 2) <= basketRight - 15);
-      final overlapsY = (letterBottom >= basketTop) && (letterTop <= basketTop + 25);
+      final overlapsY =
+          (letterBottom >= basketTop) && (letterTop <= basketTop + 25);
 
       if (overlapsX && overlapsY) {
         item.isCaught = true;
@@ -309,7 +323,10 @@ class LetterBasketGameState extends State<LetterBasketGame>
     }
 
     // If target letter fell off screen without being caught or wave is exhausted, respawn wave for same target!
-    if (!hasTargetInWave && !_isRoundTransitioning && !_isGameOver && !_isGameCompleted) {
+    if (!hasTargetInWave &&
+        !_isRoundTransitioning &&
+        !_isGameOver &&
+        !_isGameCompleted) {
       _spawnWaveForCurrentRound();
     }
 
@@ -340,7 +357,11 @@ class LetterBasketGameState extends State<LetterBasketGame>
 
     // 4. Positive Tamil Praise
     const praises = ['Super! 🎉', 'Awesome! 🌟', 'Bravo! ✨', 'Great Job! 👏'];
-    _showFeedback(praises[_rng.nextInt(praises.length)], AppColors.mintGreen, Offset(hitX, hitY - 40));
+    _showFeedback(
+      praises[_rng.nextInt(praises.length)],
+      AppColors.mintGreen,
+      Offset(hitX, hitY - 40),
+    );
 
     // 5. Clean, automatic transition to the next round after brief celebration
     Future.delayed(const Duration(milliseconds: 650), () {
@@ -361,7 +382,11 @@ class LetterBasketGameState extends State<LetterBasketGame>
     _audioService.playRetryFeedback(context);
 
     // Gentle encouraging message without ending or freezing the game
-    _showFeedback('Try again! 😊', AppColors.playfulPink, Offset(hitX, hitY - 40));
+    _showFeedback(
+      'Try again! 😊',
+      AppColors.playfulPink,
+      Offset(hitX, hitY - 40),
+    );
   }
 
   void _advanceToNextRound() {
@@ -470,116 +495,137 @@ class LetterBasketGameState extends State<LetterBasketGame>
     final size = MediaQuery.of(context).size;
     final screenWidth = size.width;
 
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFE1F5FE), // Soft sky blue
-              Color(0xFFFFF9C4), // Warm sunlight yellow
-              Color(0xFFFCE4EC), // Gentle rose pink
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+    return QuestionPopupHost(
+      show: _showQ && !_isGameOver && !_isGameCompleted,
+      question: popupQuestionFor(
+        widget.content,
+        fallback: 'Catch the right letter in your basket!',
+      ),
+      target: _roundQueue.isEmpty ? null : _currentTarget.letter,
+      label: 'LETTER BASKET',
+      hint: 'Move the basket to catch the letter shown at the top!',
+      emoji: '🧺',
+      onStart: () {
+        setState(() => _showQ = false);
+        _playTargetSound();
+      },
+      child: Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFFE1F5FE), // Soft sky blue
+                Color(0xFFFFF9C4), // Warm sunlight yellow
+                Color(0xFFFCE4EC), // Gentle rose pink
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onHorizontalDragUpdate: (details) {
-              setState(() {
-                final deltaFrac = details.delta.dx / screenWidth;
-                _basketXFraction = (_basketXFraction + deltaFrac).clamp(0.12, 0.88);
-              });
-            },
-            child: Stack(
-              children: [
-                // 1. Floating Background Clouds & Decorative Stars
-                const _BackgroundDecorations(),
-
-                // 2. Falling Tamil Letters
-                ..._fallingLetters.map((letter) {
-                  return Positioned(
-                    left: (letter.x * screenWidth) - (_letterSize / 2),
-                    top: letter.y,
-                    child: _buildLetterBubble(letter),
+          child: SafeArea(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onHorizontalDragUpdate: (details) {
+                setState(() {
+                  final deltaFrac = details.delta.dx / screenWidth;
+                  _basketXFraction = (_basketXFraction + deltaFrac).clamp(
+                    0.12,
+                    0.88,
                   );
-                }),
+                });
+              },
+              child: Stack(
+                children: [
+                  // 1. Floating Background Clouds & Decorative Stars
+                  const _BackgroundDecorations(),
 
-                // 3. Cute Cartoon Basket
-                Positioned(
-                  left: (_basketXFraction * screenWidth) - (_basketWidth / 2),
-                  bottom: 30,
-                  child: AnimatedBuilder(
-                    animation: _basketShakeAnim,
-                    builder: (context, child) {
-                      return Transform.translate(
-                        offset: Offset(_basketShakeAnim.value, 0),
-                        child: child,
-                      );
-                    },
-                    child: _buildCuteBasket(),
-                  ),
-                ),
+                  // 2. Falling Tamil Letters
+                  ..._fallingLetters.map((letter) {
+                    return Positioned(
+                      left: (letter.x * screenWidth) - (_letterSize / 2),
+                      top: letter.y,
+                      child: _buildLetterBubble(letter),
+                    );
+                  }),
 
-                // 4. Confetti & Sparkles
-                CustomPaint(
-                  painter: _ParticlePainter(_particles),
-                  size: Size.infinite,
-                ),
-
-                // 5. In-Game Float Feedback Toast
-                if (_feedbackText != null && _feedbackOpacity > 0.0)
+                  // 3. Cute Cartoon Basket
                   Positioned(
-                    left: (_feedbackPosition?.dx ?? screenWidth / 2) - 100,
-                    top: _feedbackPosition?.dy ?? 200,
-                    child: Opacity(
-                      opacity: _feedbackOpacity,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: _feedbackColor,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
+                    left: (_basketXFraction * screenWidth) - (_basketWidth / 2),
+                    bottom: 30,
+                    child: AnimatedBuilder(
+                      animation: _basketShakeAnim,
+                      builder: (context, child) {
+                        return Transform.translate(
+                          offset: Offset(_basketShakeAnim.value, 0),
+                          child: child,
+                        );
+                      },
+                      child: _buildCuteBasket(),
+                    ),
+                  ),
+
+                  // 4. Confetti & Sparkles
+                  CustomPaint(
+                    painter: _ParticlePainter(_particles),
+                    size: Size.infinite,
+                  ),
+
+                  // 5. In-Game Float Feedback Toast
+                  if (_feedbackText != null && _feedbackOpacity > 0.0)
+                    Positioned(
+                      left: (_feedbackPosition?.dx ?? screenWidth / 2) - 100,
+                      top: _feedbackPosition?.dy ?? 200,
+                      child: Opacity(
+                        opacity: _feedbackOpacity,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _feedbackColor,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.15),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            _feedbackText!,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
-                          ],
-                        ),
-                        child: Text(
-                          _feedbackText!,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
                           ),
                         ),
                       ),
                     ),
+
+                  // 6. Top Game HUD Bar & Instruction
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Column(
+                      children: [
+                        _buildTopBar(),
+                        const SizedBox(height: 6),
+                        _buildTargetBanner(),
+                      ],
+                    ),
                   ),
 
-                // 6. Top Game HUD Bar & Instruction
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Column(
-                    children: [
-                      _buildTopBar(),
-                      const SizedBox(height: 6),
-                      _buildTargetBanner(),
-                    ],
-                  ),
-                ),
+                  // 7. Game Over / Friendly Retry Dialog
+                  if (_isGameOver) _buildGameOverOverlay(),
 
-                // 7. Game Over / Friendly Retry Dialog
-                if (_isGameOver) _buildGameOverOverlay(),
-
-                // 8. Game Completed Celebration Dialog
-                if (_isGameCompleted) _buildCompletionOverlay(),
-              ],
+                  // 8. Game Completed Celebration Dialog
+                  if (_isGameCompleted) _buildCompletionOverlay(),
+                ],
+              ),
             ),
           ),
         ),
@@ -613,7 +659,11 @@ class LetterBasketGameState extends State<LetterBasketGame>
                     ),
                   ],
                 ),
-                child: const Icon(Icons.arrow_back_rounded, color: Color(0xFFE65100), size: 24),
+                child: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: Color(0xFFE65100),
+                  size: 24,
+                ),
               ),
             ),
 
@@ -662,7 +712,9 @@ class LetterBasketGameState extends State<LetterBasketGame>
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(3, (index) {
                   return Icon(
-                    index < _hearts ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    index < _hearts
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
                     color: const Color(0xFFE91E63),
                     size: 18,
                   );
@@ -676,7 +728,10 @@ class LetterBasketGameState extends State<LetterBasketGame>
             ScaleTransition(
               scale: _scoreBumpAnim,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
@@ -694,7 +749,11 @@ class LetterBasketGameState extends State<LetterBasketGame>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.star_rounded, color: Colors.white, size: 18),
+                    const Icon(
+                      Icons.star_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '$_score',
@@ -734,8 +793,8 @@ class LetterBasketGameState extends State<LetterBasketGame>
         children: [
           // Letter Target Badge
           Container(
-            width: 56,
-            height: 56,
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFFFF8A65), Color(0xFFFF5722)],
@@ -747,7 +806,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
               child: Text(
                 _currentTarget.letter,
                 style: const TextStyle(
-                  fontSize: 32,
+                  fontSize: 44,
                   fontWeight: FontWeight.w900,
                   color: Colors.white,
                 ),
@@ -766,7 +825,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
                 Text(
                   'Catch letter ${_currentTarget.letter}!',
                   style: const TextStyle(
-                    fontSize: 21,
+                    fontSize: 28,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFFD84315),
                   ),
@@ -774,7 +833,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
                 Text(
                   '${_currentTarget.word} (${_currentRoundIndex + 1}/${_roundQueue.length})',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: Colors.brown.shade600,
                   ),
@@ -867,7 +926,11 @@ class LetterBasketGameState extends State<LetterBasketGame>
             height: 46,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFFFFB300), Color(0xFFFF8F00), Color(0xFFE65100)],
+                colors: [
+                  Color(0xFFFFB300),
+                  Color(0xFFFF8F00),
+                  Color(0xFFE65100),
+                ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -890,9 +953,7 @@ class LetterBasketGameState extends State<LetterBasketGame>
               children: [
                 // Basket Wicker Crosshatch Lines (Custom kid pattern)
                 Positioned.fill(
-                  child: CustomPaint(
-                    painter: _WickerPatternPainter(),
-                  ),
+                  child: CustomPaint(painter: _WickerPatternPainter()),
                 ),
                 // Cute Smiling Cartoon Face on Basket
                 Align(
@@ -1172,16 +1233,22 @@ class LetterBasketGameState extends State<LetterBasketGame>
                   margin: const EdgeInsets.symmetric(horizontal: 6),
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: earned ? const Color(0xFFFFF8E1) : const Color(0xFFECEFF1),
+                    color: earned
+                        ? const Color(0xFFFFF8E1)
+                        : const Color(0xFFECEFF1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: earned ? const Color(0xFFFFD54F) : Colors.grey.shade300,
+                      color: earned
+                          ? const Color(0xFFFFD54F)
+                          : Colors.grey.shade300,
                       width: 2,
                     ),
                   ),
                   child: Icon(
                     Icons.star_rounded,
-                    color: earned ? const Color(0xFFFFB300) : Colors.grey.shade400,
+                    color: earned
+                        ? const Color(0xFFFFB300)
+                        : Colors.grey.shade400,
                     size: 34,
                   ),
                 );
@@ -1203,26 +1270,73 @@ class LetterBasketGameState extends State<LetterBasketGame>
                   Expanded(
                     child: Column(
                       children: [
-                        const Text('Score', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
-                        Text('$_score', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFFE65100))),
+                        const Text(
+                          'Score',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF795548),
+                          ),
+                        ),
+                        Text(
+                          '$_score',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFFE65100),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  Container(width: 1, height: 26, color: Colors.orange.shade200),
+                  Container(
+                    width: 1,
+                    height: 26,
+                    color: Colors.orange.shade200,
+                  ),
                   Expanded(
                     child: Column(
                       children: [
-                        const Text('Caught', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
-                        Text('$_correctCatches', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF2E7D32))),
+                        const Text(
+                          'Caught',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF795548),
+                          ),
+                        ),
+                        Text(
+                          '$_correctCatches',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF2E7D32),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  Container(width: 1, height: 26, color: Colors.orange.shade200),
+                  Container(
+                    width: 1,
+                    height: 26,
+                    color: Colors.orange.shade200,
+                  ),
                   Expanded(
                     child: Column(
                       children: [
-                        const Text('Stars', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
-                        Text('+$starsEarned', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFFF57F17))),
+                        const Text(
+                          'Stars',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF795548),
+                          ),
+                        ),
+                        Text(
+                          '+$starsEarned',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFFF57F17),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1312,8 +1426,16 @@ class _WickerPatternPainter extends CustomPainter {
 
     // Diagonal lines
     for (double i = -size.height; i < size.width + size.height; i += 14) {
-      canvas.drawLine(Offset(i, 0), Offset(i + size.height, size.height), paint);
-      canvas.drawLine(Offset(i + size.height, 0), Offset(i, size.height), paint);
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i + size.height, size.height),
+        paint,
+      );
+      canvas.drawLine(
+        Offset(i + size.height, 0),
+        Offset(i, size.height),
+        paint,
+      );
     }
   }
 
@@ -1330,21 +1452,9 @@ class _BackgroundDecorations extends StatelessWidget {
     return IgnorePointer(
       child: Stack(
         children: [
-          Positioned(
-            top: 120,
-            left: 20,
-            child: _buildCloud(80, 44),
-          ),
-          Positioned(
-            top: 170,
-            right: 30,
-            child: _buildCloud(100, 52),
-          ),
-          Positioned(
-            top: 300,
-            left: 40,
-            child: _buildCloud(70, 38),
-          ),
+          Positioned(top: 120, left: 20, child: _buildCloud(80, 44)),
+          Positioned(top: 170, right: 30, child: _buildCloud(100, 52)),
+          Positioned(top: 300, left: 40, child: _buildCloud(70, 38)),
           Positioned(
             top: 220,
             left: 140,
@@ -1377,7 +1487,11 @@ class _BackgroundDecorations extends StatelessWidget {
   }
 
   Widget _buildSparkle(Color color, double size) {
-    return Icon(Icons.auto_awesome_rounded, color: color.withValues(alpha: 0.6), size: size);
+    return Icon(
+      Icons.auto_awesome_rounded,
+      color: color.withValues(alpha: 0.6),
+      size: size,
+    );
   }
 }
 

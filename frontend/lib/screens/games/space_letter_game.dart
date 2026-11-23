@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../models/game_content.dart';
 import '../../services/progress_service.dart';
 import 'mini_game_kit.dart';
@@ -13,7 +15,11 @@ class SpaceLetterGame extends StatefulWidget {
   final ProgressService progressService;
   final GameContent content;
 
-  const SpaceLetterGame({super.key, required this.progressService, required this.content});
+  const SpaceLetterGame({
+    super.key,
+    required this.progressService,
+    required this.content,
+  });
 
   @override
   State<SpaceLetterGame> createState() => _SpaceLetterGameState();
@@ -88,6 +94,7 @@ class _SpaceLetterGameState extends State<SpaceLetterGame> {
   double _shipX = 0.5; // 0..1 across the arena
   double _starScroll = 0;
   String _state = 'playing';
+  bool _showQ = false; // question popup visible (game paused)
   String? _feedback;
   bool _feedbackGood = true;
   Timer? _feedbackTimer;
@@ -121,13 +128,18 @@ class _SpaceLetterGameState extends State<SpaceLetterGame> {
       _spawnsSinceTarget = 0;
       _spawnTimer = 0.3;
       _shipX = 0.5;
+      _showQ = _rounds.isNotEmpty;
       _state = _rounds.isEmpty ? 'won' : 'playing';
     });
-    _timer = Timer.periodic(const Duration(milliseconds: 16), (_) => _tick(0.016));
+    _timer = Timer.periodic(
+      const Duration(milliseconds: 16),
+      (_) => _tick(0.016),
+    );
   }
 
   void _tick(double dt) {
-    if (_state != 'playing' || !mounted || _arena == Size.zero) return;
+    if (_state != 'playing' || _showQ || !mounted || _arena == Size.zero)
+      return;
     final w = _arena.width;
     final h = _arena.height;
     _starScroll = (_starScroll + dt * 0.04) % 1.0;
@@ -182,7 +194,8 @@ class _SpaceLetterGameState extends State<SpaceLetterGame> {
     final target = _round.target;
     final targetShowing = _rocks.any((r) => r.letter == target);
     String letter;
-    if (!targetShowing && (_spawnsSinceTarget >= 2 || _rng.nextDouble() < 0.45)) {
+    if (!targetShowing &&
+        (_spawnsSinceTarget >= 2 || _rng.nextDouble() < 0.45)) {
       letter = target;
       _spawnsSinceTarget = 0;
     } else {
@@ -191,22 +204,27 @@ class _SpaceLetterGameState extends State<SpaceLetterGame> {
       _spawnsSinceTarget++;
     }
     final radius = 30.0 + _rng.nextDouble() * 6;
-    _rocks.add(_Asteroid(
-      id: _idCounter++,
-      letter: letter,
-      radius: radius,
-      vy: (42 + _rng.nextDouble() * 22) * _speed,
-      color: _rockColors[_rng.nextInt(_rockColors.length)],
-      x: radius + _rng.nextDouble() * (w - radius * 2),
-      y: -radius,
-    ));
+    _rocks.add(
+      _Asteroid(
+        id: _idCounter++,
+        letter: letter,
+        radius: radius,
+        vy: (42 + _rng.nextDouble() * 22) * _speed,
+        color: _rockColors[_rng.nextInt(_rockColors.length)],
+        x: radius + _rng.nextDouble() * (w - radius * 2),
+        y: -radius,
+      ),
+    );
   }
 
   void _onRockHit(_Asteroid rock) {
     if (rock.letter == _round.target) {
       HapticFeedback.lightImpact();
       _blasts.add(_Blast(rock.x, rock.y, true));
-      _showFeedback(['Zap! ⭐', 'Great shot! 🚀', 'Super! 🌟'][_rng.nextInt(3)], true);
+      _showFeedback(
+        ['Zap! ⭐', 'Great shot! 🚀', 'Super! 🌟'][_rng.nextInt(3)],
+        true,
+      );
       if (_roundIndex + 1 >= _rounds.length) {
         _timer?.cancel();
         rewardMiniGameWin(widget.progressService, widget.content);
@@ -217,6 +235,10 @@ class _SpaceLetterGameState extends State<SpaceLetterGame> {
         return;
       }
       _roundIndex++;
+      if (promptFor(widget.content, _round.level) !=
+          promptFor(widget.content, _rounds[_roundIndex - 1].level)) {
+        _showQ = true;
+      }
       // Clear the sky so the new target is easy to spot.
       for (final r in _rocks) {
         _blasts.add(_Blast(r.x, r.y, true));
@@ -251,69 +273,90 @@ class _SpaceLetterGameState extends State<SpaceLetterGame> {
   }
 
   void _fire() {
-    if (_state != 'playing' || _fireCooldown > 0 || _lasers.length >= 4) return;
+    if (_state != 'playing' ||
+        _showQ ||
+        _fireCooldown > 0 ||
+        _lasers.length >= 4)
+      return;
     _fireCooldown = 0.22;
     _lasers.add(_Laser(_shipX * _arena.width, _shipY));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0B1033),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                MiniGameHud(
-                  title: widget.content.game.title,
-                  done: _roundIndex.clamp(0, _rounds.length),
-                  total: _rounds.length,
-                  hearts: _hearts,
-                  color: _color,
-                ),
-                if (_rounds.isNotEmpty)
-                  MiniTargetBanner(
-                    label: 'Shoot the ${_round.target} asteroid!',
-                    target: _round.target,
-                    prompt: promptFor(widget.content, _round.level),
+    return QuestionPopupHost(
+      show: _showQ && _state == 'playing' && _rounds.isNotEmpty,
+      question: _rounds.isEmpty ? '' : promptFor(widget.content, _round.level),
+      target: _rounds.isEmpty ? null : _round.target,
+      label: 'QUESTION ${_roundIndex + 1}/${_rounds.length}',
+      hint: 'Shoot the asteroid with the right letter!',
+      emoji: '🚀',
+      onStart: () => setState(() => _showQ = false),
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0B1033),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  MiniGameHud(
+                    title: widget.content.game.title,
+                    done: _roundIndex.clamp(0, _rounds.length),
+                    total: _rounds.length,
+                    hearts: _hearts,
                     color: _color,
                   ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, c) {
-                      _arena = Size(c.maxWidth, c.maxHeight);
-                      return GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTapDown: (d) {
-                          _moveShip(d.localPosition.dx);
-                          _fire();
-                        },
-                        onHorizontalDragUpdate: (d) => _moveShip(d.localPosition.dx),
-                        child: ClipRect(child: _buildArena()),
-                      );
-                    },
+                  if (_rounds.isNotEmpty)
+                    MiniTargetBanner(
+                      label: 'Shoot the ${_round.target} asteroid!',
+                      target: _round.target,
+                      prompt: promptFor(widget.content, _round.level),
+                      color: _color,
+                    ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, c) {
+                        _arena = Size(c.maxWidth, c.maxHeight);
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTapDown: (d) {
+                            _moveShip(d.localPosition.dx);
+                            _fire();
+                          },
+                          onHorizontalDragUpdate: (d) =>
+                              _moveShip(d.localPosition.dx),
+                          child: ClipRect(child: _buildArena()),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              Positioned(
+                top: 150,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: MiniFeedbackBubble(
+                    text: _feedback,
+                    good: _feedbackGood,
                   ),
                 ),
-              ],
-            ),
-            Positioned(
-              top: 150,
-              left: 0,
-              right: 0,
-              child: Center(child: MiniFeedbackBubble(text: _feedback, good: _feedbackGood)),
-            ),
-            if (_state != 'playing')
-              Positioned.fill(
-                child: MiniGameEndOverlay(
-                  won: _state == 'won',
-                  message: _state == 'won' ? 'You cleared the letter galaxy!' : 'Too many wrong asteroids.',
-                  content: widget.content,
-                  onReplay: _start,
-                ),
               ),
-          ],
+              if (_state != 'playing')
+                Positioned.fill(
+                  child: MiniGameEndOverlay(
+                    won: _state == 'won',
+                    message: _state == 'won'
+                        ? 'You cleared the letter galaxy!'
+                        : 'Too many wrong asteroids.',
+                    content: widget.content,
+                    onReplay: _start,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -338,10 +381,19 @@ class _SpaceLetterGameState extends State<SpaceLetterGame> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   center: const Alignment(-0.3, -0.4),
-                  colors: [Colors.white.withValues(alpha: 0.9), r.color, Color.lerp(r.color, Colors.black, 0.45)!],
+                  colors: [
+                    Colors.white.withValues(alpha: 0.9),
+                    r.color,
+                    Color.lerp(r.color, Colors.black, 0.45)!,
+                  ],
                   stops: const [0.0, 0.45, 1.0],
                 ),
-                boxShadow: [BoxShadow(color: r.color.withValues(alpha: 0.6), blurRadius: 12)],
+                boxShadow: [
+                  BoxShadow(
+                    color: r.color.withValues(alpha: 0.6),
+                    blurRadius: 12,
+                  ),
+                ],
               ),
               alignment: Alignment.center,
               padding: const EdgeInsets.all(6),
@@ -369,7 +421,9 @@ class _SpaceLetterGameState extends State<SpaceLetterGame> {
               decoration: BoxDecoration(
                 color: const Color(0xFF67E8F9),
                 borderRadius: BorderRadius.circular(3),
-                boxShadow: const [BoxShadow(color: Color(0xFF22D3EE), blurRadius: 8)],
+                boxShadow: const [
+                  BoxShadow(color: Color(0xFF22D3EE), blurRadius: 8),
+                ],
               ),
             ),
           ),
@@ -382,7 +436,10 @@ class _SpaceLetterGameState extends State<SpaceLetterGame> {
             child: Opacity(
               opacity: (b.life / 0.6).clamp(0.0, 1.0),
               child: Center(
-                child: Text(b.good ? '💥' : '❌', style: const TextStyle(fontSize: 38)),
+                child: Text(
+                  b.good ? '💥' : '❌',
+                  style: const TextStyle(fontSize: 38),
+                ),
               ),
             ),
           ),
@@ -393,7 +450,9 @@ class _SpaceLetterGameState extends State<SpaceLetterGame> {
           width: _shipSize,
           height: _shipSize,
           child: Transform.rotate(
-            angle: -math.pi / 4, // the 🚀 emoji points up-right; turn it straight up
+            angle:
+                -math.pi /
+                4, // the 🚀 emoji points up-right; turn it straight up
             child: const FittedBox(child: Text('🚀')),
           ),
         ),
@@ -404,7 +463,11 @@ class _SpaceLetterGameState extends State<SpaceLetterGame> {
           child: Text(
             'Drag to move • Tap to fire',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 12, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.55),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],
@@ -425,7 +488,11 @@ class _StarFieldPainter extends CustomPainter {
       final s = stars[i];
       final y = ((s.dy + scroll * (1 + (i % 3) * 0.5)) % 1.0) * size.height;
       paint.color = Colors.white.withValues(alpha: 0.35 + (i % 4) * 0.15);
-      canvas.drawCircle(Offset(s.dx * size.width, y), 1.0 + (i % 3) * 0.6, paint);
+      canvas.drawCircle(
+        Offset(s.dx * size.width, y),
+        1.0 + (i % 3) * 0.6,
+        paint,
+      );
     }
   }
 

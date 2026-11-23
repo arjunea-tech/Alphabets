@@ -1,4 +1,5 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -9,12 +10,9 @@ import '../../models/letter_model.dart';
 import '../../services/progress_service.dart';
 import '../../widgets/bouncy_button.dart';
 import '../../widgets/next_level_button.dart';
+import 'mini_game_kit.dart';
 
-enum MovementDirection {
-  idle,
-  left,
-  right,
-}
+enum MovementDirection { idle, left, right }
 
 class FloatingScoreText {
   double x;
@@ -76,7 +74,8 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     if (_currentLevel.targetLetters.isEmpty) {
       return widget.content.targetLetters.first;
     }
-    return _currentLevel.targetLetters[_currentTargetLetterIdx % _currentLevel.targetLetters.length];
+    return _currentLevel.targetLetters[_currentTargetLetterIdx %
+        _currentLevel.targetLetters.length];
   }
 
   // Player Physics & Animation
@@ -144,18 +143,45 @@ class _AgaramRunGameState extends State<AgaramRunGame>
   }
 
   void _buildLevels() {
-
     // Modern 3300px World with Variety of Floating Platforms
     final level1Platforms = <PlatformTile>[
       // Start Platform
-      PlatformTile(id: 1, x: 0, y: 320, width: 440, height: 140, type: PlatformType.ground),
+      PlatformTile(
+        id: 1,
+        x: 0,
+        y: 320,
+        width: 440,
+        height: 140,
+        type: PlatformType.ground,
+      ),
 
       // Stepping stones
-      PlatformTile(id: 2, x: 500, y: 260, width: 140, height: 36, type: PlatformType.floating),
-      PlatformTile(id: 3, x: 700, y: 210, width: 140, height: 36, type: PlatformType.floating),
+      PlatformTile(
+        id: 2,
+        x: 500,
+        y: 260,
+        width: 140,
+        height: 36,
+        type: PlatformType.floating,
+      ),
+      PlatformTile(
+        id: 3,
+        x: 700,
+        y: 210,
+        width: 140,
+        height: 36,
+        type: PlatformType.floating,
+      ),
 
       // Mid ground platform 2
-      PlatformTile(id: 4, x: 890, y: 320, width: 500, height: 140, type: PlatformType.ground),
+      PlatformTile(
+        id: 4,
+        x: 890,
+        y: 320,
+        width: 500,
+        height: 140,
+        type: PlatformType.ground,
+      ),
 
       // Futuristic moving hover platform over gap
       PlatformTile(
@@ -171,43 +197,160 @@ class _AgaramRunGameState extends State<AgaramRunGame>
       ),
 
       // Ground platform 3
-      PlatformTile(id: 6, x: 1780, y: 320, width: 560, height: 140, type: PlatformType.ground),
+      PlatformTile(
+        id: 6,
+        x: 1780,
+        y: 320,
+        width: 560,
+        height: 140,
+        type: PlatformType.ground,
+      ),
 
       // Elevated floating route
-      PlatformTile(id: 7, x: 2100, y: 195, width: 150, height: 34, type: PlatformType.floating),
-      PlatformTile(id: 8, x: 2320, y: 155, width: 150, height: 34, type: PlatformType.floating),
+      PlatformTile(
+        id: 7,
+        x: 2100,
+        y: 195,
+        width: 150,
+        height: 34,
+        type: PlatformType.floating,
+      ),
+      PlatformTile(
+        id: 8,
+        x: 2320,
+        y: 155,
+        width: 150,
+        height: 34,
+        type: PlatformType.floating,
+      ),
 
       // Finish Ground Runway
-      PlatformTile(id: 9, x: 2520, y: 320, width: 800, height: 140, type: PlatformType.ground),
+      PlatformTile(
+        id: 9,
+        x: 2520,
+        y: 320,
+        width: 800,
+        height: 140,
+        type: PlatformType.ground,
+      ),
     ];
 
     // Collectibles (Target Letters + Bonus Stars)
-    List<CollectibleItem> collectiblesFor(List<LetterModel> letters) => <CollectibleItem>[
-      CollectibleItem(id: 1, x: 220, y: 250, type: CollectibleType.targetLetter, letterModel: letters[0 % letters.length]), // A
+    List<CollectibleItem> collectiblesFor(
+      List<LetterModel> letters,
+    ) => <CollectibleItem>[
+      CollectibleItem(
+        id: 1,
+        x: 220,
+        y: 250,
+        type: CollectibleType.targetLetter,
+        letterModel: letters[0 % letters.length],
+      ), // A
       CollectibleItem(id: 2, x: 340, y: 230, type: CollectibleType.bonusStar),
 
-      CollectibleItem(id: 3, x: 570, y: 195, type: CollectibleType.targetLetter, letterModel: letters[1 % letters.length]), // B
-      CollectibleItem(id: 4, x: 770, y: 145, type: CollectibleType.targetLetter, letterModel: letters[2 % letters.length]), // C
+      CollectibleItem(
+        id: 3,
+        x: 570,
+        y: 195,
+        type: CollectibleType.targetLetter,
+        letterModel: letters[1 % letters.length],
+      ), // B
+      CollectibleItem(
+        id: 4,
+        x: 770,
+        y: 145,
+        type: CollectibleType.targetLetter,
+        letterModel: letters[2 % letters.length],
+      ), // C
 
-      CollectibleItem(id: 5, x: 1050, y: 245, type: CollectibleType.targetLetter, letterModel: letters[3 % letters.length]), // D
+      CollectibleItem(
+        id: 5,
+        x: 1050,
+        y: 245,
+        type: CollectibleType.targetLetter,
+        letterModel: letters[3 % letters.length],
+      ), // D
       CollectibleItem(id: 6, x: 1200, y: 215, type: CollectibleType.bonusStar),
 
-      CollectibleItem(id: 7, x: 1580, y: 165, type: CollectibleType.targetLetter, letterModel: letters[4 % letters.length]), // E
-      CollectibleItem(id: 8, x: 1920, y: 245, type: CollectibleType.targetLetter, letterModel: letters[5 % letters.length]), // F
+      CollectibleItem(
+        id: 7,
+        x: 1580,
+        y: 165,
+        type: CollectibleType.targetLetter,
+        letterModel: letters[4 % letters.length],
+      ), // E
+      CollectibleItem(
+        id: 8,
+        x: 1920,
+        y: 245,
+        type: CollectibleType.targetLetter,
+        letterModel: letters[5 % letters.length],
+      ), // F
 
-      CollectibleItem(id: 9, x: 2175, y: 130, type: CollectibleType.targetLetter, letterModel: letters[6 % letters.length]), // G
-      CollectibleItem(id: 10, x: 2395, y: 90, type: CollectibleType.targetLetter, letterModel: letters[7 % letters.length]), // H
+      CollectibleItem(
+        id: 9,
+        x: 2175,
+        y: 130,
+        type: CollectibleType.targetLetter,
+        letterModel: letters[6 % letters.length],
+      ), // G
+      CollectibleItem(
+        id: 10,
+        x: 2395,
+        y: 90,
+        type: CollectibleType.targetLetter,
+        letterModel: letters[7 % letters.length],
+      ), // H
 
-      CollectibleItem(id: 11, x: 2650, y: 245, type: CollectibleType.targetLetter, letterModel: letters[8 % letters.length]), // I
-      CollectibleItem(id: 12, x: 2850, y: 245, type: CollectibleType.targetLetter, letterModel: letters[9 % letters.length]), // J
-      CollectibleItem(id: 13, x: 3020, y: 245, type: CollectibleType.targetLetter, letterModel: letters[10 % letters.length]), // K
+      CollectibleItem(
+        id: 11,
+        x: 2650,
+        y: 245,
+        type: CollectibleType.targetLetter,
+        letterModel: letters[8 % letters.length],
+      ), // I
+      CollectibleItem(
+        id: 12,
+        x: 2850,
+        y: 245,
+        type: CollectibleType.targetLetter,
+        letterModel: letters[9 % letters.length],
+      ), // J
+      CollectibleItem(
+        id: 13,
+        x: 3020,
+        y: 245,
+        type: CollectibleType.targetLetter,
+        letterModel: letters[10 % letters.length],
+      ), // K
     ];
 
     // Modern Obstacles
     final level1Obstacles = <ObstacleItem>[
-      ObstacleItem(id: 1, x: 1000, y: 286, width: 34, height: 34, type: ObstacleType.rock),
-      ObstacleItem(id: 2, x: 1250, y: 282, width: 36, height: 38, type: ObstacleType.woodenLog),
-      ObstacleItem(id: 3, x: 1980, y: 286, width: 34, height: 34, type: ObstacleType.rock),
+      ObstacleItem(
+        id: 1,
+        x: 1000,
+        y: 286,
+        width: 34,
+        height: 34,
+        type: ObstacleType.rock,
+      ),
+      ObstacleItem(
+        id: 2,
+        x: 1250,
+        y: 282,
+        width: 36,
+        height: 38,
+        type: ObstacleType.woodenLog,
+      ),
+      ObstacleItem(
+        id: 3,
+        x: 1980,
+        y: 286,
+        width: 34,
+        height: 34,
+        type: ObstacleType.rock,
+      ),
       ObstacleItem(
         id: 4,
         x: 2750,
@@ -227,13 +370,19 @@ class _AgaramRunGameState extends State<AgaramRunGame>
           final letters = widget.content.lettersFor(adminLevels[i].targets);
           return AgaramRunLevel(
             levelNumber: i + 1,
-            title: adminLevels[i].title.isNotEmpty ? adminLevels[i].title : widget.content.game.title,
+            title: adminLevels[i].title.isNotEmpty
+                ? adminLevels[i].title
+                : widget.content.game.title,
             subtitle: widget.content.isLevelMode
                 ? 'Level ${widget.content.levelIndex! + 1} of ${widget.content.game.playableLevels.length}'
                 : 'Level ${i + 1} of ${adminLevels.length}',
-            description: adminLevels[i].prompt.isNotEmpty ? adminLevels[i].prompt : widget.content.game.prompt,
+            description: adminLevels[i].prompt.isNotEmpty
+                ? adminLevels[i].prompt
+                : widget.content.game.prompt,
             // 11 letter slots on the track, filled in order from the admin's targets
-            targetLetters: [for (var k = 0; k < 11; k++) letters[k % letters.length]],
+            targetLetters: [
+              for (var k = 0; k < 11; k++) letters[k % letters.length],
+            ],
             worldWidth: 3300,
             platforms: level1Platforms,
             collectibles: collectiblesFor(letters),
@@ -245,40 +394,52 @@ class _AgaramRunGameState extends State<AgaramRunGame>
   }
 
   void _loadLevelData() {
-    _platforms = _currentLevel.platforms.map((p) => PlatformTile(
-      id: p.id,
-      x: p.x,
-      y: p.y,
-      width: p.width,
-      height: p.height,
-      type: p.type,
-      minX: p.minX,
-      maxX: p.maxX,
-      speedX: p.speedX,
-      moveDirection: p.moveDirection,
-      primaryColor: p.primaryColor,
-      accentColor: p.accentColor,
-    )).toList();
+    _platforms = _currentLevel.platforms
+        .map(
+          (p) => PlatformTile(
+            id: p.id,
+            x: p.x,
+            y: p.y,
+            width: p.width,
+            height: p.height,
+            type: p.type,
+            minX: p.minX,
+            maxX: p.maxX,
+            speedX: p.speedX,
+            moveDirection: p.moveDirection,
+            primaryColor: p.primaryColor,
+            accentColor: p.accentColor,
+          ),
+        )
+        .toList();
 
-    _collectibles = _currentLevel.collectibles.map((c) => CollectibleItem(
-      id: c.id,
-      x: c.x,
-      y: c.y,
-      type: c.type,
-      letterModel: c.letterModel,
-      isCollected: false,
-    )).toList();
+    _collectibles = _currentLevel.collectibles
+        .map(
+          (c) => CollectibleItem(
+            id: c.id,
+            x: c.x,
+            y: c.y,
+            type: c.type,
+            letterModel: c.letterModel,
+            isCollected: false,
+          ),
+        )
+        .toList();
 
-    _obstacles = _currentLevel.obstacles.map((o) => ObstacleItem(
-      id: o.id,
-      x: o.x,
-      y: o.y,
-      width: o.width,
-      height: o.height,
-      type: o.type,
-      patrolRange: o.patrolRange,
-      startX: o.startX,
-    )).toList();
+    _obstacles = _currentLevel.obstacles
+        .map(
+          (o) => ObstacleItem(
+            id: o.id,
+            x: o.x,
+            y: o.y,
+            width: o.width,
+            height: o.height,
+            type: o.type,
+            patrolRange: o.patrolRange,
+            startX: o.startX,
+          ),
+        )
+        .toList();
 
     _playerX = 60.0;
     _playerY = 220.0;
@@ -398,11 +559,15 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     bool foundGround = false;
 
     for (final p in _platforms) {
-      final overlapsX = (playerRight - 4.0) > p.x && (playerLeft + 4.0) < (p.x + p.width);
+      final overlapsX =
+          (playerRight - 4.0) > p.x && (playerLeft + 4.0) < (p.x + p.width);
 
       if (overlapsX) {
         if (_playerVy >= 0) {
-          final isLanding = prevFeet <= p.y + 16.0 && playerFeet >= p.y - 4.0 && playerFeet <= p.y + p.height + 16.0;
+          final isLanding =
+              prevFeet <= p.y + 16.0 &&
+              playerFeet >= p.y - 4.0 &&
+              playerFeet <= p.y + p.height + 16.0;
           if (isLanding) {
             _playerY = p.y - playerHeight;
             _playerVy = 0.0;
@@ -454,16 +619,18 @@ class _AgaramRunGameState extends State<AgaramRunGame>
   void _emitRunningDust() {
     if (!_isGrounded) return;
     if (_rng.nextDouble() < 0.28) {
-      _particles.add(AgaramRunParticle(
-        x: _playerX + (_facingDirection == 1 ? 4 : 28),
-        y: _playerY + 42,
-        vx: -_facingDirection * (30.0 + _rng.nextDouble() * 40.0),
-        vy: -15.0 - _rng.nextDouble() * 25.0,
-        color: Colors.white70,
-        size: 2.5 + _rng.nextDouble() * 2.0,
-        life: 0.35,
-        maxLife: 0.35,
-      ));
+      _particles.add(
+        AgaramRunParticle(
+          x: _playerX + (_facingDirection == 1 ? 4 : 28),
+          y: _playerY + 42,
+          vx: -_facingDirection * (30.0 + _rng.nextDouble() * 40.0),
+          vy: -15.0 - _rng.nextDouble() * 25.0,
+          color: Colors.white70,
+          size: 2.5 + _rng.nextDouble() * 2.0,
+          life: 0.35,
+          maxLife: 0.35,
+        ),
+      );
     }
   }
 
@@ -481,8 +648,17 @@ class _AgaramRunGameState extends State<AgaramRunGame>
           _starsCollected++;
           _showToast('Star! +5 ⭐', const Color(0xFFFBBF24));
           _emitSparkles(item.x, item.y, const Color(0xFFFBBF24));
-          _floatingScores.add(FloatingScoreText(x: item.x, y: item.y - 10, text: '+5 ⭐', color: const Color(0xFFFBBF24)));
-          try { HapticFeedback.lightImpact(); } catch (_) {}
+          _floatingScores.add(
+            FloatingScoreText(
+              x: item.x,
+              y: item.y - 10,
+              text: '+5 ⭐',
+              color: const Color(0xFFFBBF24),
+            ),
+          );
+          try {
+            HapticFeedback.lightImpact();
+          } catch (_) {}
         } else if (item.type == CollectibleType.targetLetter) {
           final letter = item.letter;
           final target = _currentTargetLetter.letter;
@@ -492,17 +668,36 @@ class _AgaramRunGameState extends State<AgaramRunGame>
             _score += 15;
             _lettersCollected++;
             _showToast('Great! "$letter" +15 ⭐', const Color(0xFF10B981));
-            _emitSparkles(item.x, item.y, const Color(0xFF10B981), isLetterBurst: true);
-            _floatingScores.add(FloatingScoreText(x: item.x, y: item.y - 15, text: '+15 "$letter"', color: const Color(0xFF10B981)));
+            _emitSparkles(
+              item.x,
+              item.y,
+              const Color(0xFF10B981),
+              isLetterBurst: true,
+            );
+            _floatingScores.add(
+              FloatingScoreText(
+                x: item.x,
+                y: item.y - 15,
+                text: '+15 "$letter"',
+                color: const Color(0xFF10B981),
+              ),
+            );
 
             widget.progressService?.markLetterCompleted(item.letterModel!.id);
             _currentTargetLetterIdx++;
-            try { HapticFeedback.mediumImpact(); } catch (_) {}
+            try {
+              HapticFeedback.mediumImpact();
+            } catch (_) {}
           } else {
             // Friendly gently reminder, no speech
-            _showToast('This is "$letter" - Look for "$target"!', const Color(0xFFF97316));
+            _showToast(
+              'This is "$letter" - Look for "$target"!',
+              const Color(0xFFF97316),
+            );
             _emitSparkles(item.x, item.y, const Color(0xFFF97316));
-            try { HapticFeedback.selectionClick(); } catch (_) {}
+            try {
+              HapticFeedback.selectionClick();
+            } catch (_) {}
           }
         }
       }
@@ -540,7 +735,9 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     }
 
     _showToast('Watch out! ❤️ -1', const Color(0xFFEF4444));
-    try { HapticFeedback.heavyImpact(); } catch (_) {}
+    try {
+      HapticFeedback.heavyImpact();
+    } catch (_) {}
 
     if (_lives <= 0) {
       _onGameOver();
@@ -552,7 +749,9 @@ class _AgaramRunGameState extends State<AgaramRunGame>
       _playerVy = -480.0;
       _isGrounded = false;
       _coyoteTimer = 0.0;
-      try { HapticFeedback.mediumImpact(); } catch (_) {}
+      try {
+        HapticFeedback.mediumImpact();
+      } catch (_) {}
       _emitJumpDust(_playerX + 16, _playerY + 44);
     }
   }
@@ -574,7 +773,9 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     widget.progressService?.addStars(widget.content.game.starsReward);
     widget.progressService?.completeActiveGameLevel();
     widget.progressService?.recordGameCompleted(3);
-    try { HapticFeedback.heavyImpact(); } catch (_) {}
+    try {
+      HapticFeedback.heavyImpact();
+    } catch (_) {}
   }
 
   void _onGameOver() {
@@ -596,35 +797,44 @@ class _AgaramRunGameState extends State<AgaramRunGame>
     for (int i = 0; i < 9; i++) {
       final angle = (pi / 6) + _rng.nextDouble() * (2 * pi / 3);
       final speed = 35.0 + _rng.nextDouble() * 65.0;
-      _particles.add(AgaramRunParticle(
-        x: x,
-        y: y,
-        vx: cos(angle) * speed * (_rng.nextBool() ? 1 : -1),
-        vy: -(sin(angle) * speed).abs(),
-        color: Colors.white70,
-        size: 3.0 + _rng.nextDouble() * 2.5,
-        life: 0.35,
-        maxLife: 0.35,
-      ));
+      _particles.add(
+        AgaramRunParticle(
+          x: x,
+          y: y,
+          vx: cos(angle) * speed * (_rng.nextBool() ? 1 : -1),
+          vy: -(sin(angle) * speed).abs(),
+          color: Colors.white70,
+          size: 3.0 + _rng.nextDouble() * 2.5,
+          life: 0.35,
+          maxLife: 0.35,
+        ),
+      );
     }
   }
 
-  void _emitSparkles(double x, double y, Color color, {bool isLetterBurst = false}) {
+  void _emitSparkles(
+    double x,
+    double y,
+    Color color, {
+    bool isLetterBurst = false,
+  }) {
     final count = isLetterBurst ? 24 : 12;
     for (int i = 0; i < count; i++) {
       final angle = _rng.nextDouble() * 2 * pi;
       final speed = 60.0 + _rng.nextDouble() * 140.0;
-      _particles.add(AgaramRunParticle(
-        x: x,
-        y: y,
-        vx: cos(angle) * speed,
-        vy: sin(angle) * speed,
-        color: i % 2 == 0 ? color : Colors.white,
-        size: 2.8 + _rng.nextDouble() * 3.5,
-        life: 0.55,
-        maxLife: 0.55,
-        isStar: _rng.nextBool(),
-      ));
+      _particles.add(
+        AgaramRunParticle(
+          x: x,
+          y: y,
+          vx: cos(angle) * speed,
+          vy: sin(angle) * speed,
+          color: i % 2 == 0 ? color : Colors.white,
+          size: 2.8 + _rng.nextDouble() * 3.5,
+          life: 0.55,
+          maxLife: 0.55,
+          isStar: _rng.nextBool(),
+        ),
+      );
     }
   }
 
@@ -666,7 +876,8 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                 onTapDown: (details) {
                   // Tap on right half of screen triggers jump
                   final screenW = MediaQuery.of(context).size.width;
-                  if (details.localPosition.dx > screenW * 0.55 && _gameState == 'playing') {
+                  if (details.localPosition.dx > screenW * 0.55 &&
+                      _gameState == 'playing') {
                     _triggerJump();
                   }
                 },
@@ -722,7 +933,10 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                     child: Opacity(
                       opacity: _toastOpacity,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: _toastColor.withOpacity(0.95),
                           borderRadius: BorderRadius.circular(24),
@@ -749,7 +963,20 @@ class _AgaramRunGameState extends State<AgaramRunGame>
               ),
 
             // Overlays
-            if (_gameState == 'start') _buildStartScreen(),
+            if (_gameState == 'start')
+              Positioned.fill(
+                child: QuestionPopup(
+                  question: _currentLevel.description,
+                  target: _currentLevel.targetLetters
+                      .map((l) => l.letter)
+                      .toSet()
+                      .join('  '),
+                  label: _currentLevel.subtitle.toUpperCase(),
+                  hint: 'Run, jump and collect these letters in order!',
+                  emoji: '🏃',
+                  onStart: _startGame,
+                ),
+              ),
             if (_gameState == 'paused') _buildPauseScreen(),
             if (_gameState == 'victory') _buildVictoryScreen(),
             if (_gameState == 'game_over') _buildGameOverScreen(),
@@ -787,7 +1014,11 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                 color: Colors.white.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
           ),
 
@@ -815,7 +1046,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                   const Text(
                     'TARGET: ',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 20,
                       fontWeight: FontWeight.w900,
                       color: Colors.white70,
                       letterSpacing: 0.5,
@@ -824,7 +1055,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                   Text(
                     _currentTargetLetter.letter,
                     style: const TextStyle(
-                      fontSize: 28,
+                      fontSize: 44,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
                     ),
@@ -842,8 +1073,12 @@ class _AgaramRunGameState extends State<AgaramRunGame>
               Row(
                 children: List.generate(3, (idx) {
                   return Icon(
-                    idx < _lives ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                    color: idx < _lives ? const Color(0xFFEF4444) : Colors.white24,
+                    idx < _lives
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    color: idx < _lives
+                        ? const Color(0xFFEF4444)
+                        : Colors.white24,
                     size: 18,
                   );
                 }),
@@ -859,7 +1094,11 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 16),
+                    const Icon(
+                      Icons.star_rounded,
+                      color: Color(0xFFFBBF24),
+                      size: 16,
+                    ),
                     const SizedBox(width: 3),
                     Text(
                       '$_score',
@@ -889,7 +1128,11 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                     color: Colors.white.withOpacity(0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.pause_rounded, color: Colors.white, size: 18),
+                  child: const Icon(
+                    Icons.pause_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                 ),
               ),
             ],
@@ -947,10 +1190,14 @@ class _AgaramRunGameState extends State<AgaramRunGame>
         width: 68,
         height: 68,
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF38BDF8).withOpacity(0.4) : Colors.black.withOpacity(0.45),
+          color: isActive
+              ? const Color(0xFF38BDF8).withOpacity(0.4)
+              : Colors.black.withOpacity(0.45),
           shape: BoxShape.circle,
           border: Border.all(
-            color: isActive ? const Color(0xFF38BDF8) : Colors.white.withOpacity(0.35),
+            color: isActive
+                ? const Color(0xFF38BDF8)
+                : Colors.white.withOpacity(0.35),
             width: 2.2,
           ),
           boxShadow: [
@@ -961,9 +1208,7 @@ class _AgaramRunGameState extends State<AgaramRunGame>
             ),
           ],
         ),
-        child: Center(
-          child: Icon(icon, color: Colors.white, size: 28),
-        ),
+        child: Center(child: Icon(icon, color: Colors.white, size: 28)),
       ),
     );
   }
@@ -1014,117 +1259,6 @@ class _AgaramRunGameState extends State<AgaramRunGame>
   }
 
   // Modern Start Screen
-  Widget _buildStartScreen() {
-    return Container(
-      color: Colors.black.withOpacity(0.65),
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 380),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: const Color(0xFF38BDF8), width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF38BDF8).withOpacity(0.25),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Mascot / Icon
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFF38BDF8), Color(0xFF0284C7)]),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2.5),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.directions_run_rounded, color: Colors.white, size: 48),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                const Text(
-                  'ALPHABET RUNNER',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Collect the target letters and dash to the finish line!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: Colors.white70),
-                ),
-                const SizedBox(height: 24),
-
-                // Controls Tutorial
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.06),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Row(children: [
-                        Icon(Icons.touch_app_rounded, color: Color(0xFF38BDF8), size: 18),
-                        SizedBox(width: 6),
-                        Text('◀ ▶ Move', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-                      ]),
-                      Row(children: [
-                        Icon(Icons.arrow_upward_rounded, color: Color(0xFFF97316), size: 18),
-                        SizedBox(width: 6),
-                        Text('▲ Jump', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-                      ]),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                BouncyButton(
-                  onPressed: _startGame,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'START RUNNING 🏃',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Modern Pause Screen
   Widget _buildPauseScreen() {
     return Container(
       color: Colors.black.withOpacity(0.65),
@@ -1140,7 +1274,14 @@ class _AgaramRunGameState extends State<AgaramRunGame>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('GAME PAUSED', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+              const Text(
+                'GAME PAUSED',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
               const SizedBox(height: 20),
               BouncyButton(
                 onPressed: () => setState(() => _gameState = 'playing'),
@@ -1148,11 +1289,19 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFF38BDF8), Color(0xFF0284C7)]),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF38BDF8), Color(0xFF0284C7)],
+                    ),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Center(
-                    child: Text('Resume', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      'Resume',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -1167,7 +1316,13 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Center(
-                    child: Text('Exit Game', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      'Exit Game',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -1198,11 +1353,19 @@ class _AgaramRunGameState extends State<AgaramRunGame>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.emoji_events_rounded, color: Color(0xFFFBBF24), size: 68),
+              const Icon(
+                Icons.emoji_events_rounded,
+                color: Color(0xFFFBBF24),
+                size: 68,
+              ),
               const SizedBox(height: 12),
               const Text(
                 'RUN COMPLETE! 🎉',
-                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 6),
               const Text(
@@ -1213,7 +1376,10 @@ class _AgaramRunGameState extends State<AgaramRunGame>
               const SizedBox(height: 18),
 
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(16),
@@ -1222,16 +1388,48 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    Column(children: [
-                      const Text('LETTERS', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 2),
-                      Text('$_lettersCollected', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
-                    ]),
-                    Column(children: [
-                      const Text('SCORE', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 2),
-                      Text('$_score pts', style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 18, fontWeight: FontWeight.w900)),
-                    ]),
+                    Column(
+                      children: [
+                        const Text(
+                          'LETTERS',
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$_lettersCollected',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        const Text(
+                          'SCORE',
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$_score pts',
+                          style: const TextStyle(
+                            color: Color(0xFFFBBF24),
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -1244,12 +1442,21 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                   BouncyButton(
                     onPressed: () => Navigator.pop(context),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white12,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Text('Back to Games', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Back to Games',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1260,17 +1467,29 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                         _currentLevelIndex++;
                         _currentTargetLetterIdx = 0;
                       }
-                      _startGame();
+                      setState(
+                        () => _gameState = 'start',
+                      ); // show the question popup first
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 22,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF10B981), Color(0xFF059669)],
+                        ),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
-                        _currentLevelIndex < _levels.length - 1 ? 'Next Level' : 'Play Again',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        _currentLevelIndex < _levels.length - 1
+                            ? 'Next Level'
+                            : 'Play Again',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -1299,11 +1518,26 @@ class _AgaramRunGameState extends State<AgaramRunGame>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.heart_broken_rounded, color: Color(0xFFEF4444), size: 64),
+              const Icon(
+                Icons.heart_broken_rounded,
+                color: Color(0xFFEF4444),
+                size: 64,
+              ),
               const SizedBox(height: 12),
-              const Text('OUT OF LIVES', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+              const Text(
+                'OUT OF LIVES',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
               const SizedBox(height: 6),
-              const Text('Jump over obstacles and pits to keep running!', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 13)),
+              const Text(
+                'Jump over obstacles and pits to keep running!',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white70, fontSize: 13),
+              ),
               const SizedBox(height: 20),
 
               Row(
@@ -1312,24 +1546,44 @@ class _AgaramRunGameState extends State<AgaramRunGame>
                   BouncyButton(
                     onPressed: () => Navigator.pop(context),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white12,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Text('Back to Games', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Back to Games',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   BouncyButton(
-                    onPressed: _startGame,
+                    onPressed: () => setState(() => _gameState = 'start'),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 22,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFFEF4444), Color(0xFFDC2626)]),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                        ),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Text('Try Again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Try Again',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -1400,7 +1654,10 @@ class _ModernRunnerWorldPainter extends CustomPainter {
     final sunOffset = Offset(w * 0.8 - (cameraX * 0.05) % (w * 0.4), h * 0.22);
     final coronaPaint = Paint()
       ..shader = RadialGradient(
-        colors: [const Color(0xFFFEF08A).withOpacity(0.85), const Color(0xFFFDE047).withOpacity(0.0)],
+        colors: [
+          const Color(0xFFFEF08A).withOpacity(0.85),
+          const Color(0xFFFDE047).withOpacity(0.0),
+        ],
       ).createShader(Rect.fromCircle(center: sunOffset, radius: 55));
     canvas.drawCircle(sunOffset, 55, coronaPaint);
     canvas.drawCircle(sunOffset, 22, Paint()..color = const Color(0xFFFEF08A));
@@ -1460,11 +1717,16 @@ class _ModernRunnerWorldPainter extends CustomPainter {
           fontSize: 16,
           fontWeight: FontWeight.w900,
           shadows: [
-            Shadow(color: Colors.black.withOpacity(0.6 * alpha), blurRadius: 4, offset: const Offset(0, 2)),
+            Shadow(
+              color: Colors.black.withOpacity(0.6 * alpha),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
       );
-      final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr)..layout();
+      final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr)
+        ..layout();
       tp.paint(canvas, Offset(f.x - (tp.width / 2), f.y));
     }
 
@@ -1473,7 +1735,8 @@ class _ModernRunnerWorldPainter extends CustomPainter {
 
   void _drawParallaxClouds(Canvas canvas, Size size, double offset) {
     final cloudPaint = Paint()..color = Colors.white.withOpacity(0.72);
-    final cloudShadowPaint = Paint()..color = const Color(0xFFBAE6FD).withOpacity(0.5);
+    final cloudShadowPaint = Paint()
+      ..color = const Color(0xFFBAE6FD).withOpacity(0.5);
 
     for (double x = -100; x <= size.width + 200; x += 180) {
       final posX = (x - (offset % 600));
@@ -1492,11 +1755,19 @@ class _ModernRunnerWorldPainter extends CustomPainter {
 
   void _drawParallaxMountains(Canvas canvas, Size size, double offset) {
     final mountainPaint = Paint()
-      ..shader = const LinearGradient(
-        colors: [Color(0xFF60A5FA), Color(0xFF93C5FD)],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, size.height * 0.45, size.width, size.height * 0.55));
+      ..shader =
+          const LinearGradient(
+            colors: [Color(0xFF60A5FA), Color(0xFF93C5FD)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ).createShader(
+            Rect.fromLTWH(
+              0,
+              size.height * 0.45,
+              size.width,
+              size.height * 0.55,
+            ),
+          );
 
     final path = Path();
     path.moveTo(0, size.height);
@@ -1512,11 +1783,19 @@ class _ModernRunnerWorldPainter extends CustomPainter {
 
   void _drawParallaxHills(Canvas canvas, Size size, double offset) {
     final hillPaint = Paint()
-      ..shader = const LinearGradient(
-        colors: [Color(0xFF34D399), Color(0xFF059669)],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, size.height * 0.60, size.width, size.height * 0.40));
+      ..shader =
+          const LinearGradient(
+            colors: [Color(0xFF34D399), Color(0xFF059669)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ).createShader(
+            Rect.fromLTWH(
+              0,
+              size.height * 0.60,
+              size.width,
+              size.height * 0.40,
+            ),
+          );
 
     final path = Path();
     path.moveTo(0, size.height);
@@ -1537,7 +1816,9 @@ class _ModernRunnerWorldPainter extends CustomPainter {
     final shadowRect = Rect.fromLTWH(p.x + 4, p.y + 10, p.width - 8, p.height);
     canvas.drawRRect(
       RRect.fromRectAndRadius(shadowRect, const Radius.circular(16)),
-      Paint()..color = Colors.black.withOpacity(0.22)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+      Paint()
+        ..color = Colors.black.withOpacity(0.22)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
     );
 
     if (p.type == PlatformType.ground) {
@@ -1548,7 +1829,10 @@ class _ModernRunnerWorldPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ).createShader(rect);
-      canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(14)), bodyPaint);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, const Radius.circular(14)),
+        bodyPaint,
+      );
 
       // Lush Glossy Emerald Grass Cap
       final grassRect = Rect.fromLTWH(p.x, p.y, p.width, 22);
@@ -1558,18 +1842,28 @@ class _ModernRunnerWorldPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ).createShader(grassRect);
-      canvas.drawRRect(RRect.fromRectAndRadius(grassRect, const Radius.circular(12)), grassPaint);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(grassRect, const Radius.circular(12)),
+        grassPaint,
+      );
 
       // Glossy Top Highlight Strip
       canvas.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTWH(p.x + 4, p.y + 2, p.width - 8, 4), const Radius.circular(4)),
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(p.x + 4, p.y + 2, p.width - 8, 4),
+          const Radius.circular(4),
+        ),
         Paint()..color = Colors.white.withOpacity(0.45),
       );
     } else {
       // Floating / Moving Island
       final isMoving = p.type == PlatformType.moving;
-      final ledgeColor1 = isMoving ? const Color(0xFF0EA5E9) : const Color(0xFFD97706);
-      final ledgeColor2 = isMoving ? const Color(0xFF0369A1) : const Color(0xFFB45309);
+      final ledgeColor1 = isMoving
+          ? const Color(0xFF0EA5E9)
+          : const Color(0xFFD97706);
+      final ledgeColor2 = isMoving
+          ? const Color(0xFF0369A1)
+          : const Color(0xFFB45309);
 
       final ledgePaint = Paint()
         ..shader = LinearGradient(
@@ -1577,13 +1871,19 @@ class _ModernRunnerWorldPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ).createShader(rect);
-      canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(14)), ledgePaint);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, const Radius.circular(14)),
+        ledgePaint,
+      );
 
       // Neon Top Strip
       final topStripRect = Rect.fromLTWH(p.x, p.y, p.width, 10);
       canvas.drawRRect(
         RRect.fromRectAndRadius(topStripRect, const Radius.circular(10)),
-        Paint()..color = isMoving ? const Color(0xFF7DD3FC) : const Color(0xFFFDE68A),
+        Paint()
+          ..color = isMoving
+              ? const Color(0xFF7DD3FC)
+              : const Color(0xFFFDE68A),
       );
 
       // Futuristic Thruster Energy Glow for moving platform
@@ -1591,8 +1891,16 @@ class _ModernRunnerWorldPainter extends CustomPainter {
         final thrusterGlow = Paint()
           ..color = const Color(0xFF38BDF8).withOpacity(0.65)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-        canvas.drawCircle(Offset(p.x + p.width * 0.25, p.y + p.height + 4), 6, thrusterGlow);
-        canvas.drawCircle(Offset(p.x + p.width * 0.75, p.y + p.height + 4), 6, thrusterGlow);
+        canvas.drawCircle(
+          Offset(p.x + p.width * 0.25, p.y + p.height + 4),
+          6,
+          thrusterGlow,
+        );
+        canvas.drawCircle(
+          Offset(p.x + p.width * 0.75, p.y + p.height + 4),
+          6,
+          thrusterGlow,
+        );
       }
     }
   }
@@ -1609,8 +1917,14 @@ class _ModernRunnerWorldPainter extends CustomPainter {
         end: Alignment.bottomCenter,
       ).createShader(p1);
 
-    canvas.drawRRect(RRect.fromRectAndRadius(p1, const Radius.circular(8)), pillarPaint);
-    canvas.drawRRect(RRect.fromRectAndRadius(p2, const Radius.circular(8)), pillarPaint);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(p1, const Radius.circular(8)),
+      pillarPaint,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(p2, const Radius.circular(8)),
+      pillarPaint,
+    );
 
     // Rainbow Portal Banner
     final bannerRect = Rect.fromLTWH(gx - 8, 130, 134, 32);
@@ -1618,14 +1932,23 @@ class _ModernRunnerWorldPainter extends CustomPainter {
       ..shader = const LinearGradient(
         colors: [Color(0xFFEC4899), Color(0xFF8B5CF6), Color(0xFF3B82F6)],
       ).createShader(bannerRect);
-    canvas.drawRRect(RRect.fromRectAndRadius(bannerRect, const Radius.circular(12)), bannerPaint);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(bannerRect, const Radius.circular(12)),
+      bannerPaint,
+    );
 
     // Finish Text
     const textSpan = TextSpan(
       text: 'FINISH 🏁',
-      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.8),
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w900,
+        color: Colors.white,
+        letterSpacing: 0.8,
+      ),
     );
-    final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr)..layout();
+    final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr)
+      ..layout();
     tp.paint(canvas, Offset(gx + 59 - (tp.width / 2), 137));
   }
 
@@ -1639,10 +1962,17 @@ class _ModernRunnerWorldPainter extends CustomPainter {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ).createShader(r);
-      canvas.drawRRect(RRect.fromRectAndRadius(r, const Radius.circular(10)), crystalPaint);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(r, const Radius.circular(10)),
+        crystalPaint,
+      );
 
       // Facet Highlight
-      canvas.drawCircle(Offset(obs.x + 10, obs.y + 10), 5, Paint()..color = Colors.white.withOpacity(0.55));
+      canvas.drawCircle(
+        Offset(obs.x + 10, obs.y + 10),
+        5,
+        Paint()..color = Colors.white.withOpacity(0.55),
+      );
     } else if (obs.type == ObstacleType.woodenLog) {
       final logPaint = Paint()
         ..shader = const LinearGradient(
@@ -1650,7 +1980,10 @@ class _ModernRunnerWorldPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ).createShader(obs.rect);
-      canvas.drawRRect(RRect.fromRectAndRadius(obs.rect, const Radius.circular(8)), logPaint);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(obs.rect, const Radius.circular(8)),
+        logPaint,
+      );
     } else if (obs.type == ObstacleType.snailEnemy) {
       // Cute Modern Robotic/Cartoon Snail
       final shellCenter = Offset(obs.x + 18, obs.y + 16);
@@ -1661,8 +1994,15 @@ class _ModernRunnerWorldPainter extends CustomPainter {
       canvas.drawCircle(shellCenter, 14, shellPaint);
 
       // Body & Eye
-      canvas.drawOval(Rect.fromLTWH(obs.x + 2, obs.y + 20, 32, 14), Paint()..color = const Color(0xFFFBBF24));
-      canvas.drawCircle(Offset(obs.x + (obs.patrolDir == 1 ? 30 : 6), obs.y + 16), 3, Paint()..color = Colors.black87);
+      canvas.drawOval(
+        Rect.fromLTWH(obs.x + 2, obs.y + 20, 32, 14),
+        Paint()..color = const Color(0xFFFBBF24),
+      );
+      canvas.drawCircle(
+        Offset(obs.x + (obs.patrolDir == 1 ? 30 : 6), obs.y + 16),
+        3,
+        Paint()..color = Colors.black87,
+      );
     }
   }
 
@@ -1687,8 +2027,12 @@ class _ModernRunnerWorldPainter extends CustomPainter {
       canvas.drawCircle(center, 18, starPaint);
 
       const textSpan = TextSpan(text: '⭐', style: TextStyle(fontSize: 20));
-      final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr)..layout();
-      tp.paint(canvas, Offset(center.dx - (tp.width / 2), center.dy - (tp.height / 2)));
+      final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr)
+        ..layout();
+      tp.paint(
+        canvas,
+        Offset(center.dx - (tp.width / 2), center.dy - (tp.height / 2)),
+      );
     } else {
       final isTarget = item.letter == targetLetter;
 
@@ -1740,8 +2084,12 @@ class _ModernRunnerWorldPainter extends CustomPainter {
           ],
         ),
       );
-      final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr)..layout();
-      tp.paint(canvas, Offset(center.dx - (tp.width / 2), center.dy - (tp.height / 2)));
+      final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr)
+        ..layout();
+      tp.paint(
+        canvas,
+        Offset(center.dx - (tp.width / 2), center.dy - (tp.height / 2)),
+      );
     }
   }
 
@@ -1768,7 +2116,10 @@ class _ModernRunnerWorldPainter extends CustomPainter {
       canvas.drawCircle(
         Offset.zero,
         28,
-        Paint()..color = const Color(0xFFFBBF24)..style = PaintingStyle.stroke..strokeWidth = 2,
+        Paint()
+          ..color = const Color(0xFFFBBF24)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
       );
     }
 
@@ -1779,20 +2130,40 @@ class _ModernRunnerWorldPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(const Rect.fromLTWH(-14, -6, 28, 26));
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(-14, -6, 28, 26), const Radius.circular(10)), bodyPaint);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(-14, -6, 28, 26),
+        const Radius.circular(10),
+      ),
+      bodyPaint,
+    );
 
     // White athletic stripe
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(-3, -4, 6, 22), const Radius.circular(3)), Paint()..color = Colors.white70);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(-3, -4, 6, 22),
+        const Radius.circular(3),
+      ),
+      Paint()..color = Colors.white70,
+    );
 
     // 2. Cartoon Face (Cute round head)
     final headPaint = Paint()..color = const Color(0xFFFFCC80);
     canvas.drawCircle(const Offset(0, -14), 14, headPaint);
 
     // Blushing cheeks
-    canvas.drawCircle(const Offset(6, -11), 3.5, Paint()..color = Colors.pinkAccent.withOpacity(0.5));
+    canvas.drawCircle(
+      const Offset(6, -11),
+      3.5,
+      Paint()..color = Colors.pinkAccent.withOpacity(0.5),
+    );
 
     // Big Sparkly Cartoon Eyes
-    canvas.drawCircle(const Offset(4, -14), 3, Paint()..color = const Color(0xFF0F172A));
+    canvas.drawCircle(
+      const Offset(4, -14),
+      3,
+      Paint()..color = const Color(0xFF0F172A),
+    );
     canvas.drawCircle(const Offset(5, -15), 1, Paint()..color = Colors.white);
 
     // Happy Smile
@@ -1801,7 +2172,10 @@ class _ModernRunnerWorldPainter extends CustomPainter {
       0,
       pi,
       false,
-      Paint()..color = const Color(0xFFDC2626)..style = PaintingStyle.stroke..strokeWidth = 1.4,
+      Paint()
+        ..color = const Color(0xFFDC2626)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4,
     );
 
     // 3. Cool Sporty Backwards Runner Cap
@@ -1819,7 +2193,10 @@ class _ModernRunnerWorldPainter extends CustomPainter {
 
     // Cap Visor sticking backwards
     canvas.drawRRect(
-      RRect.fromRectAndRadius(const Rect.fromLTWH(-18, -19, 10, 4), const Radius.circular(2)),
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(-18, -19, 10, 4),
+        const Radius.circular(2),
+      ),
       Paint()..color = const Color(0xFF991B1B),
     );
 
@@ -1838,8 +2215,20 @@ class _ModernRunnerWorldPainter extends CustomPainter {
 
     // Red & White Sneakers
     final shoePaint = Paint()..color = const Color(0xFFEF4444);
-    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(-9 - legSwing, 24, 10, 5), const Radius.circular(2)), shoePaint);
-    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(1 + legSwing, 24, 10, 5), const Radius.circular(2)), shoePaint);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(-9 - legSwing, 24, 10, 5),
+        const Radius.circular(2),
+      ),
+      shoePaint,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(1 + legSwing, 24, 10, 5),
+        const Radius.circular(2),
+      ),
+      shoePaint,
+    );
 
     canvas.restore();
   }

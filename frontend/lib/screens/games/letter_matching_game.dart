@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../../services/progress_service.dart';
+import 'mini_game_kit.dart';
 
 /// Pairs on the board for each level, in play order.
 const List<int> letterMatchingLevelPairs = [3, 4, 6, 8];
@@ -55,9 +57,14 @@ class _LetterMatchingGameState extends State<LetterMatchingGame> {
     super.dispose();
   }
 
+  /// True while the question popup is shown (it blocks card taps).
+  bool _showQ = true;
+
   void _loadLevel(int levelIndex) {
     _pendingTimer?.cancel();
-    final alphabet = List.generate(26, (i) => String.fromCharCode(65 + i))..shuffle(_random);
+    _showQ = true;
+    final alphabet = List.generate(26, (i) => String.fromCharCode(65 + i))
+      ..shuffle(_random);
     final letters = alphabet.take(letterMatchingLevelPairs[levelIndex]);
 
     _levelIndex = levelIndex;
@@ -74,7 +81,11 @@ class _LetterMatchingGameState extends State<LetterMatchingGame> {
   }
 
   void _onCardTap(_MatchCard card) {
-    if (_gameState != 'playing' || _boardLocked || card.isFaceUp || card.isMatched) return;
+    if (_gameState != 'playing' ||
+        _boardLocked ||
+        card.isFaceUp ||
+        card.isMatched)
+      return;
 
     final firstPick = _firstPick;
     if (firstPick == null) {
@@ -129,42 +140,51 @@ class _LetterMatchingGameState extends State<LetterMatchingGame> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF8338EC), Color(0xFF3A86FF)],
+    return QuestionPopupHost(
+      show: _showQ,
+      question: 'Match each BIG letter with its small letter!',
+      target: 'A ↔ a',
+      label: 'LEVEL ${_levelIndex + 1}/${letterMatchingLevelPairs.length}',
+      hint: 'Tap two cards to flip them and find the pairs.',
+      emoji: '🃏',
+      onStart: () => setState(() => _showQ = false),
+      child: Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF8338EC), Color(0xFF3A86FF)],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 540),
-              child: Stack(
-                children: [
-                  Column(
-                    children: [
-                      _buildHeader(context),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'Find the big and small letter pairs!',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
+          child: SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 540),
+                child: Stack(
+                  children: [
+                    Column(
+                      children: [
+                        _buildHeader(context),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'Find the big and small letter pairs!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Expanded(child: _buildBoard()),
-                    ],
-                  ),
-                  if (_gameState != 'playing') _buildResultOverlay(),
-                ],
+                        const SizedBox(height: 12),
+                        Expanded(child: _buildBoard()),
+                      ],
+                    ),
+                    if (_gameState != 'playing') _buildResultOverlay(),
+                  ],
+                ),
               ),
             ),
           ),
@@ -220,8 +240,11 @@ class _LetterMatchingGameState extends State<LetterMatchingGame> {
     return LayoutBuilder(
       builder: (context, constraints) {
         // Size the cards so a whole level fits on screen without scrolling.
-        final cardWidth = (constraints.maxWidth - padding * 2 - spacing * (columns - 1)) / columns;
-        final cardHeight = (constraints.maxHeight - padding * 2 - spacing * (rows - 1)) / rows;
+        final cardWidth =
+            (constraints.maxWidth - padding * 2 - spacing * (columns - 1)) /
+            columns;
+        final cardHeight =
+            (constraints.maxHeight - padding * 2 - spacing * (rows - 1)) / rows;
 
         return GridView.count(
           physics: const NeverScrollableScrollPhysics(),
@@ -276,7 +299,9 @@ class _LetterMatchingGameState extends State<LetterMatchingGame> {
             style: TextStyle(
               fontSize: 56,
               fontWeight: FontWeight.w900,
-              color: card.isMatched ? const Color(0xFF15803D) : const Color(0xFF5B21B6),
+              color: card.isMatched
+                  ? const Color(0xFF15803D)
+                  : const Color(0xFF5B21B6),
             ),
           ),
         ),
@@ -317,10 +342,16 @@ class _LetterMatchingGameState extends State<LetterMatchingGame> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 64),
+              const Icon(
+                Icons.star_rounded,
+                color: Color(0xFFFBBF24),
+                size: 64,
+              ),
               const SizedBox(height: 8),
               Text(
-                isVictory ? 'You matched them all!' : 'Level ${_levelIndex + 1} complete!',
+                isVictory
+                    ? 'You matched them all!'
+                    : 'Level ${_levelIndex + 1} complete!',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 22,
@@ -330,7 +361,9 @@ class _LetterMatchingGameState extends State<LetterMatchingGame> {
               ),
               const SizedBox(height: 6),
               Text(
-                isVictory ? '+$letterMatchingStarsReward stars' : 'Finished in $_moves moves',
+                isVictory
+                    ? '+$letterMatchingStarsReward stars'
+                    : 'Finished in $_moves moves',
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -339,7 +372,8 @@ class _LetterMatchingGameState extends State<LetterMatchingGame> {
               ),
               const SizedBox(height: 18),
               FilledButton(
-                onPressed: () => setState(() => _loadLevel(isVictory ? 0 : _levelIndex + 1)),
+                onPressed: () =>
+                    setState(() => _loadLevel(isVictory ? 0 : _levelIndex + 1)),
                 child: Text(isVictory ? 'Play Again' : 'Next Level'),
               ),
               if (isVictory)

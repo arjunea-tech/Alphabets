@@ -485,11 +485,13 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         return 'assets/images/games/basket_vowels_cover.png';
       case 'puzzle':
         return 'assets/images/games/word_puzzle_cover.png';
-      // No cover image yet: a coloured backdrop + the animated card art.
+      // Scenery-only covers; the animated card art draws moles/rocket/train on top.
       case 'whack':
+        return 'assets/images/games/whack_cover.png';
       case 'space':
+        return 'assets/images/games/space_cover.png';
       case 'train':
-        return '';
+        return 'assets/images/games/train_cover.png';
       default:
         return 'assets/images/welcome.png';
     }

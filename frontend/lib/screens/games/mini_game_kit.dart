@@ -1,5 +1,7 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+
 import '../../models/game_content.dart';
 import '../../models/game_item_model.dart';
 import '../../services/progress_service.dart';
@@ -15,22 +17,38 @@ class MiniRound {
   final String target;
   final List<String> wrong;
 
-  const MiniRound({required this.level, required this.target, required this.wrong});
+  const MiniRound({
+    required this.level,
+    required this.target,
+    required this.wrong,
+  });
 }
 
 /// Rounds for a "find the target" game. A picked level gives exactly
 /// [GameContent.questionsPerLevel] rounds; playing all levels together gives
 /// up to [roundsPerLevel] rounds per level.
-List<MiniRound> buildMiniRounds(GameContent content, math.Random rng, {int roundsPerLevel = 3}) {
+List<MiniRound> buildMiniRounds(
+  GameContent content,
+  math.Random rng, {
+  int roundsPerLevel = 3,
+}) {
   final rounds = <MiniRound>[];
   for (final level in content.levels) {
     final wrongPool = wrongChoicesFor(content, level);
-    for (final target in content.roundsFrom(level.targets, rng, maxRounds: roundsPerLevel)) {
-      rounds.add(MiniRound(
-        level: level,
-        target: target,
-        wrong: wrongPool.where((w) => w.toUpperCase() != target.toUpperCase()).toList(),
-      ));
+    for (final target in content.roundsFrom(
+      level.targets,
+      rng,
+      maxRounds: roundsPerLevel,
+    )) {
+      rounds.add(
+        MiniRound(
+          level: level,
+          target: target,
+          wrong: wrongPool
+              .where((w) => w.toUpperCase() != target.toUpperCase())
+              .toList(),
+        ),
+      );
     }
   }
   return rounds;
@@ -89,7 +107,12 @@ class MiniGameHud extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 6)],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 6,
+                  ),
+                ],
               ),
               child: Icon(Icons.arrow_back_rounded, color: color),
             ),
@@ -134,9 +157,19 @@ class MiniGameHud extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.favorite_rounded, color: Color(0xFFEF4444), size: 18),
+                  const Icon(
+                    Icons.favorite_rounded,
+                    color: Color(0xFFEF4444),
+                    size: 18,
+                  ),
                   const SizedBox(width: 4),
-                  Text('$hearts', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                  Text(
+                    '$hearts',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -149,7 +182,11 @@ class MiniGameHud extends StatelessWidget {
             ),
             child: Text(
               '$done / $total',
-              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: color),
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 15,
+                color: color,
+              ),
             ),
           ),
         ],
@@ -177,7 +214,7 @@ class MiniTargetBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 14),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(20),
@@ -186,14 +223,21 @@ class MiniTargetBanner extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            constraints: const BoxConstraints(minWidth: 56),
-            height: 56,
+            constraints: const BoxConstraints(minWidth: 72),
+            height: 72,
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(16),
+            ),
             alignment: Alignment.center,
             child: Text(
               target,
-              style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Colors.white),
+              style: const TextStyle(
+                fontSize: 42,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -201,12 +245,24 @@ class MiniTargetBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: color)),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: color,
+                  ),
+                ),
                 Text(
                   prompt,
-                  maxLines: 2,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1E293B),
+                    height: 1.15,
+                  ),
                 ),
               ],
             ),
@@ -262,13 +318,21 @@ class MiniGameEndOverlay extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF475569),
+              ),
             ),
             if (won) ...[
               const SizedBox(height: 10),
               Text(
                 '+${content.game.starsReward} ⭐',
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFFD97706)),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFFD97706),
+                ),
               ),
             ],
             const SizedBox(height: 20),
@@ -310,7 +374,10 @@ class MiniGameEndOverlay extends StatelessWidget {
       onPressed: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 13),
-        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(18)),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(18),
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -319,7 +386,14 @@ class MiniGameEndOverlay extends StatelessWidget {
             Flexible(
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
               ),
             ),
           ],
@@ -347,14 +421,251 @@ class MiniFeedbackBubble extends StatelessWidget {
           decoration: BoxDecoration(
             color: good ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
             borderRadius: BorderRadius.circular(22),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 8)],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 8,
+              ),
+            ],
           ),
           child: Text(
             text ?? '',
-            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+/// Wraps a game screen and, while [show] is true, covers it with a big
+/// question popup. The game should pause itself while [show] is true and
+/// start/resume when [onStart] is called.
+class QuestionPopupHost extends StatelessWidget {
+  final bool show;
+  final String question;
+  final VoidCallback onStart;
+  final Widget child;
+
+  /// Optional big target letter/word shown under the question.
+  final String? target;
+
+  /// Small heading above the question, e.g. "LEVEL 2" or "QUESTION 1/5".
+  final String? label;
+
+  /// Short how-to-play line under the question.
+  final String? hint;
+  final String emoji;
+  final String buttonText;
+
+  const QuestionPopupHost({
+    super.key,
+    required this.show,
+    required this.question,
+    required this.onStart,
+    required this.child,
+    this.target,
+    this.label,
+    this.hint,
+    this.emoji = '🎯',
+    this.buttonText = "Let's Play! 🚀",
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned.fill(child: child),
+        if (show)
+          Positioned.fill(
+            child: QuestionPopup(
+              question: question,
+              onStart: onStart,
+              target: target,
+              label: label,
+              hint: hint,
+              emoji: emoji,
+              buttonText: buttonText,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Full-screen dimmed popup that shows the question big before play starts.
+class QuestionPopup extends StatelessWidget {
+  final String question;
+  final VoidCallback onStart;
+  final String? target;
+  final String? label;
+  final String? hint;
+  final String emoji;
+  final String buttonText;
+
+  const QuestionPopup({
+    super.key,
+    required this.question,
+    required this.onStart,
+    this.target,
+    this.label,
+    this.hint,
+    this.emoji = '🎯',
+    this.buttonText = "Let's Play! 🚀",
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final t = target?.trim() ?? '';
+    return Material(
+      color: Colors.black.withValues(alpha: 0.78),
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(maxWidth: 520),
+              padding: const EdgeInsets.fromLTRB(22, 22, 22, 24),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)],
+                ),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: const Color(0xFFFDE047), width: 3),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF38BDF8).withValues(alpha: 0.45),
+                    blurRadius: 24,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(emoji, style: const TextStyle(fontSize: 54)),
+                  if (label != null && label!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      label!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFF38BDF8),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 14),
+                  Text(
+                    question,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFFFDE047),
+                      fontSize: 36,
+                      fontWeight: FontWeight.w900,
+                      height: 1.25,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black,
+                          blurRadius: 6,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (t.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 26,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                          color: const Color(0xFF4ADE80),
+                          width: 3,
+                        ),
+                      ),
+                      child: Text(
+                        t,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: const Color(0xFF1E3A8A),
+                          fontSize: t.length <= 4
+                              ? 56
+                              : (t.length <= 12 ? 40 : 28),
+                          fontWeight: FontWeight.w900,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (hint != null && hint!.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    Text(
+                      hint!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 22),
+                  BouncyButton(
+                    onPressed: onStart,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 36,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF10B981), Color(0xFF059669)],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: Text(
+                        buttonText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Question for the start popup of games that ask one thing for the whole
+/// session: the picked level's prompt, else the game's own prompt.
+String popupQuestionFor(
+  GameContent content, {
+  String fallback = "Let's play!",
+}) {
+  final q = content.levels.length == 1
+      ? promptFor(content, content.levels.first)
+      : content.game.prompt.trim();
+  return q.isNotEmpty ? q : fallback;
 }

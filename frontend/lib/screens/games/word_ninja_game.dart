@@ -1,16 +1,24 @@
 import 'dart:async';
 import 'dart:math';
+
 import 'package:flutter/material.dart';
+
 import '../../models/game_content.dart';
 import '../../services/progress_service.dart';
 import '../../widgets/bouncy_button.dart';
+import 'mini_game_kit.dart';
+
 import 'package:flutter/services.dart';
 
 class WordNinjaGame extends StatefulWidget {
   final ProgressService progressService;
   final GameContent content;
 
-  const WordNinjaGame({super.key, required this.progressService, required this.content});
+  const WordNinjaGame({
+    super.key,
+    required this.progressService,
+    required this.content,
+  });
 
   @override
   State<WordNinjaGame> createState() => _WordNinjaGameState();
@@ -145,6 +153,7 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
   int _challengeSlices = 0;
   final int _slicesPerChallenge = 4;
   String _gameState = 'playing'; // 'playing', 'victory', 'gameover'
+  bool _showQ = true; // question popup visible (game paused)
   bool _soundEnabled = true;
 
   Timer? _loopTimer;
@@ -166,31 +175,15 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
       'color': Color(0xFF15803D),
       'juice': Color(0xFFEF4444),
     },
-    {
-      'type': 'orange',
-      'color': Color(0xFFEA580C),
-      'juice': Color(0xFFF97316),
-    },
-    {
-      'type': 'apple',
-      'color': Color(0xFFDC2626),
-      'juice': Color(0xFFFCA5A5),
-    },
+    {'type': 'orange', 'color': Color(0xFFEA580C), 'juice': Color(0xFFF97316)},
+    {'type': 'apple', 'color': Color(0xFFDC2626), 'juice': Color(0xFFFCA5A5)},
     {
       'type': 'strawberry',
       'color': Color(0xFFE11D48),
       'juice': Color(0xFFFB7185),
     },
-    {
-      'type': 'banana',
-      'color': Color(0xFFFACC15),
-      'juice': Color(0xFFFEF08A),
-    },
-    {
-      'type': 'grapes',
-      'color': Color(0xFF9333EA),
-      'juice': Color(0xFFA855F7),
-    },
+    {'type': 'banana', 'color': Color(0xFFFACC15), 'juice': Color(0xFFFEF08A)},
+    {'type': 'grapes', 'color': Color(0xFF9333EA), 'juice': Color(0xFFA855F7)},
   ];
 
   @override
@@ -200,7 +193,9 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
     _challenges = [
       for (final level in content.levels)
         _NinjaChallenge(
-          title: level.title.isNotEmpty ? level.title.toUpperCase() : content.game.title.toUpperCase(),
+          title: level.title.isNotEmpty
+              ? level.title.toUpperCase()
+              : content.game.title.toUpperCase(),
           prompt: level.prompt.isNotEmpty ? level.prompt : content.game.prompt,
           targets: level.targets,
           distractors: content.distractorsFor(level),
@@ -224,6 +219,7 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
       _streak = 0;
       _currentChallengeIndex = 0;
       _challengeSlices = 0;
+      _showQ = true;
       _gameState = 'playing';
       _items.clear();
       _pieces.clear();
@@ -234,7 +230,10 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
     });
 
     // 60 FPS fixed delta loop (16ms per tick)
-    _loopTimer = Timer.periodic(const Duration(milliseconds: 16), (_) => _tick(0.016));
+    _loopTimer = Timer.periodic(
+      const Duration(milliseconds: 16),
+      (_) => _tick(0.016),
+    );
   }
 
   void _triggerVictory() {
@@ -272,7 +271,7 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
   }
 
   void _tick(double dt) {
-    if (_gameState != 'playing') return;
+    if (_gameState != 'playing' || _showQ) return;
 
     final random = Random();
 
@@ -301,12 +300,14 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
           _streak = 0;
           _lives--;
           _playSound(false);
-          _feedbacks.add(_FloatingFeedback(
-            text: 'MISSED! -1 ❤️',
-            color: const Color(0xFFEF4444),
-            x: item.x.clamp(60.0, 300.0),
-            y: 520,
-          ));
+          _feedbacks.add(
+            _FloatingFeedback(
+              text: 'MISSED! -1 ❤️',
+              color: const Color(0xFFEF4444),
+              x: item.x.clamp(60.0, 300.0),
+              y: 520,
+            ),
+          );
           if (_lives <= 0) {
             _triggerGameOver();
             return;
@@ -366,7 +367,8 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
 
     for (int i = 0; i < count; i++) {
       final currentCh = _challenges[_currentChallengeIndex];
-      final isTarget = currentCh.distractors.isEmpty || random.nextDouble() < 0.65;
+      final isTarget =
+          currentCh.distractors.isEmpty || random.nextDouble() < 0.65;
       final text = isTarget
           ? currentCh.targets[random.nextInt(currentCh.targets.length)]
           : currentCh.distractors[random.nextInt(currentCh.distractors.length)];
@@ -379,24 +381,27 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
 
       // Gentle upward arc
       final targetMidX = 180.0 + (random.nextDouble() - 0.5) * 80.0;
-      final vx = (targetMidX - startX) * 0.75 + (random.nextDouble() - 0.5) * 40.0;
+      final vx =
+          (targetMidX - startX) * 0.75 + (random.nextDouble() - 0.5) * 40.0;
       // Gentle vertical velocity: stays in air ~2.6-3.2 seconds
       final vy = -410.0 - random.nextDouble() * 50.0;
 
-      _items.add(_NinjaItem(
-        id: ++_idCounter,
-        text: text,
-        isTarget: isTarget,
-        color: fruit['color'] as Color,
-        fruitType: fruit['type'] as String,
-        juiceColor: fruit['juice'] as Color,
-        x: startX,
-        y: startY,
-        vx: vx,
-        vy: vy,
-        angle: (random.nextDouble() - 0.5) * 0.5,
-        vRot: (random.nextDouble() - 0.5) * 2.2,
-      ));
+      _items.add(
+        _NinjaItem(
+          id: ++_idCounter,
+          text: text,
+          isTarget: isTarget,
+          color: fruit['color'] as Color,
+          fruitType: fruit['type'] as String,
+          juiceColor: fruit['juice'] as Color,
+          x: startX,
+          y: startY,
+          vx: vx,
+          vy: vy,
+          angle: (random.nextDouble() - 0.5) * 0.5,
+          vRot: (random.nextDouble() - 0.5) * 2.2,
+        ),
+      );
     }
   }
 
@@ -434,35 +439,39 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
     final random = Random();
     final splitVx = 110.0 + random.nextDouble() * 50.0;
 
-    _pieces.add(_SlicePiece(
-      text: item.text,
-      color: item.color,
-      fruitType: item.fruitType,
-      isLeft: true,
-      juiceColor: item.juiceColor,
-      radius: item.radius,
-      x: item.x - 14,
-      y: item.y,
-      vx: -splitVx,
-      vy: item.vy * 0.45 - 40,
-      angle: item.angle - 0.3,
-      vRot: -2.8,
-    ));
+    _pieces.add(
+      _SlicePiece(
+        text: item.text,
+        color: item.color,
+        fruitType: item.fruitType,
+        isLeft: true,
+        juiceColor: item.juiceColor,
+        radius: item.radius,
+        x: item.x - 14,
+        y: item.y,
+        vx: -splitVx,
+        vy: item.vy * 0.45 - 40,
+        angle: item.angle - 0.3,
+        vRot: -2.8,
+      ),
+    );
 
-    _pieces.add(_SlicePiece(
-      text: item.text,
-      color: item.color,
-      fruitType: item.fruitType,
-      isLeft: false,
-      juiceColor: item.juiceColor,
-      radius: item.radius,
-      x: item.x + 14,
-      y: item.y,
-      vx: splitVx,
-      vy: item.vy * 0.45 - 40,
-      angle: item.angle + 0.3,
-      vRot: 2.8,
-    ));
+    _pieces.add(
+      _SlicePiece(
+        text: item.text,
+        color: item.color,
+        fruitType: item.fruitType,
+        isLeft: false,
+        juiceColor: item.juiceColor,
+        radius: item.radius,
+        x: item.x + 14,
+        y: item.y,
+        vx: splitVx,
+        vy: item.vy * 0.45 - 40,
+        angle: item.angle + 0.3,
+        vRot: 2.8,
+      ),
+    );
 
     if (item.isTarget) {
       // CORRECT TARGET SLICED!
@@ -471,25 +480,30 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
       final bonus = _streak >= 3 ? 150 : 100;
       _score += bonus;
 
-      _feedbacks.add(_FloatingFeedback(
-        text: _streak >= 3 ? 'COMBO! +$bonus' : '+$bonus',
-        color: const Color(0xFFFBBF24),
-        x: item.x,
-        y: item.y - 20,
-      ));
+      _feedbacks.add(
+        _FloatingFeedback(
+          text: _streak >= 3 ? 'COMBO! +$bonus' : '+$bonus',
+          color: const Color(0xFFFBBF24),
+          x: item.x,
+          y: item.y - 20,
+        ),
+      );
 
       if (_challengeSlices >= _slicesPerChallenge) {
         if (_currentChallengeIndex < _challenges.length - 1) {
           setState(() {
             _currentChallengeIndex++;
+            _showQ = true; // new challenge → show its question first
             _challengeSlices = 0;
             _items.clear();
-            _feedbacks.add(_FloatingFeedback(
-              text: 'CHALLENGE COMPLETED! ⭐',
-              color: const Color(0xFF10B981),
-              x: 180,
-              y: 260,
-            ));
+            _feedbacks.add(
+              _FloatingFeedback(
+                text: 'CHALLENGE COMPLETED! ⭐',
+                color: const Color(0xFF10B981),
+                x: 180,
+                y: 260,
+              ),
+            );
           });
         } else {
           // Completed all 5 challenges!
@@ -500,12 +514,14 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
       // WRONG DISTRACTOR SLICED!
       _streak = 0;
       _lives--;
-      _feedbacks.add(_FloatingFeedback(
-        text: 'WRONG! -1 ❤️',
-        color: const Color(0xFFEF4444),
-        x: item.x,
-        y: item.y - 20,
-      ));
+      _feedbacks.add(
+        _FloatingFeedback(
+          text: 'WRONG! -1 ❤️',
+          color: const Color(0xFFEF4444),
+          x: item.x,
+          y: item.y - 20,
+        ),
+      );
 
       if (_lives <= 0) {
         _triggerGameOver();
@@ -518,129 +534,154 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
     for (int i = 0; i < 22; i++) {
       final angle = random.nextDouble() * pi * 2;
       final speed = 60.0 + random.nextDouble() * 180.0;
-      _particles.add(_Particle(
-        x: x,
-        y: y,
-        vx: cos(angle) * speed,
-        vy: sin(angle) * speed,
-        color: i % 3 == 0 ? Colors.white : juiceColor,
-        radius: 2.5 + random.nextDouble() * 3.5,
-        life: 0.50,
-        maxLife: 0.50,
-      ));
+      _particles.add(
+        _Particle(
+          x: x,
+          y: y,
+          vx: cos(angle) * speed,
+          vy: sin(angle) * speed,
+          color: i % 3 == 0 ? Colors.white : juiceColor,
+          radius: 2.5 + random.nextDouble() * 3.5,
+          life: 0.50,
+          maxLife: 0.50,
+        ),
+      );
     }
   }
 
   double _distToSegment(Offset p, Offset v, Offset w) {
     final l2 = (v - w).distanceSquared;
     if (l2 == 0) return (p - v).distance;
-    final t = (((p.dx - v.dx) * (w.dx - v.dx) + (p.dy - v.dy) * (w.dy - v.dy)) / l2).clamp(0.0, 1.0);
+    final t =
+        (((p.dx - v.dx) * (w.dx - v.dx) + (p.dy - v.dy) * (w.dy - v.dy)) / l2)
+            .clamp(0.0, 1.0);
     final proj = Offset(v.dx + t * (w.dx - v.dx), v.dy + t * (w.dy - v.dy));
     return (p - proj).distance;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top HUD
-            _buildTopHud(),
+    return QuestionPopupHost(
+      show: _showQ && _gameState == 'playing' && _challenges.isNotEmpty,
+      question: _challenges.isEmpty
+          ? ''
+          : _challenges[_currentChallengeIndex.clamp(0, _challenges.length - 1)]
+                .prompt,
+      target: _challenges.isEmpty
+          ? null
+          : _challenges[_currentChallengeIndex.clamp(0, _challenges.length - 1)]
+                .targets
+                .join('  '),
+      label: 'CHALLENGE ${_currentChallengeIndex + 1}/${_challenges.length}',
+      hint: 'Swipe to slice only the right letters!',
+      emoji: '🥷',
+      onStart: () => setState(() => _showQ = false),
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0F172A),
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Top HUD
+              _buildTopHud(),
 
-            // High-Contrast Question Banner
-            _buildObjectiveBanner(),
+              // High-Contrast Question Banner
+              _buildObjectiveBanner(),
 
-            // Slicing Arena
-            Expanded(
-              child: Stack(
-                children: [
-                  // 1. Scenic Ninja Dojo Background Art (Asset + Procedural Japanese Dojo Fallback)
-                  Positioned.fill(
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: _DojoAtmospherePainter(),
+              // Slicing Arena
+              Expanded(
+                child: Stack(
+                  children: [
+                    // 1. Scenic Ninja Dojo Background Art (Asset + Procedural Japanese Dojo Fallback)
+                    Positioned.fill(
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: _DojoAtmospherePainter(),
+                            ),
                           ),
-                        ),
-                        Positioned.fill(
-                          child: Image.asset(
-                            'assets/images/games/word_ninja_cover.png',
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                          Positioned.fill(
+                            child: Image.asset(
+                              'assets/images/games/word_ninja_cover.png',
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const SizedBox.shrink(),
+                            ),
                           ),
-                        ),
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.black.withValues(alpha: 0.10),
-                                  Colors.transparent,
-                                  Colors.black.withValues(alpha: 0.35),
-                                ],
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.black.withValues(alpha: 0.10),
+                                    Colors.transparent,
+                                    Colors.black.withValues(alpha: 0.35),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // 3. Full Arena Gesture & Custom Painter
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onPanDown: (d) => _bladeTrail.add(_BladePoint(d.localPosition)),
-                    onPanUpdate: _onPanUpdate,
-                    child: CustomPaint(
-                      painter: _NinjaArenaPainter(
-                        items: _items,
-                        pieces: _pieces,
-                        particles: _particles,
-                        feedbacks: _feedbacks,
-                        bladeTrail: _bladeTrail,
+                        ],
                       ),
-                      child: Container(),
                     ),
-                  ),
 
-                  // Bottom Guidance
-                  Positioned(
-                    bottom: 12,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white24, width: 1),
+                    // 3. Full Arena Gesture & Custom Painter
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onPanDown: (d) =>
+                          _bladeTrail.add(_BladePoint(d.localPosition)),
+                      onPanUpdate: _onPanUpdate,
+                      child: CustomPaint(
+                        painter: _NinjaArenaPainter(
+                          items: _items,
+                          pieces: _pieces,
+                          particles: _particles,
+                          feedbacks: _feedbacks,
+                          bladeTrail: _bladeTrail,
                         ),
-                        child: const Text(
-                          '⚔️ SWIPE ACROSS FLYING FRUITS TO SLICE',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
+                        child: Container(),
+                      ),
+                    ),
+
+                    // Bottom Guidance
+                    Positioned(
+                      bottom: 12,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white24, width: 1),
+                          ),
+                          child: const Text(
+                            '⚔️ SWIPE ACROSS FLYING FRUITS TO SLICE',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
 
-                  // Overlays
-                  if (_gameState == 'victory') _buildVictoryOverlay(),
-                  if (_gameState == 'gameover') _buildGameOverOverlay(),
-                ],
+                    // Overlays
+                    if (_gameState == 'victory') _buildVictoryOverlay(),
+                    if (_gameState == 'gameover') _buildGameOverOverlay(),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -662,7 +703,11 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
                 color: Colors.white12,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
           ),
 
@@ -670,16 +715,27 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 22),
+              const Icon(
+                Icons.star_rounded,
+                color: Color(0xFFFBBF24),
+                size: 22,
+              ),
               const SizedBox(width: 4),
               Text(
                 '$_score',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                ),
               ),
               if (_streak >= 2) ...[
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.orange.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(8),
@@ -687,7 +743,11 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
                   ),
                   child: Text(
                     '⚡${_streak}x',
-                    style: const TextStyle(color: Colors.orange, fontSize: 11, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -703,13 +763,16 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
                 (i) => Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 1),
                   child: Icon(
-                    i < _lives ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                    color: i < _lives ? const Color(0xFFEF4444) : Colors.white24,
+                    i < _lives
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    color: i < _lives
+                        ? const Color(0xFFEF4444)
+                        : Colors.white24,
                     size: 16,
                   ),
                 ),
               ),
-              
             ],
           ),
         ],
@@ -728,16 +791,10 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF311042),
-            const Color(0xFF1E1B4B),
-          ],
+          colors: [const Color(0xFF311042), const Color(0xFF1E1B4B)],
         ),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xFFF59E0B),
-          width: 2.2,
-        ),
+        border: Border.all(color: const Color(0xFFF59E0B), width: 2.2),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFFF59E0B).withValues(alpha: 0.35),
@@ -760,7 +817,11 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.content_cut_rounded, color: Color(0xFFF59E0B), size: 14),
+                const Icon(
+                  Icons.content_cut_rounded,
+                  color: Color(0xFFF59E0B),
+                  size: 14,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   'CHALLENGE ${_currentChallengeIndex + 1}/5: ${currentCh.title}',
@@ -782,11 +843,15 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 22,
+              fontSize: 30,
               fontWeight: FontWeight.w900,
               height: 1.25,
               shadows: [
-                Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(0, 1)),
+                Shadow(
+                  color: Colors.black87,
+                  blurRadius: 4,
+                  offset: Offset(0, 1),
+                ),
               ],
             ),
           ),
@@ -798,7 +863,11 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
             children: [
               const Text(
                 'Sliced: ',
-                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Text(
                 '$_challengeSlices / $_slicesPerChallenge',
@@ -824,11 +893,19 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.emoji_events_rounded, color: Color(0xFFF59E0B), size: 72),
+              const Icon(
+                Icons.emoji_events_rounded,
+                color: Color(0xFFF59E0B),
+                size: 72,
+              ),
               const SizedBox(height: 14),
               const Text(
                 '🎉 MASTER NINJA!',
-                style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               const Text(
@@ -838,7 +915,10 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
               ),
               const SizedBox(height: 22),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white12,
                   borderRadius: BorderRadius.circular(16),
@@ -846,7 +926,11 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
                 ),
                 child: Text(
                   'Final Score: $_score pts  (+15 ⭐)',
-                  style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Color(0xFFF59E0B),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -856,24 +940,44 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
                   BouncyButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white24,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Text('Back to Games', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Back to Games',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   BouncyButton(
                     onPressed: _startNinjaGame,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF10B981), Color(0xFF059669)],
+                        ),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Text('Play Again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Play Again',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -894,11 +998,19 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.heart_broken_rounded, color: Color(0xFFEF4444), size: 72),
+              const Icon(
+                Icons.heart_broken_rounded,
+                color: Color(0xFFEF4444),
+                size: 72,
+              ),
               const SizedBox(height: 14),
               const Text(
                 'OUT OF LIVES!',
-                style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               const Text(
@@ -908,7 +1020,10 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
               ),
               const SizedBox(height: 22),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white12,
                   borderRadius: BorderRadius.circular(16),
@@ -916,7 +1031,11 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
                 ),
                 child: Text(
                   'Score: $_score pts',
-                  style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Color(0xFFF59E0B),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -926,24 +1045,44 @@ class _WordNinjaGameState extends State<WordNinjaGame> {
                   BouncyButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white24,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Text('Back to Games', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Back to Games',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   BouncyButton(
                     onPressed: _startNinjaGame,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFFEF4444), Color(0xFFDC2626)]),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                        ),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Text('Try Again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Try Again',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -1004,7 +1143,13 @@ class _NinjaArenaPainter extends CustomPainter {
       canvas.translate(piece.x, piece.y);
       canvas.rotate(piece.angle);
 
-      _drawSlicedFruitHalf(canvas, piece.fruitType, piece.radius, piece.isLeft, piece.opacity);
+      _drawSlicedFruitHalf(
+        canvas,
+        piece.fruitType,
+        piece.radius,
+        piece.isLeft,
+        piece.opacity,
+      );
       _drawSlicedPlaque(canvas, piece.text, piece.isLeft, piece.opacity);
 
       canvas.restore();
@@ -1080,7 +1225,11 @@ class _NinjaArenaPainter extends CustomPainter {
           ..shader = RadialGradient(
             center: const Alignment(-0.25, -0.25),
             radius: 0.9,
-            colors: const [Color(0xFF22C55E), Color(0xFF15803D), Color(0xFF14532D)],
+            colors: const [
+              Color(0xFF22C55E),
+              Color(0xFF15803D),
+              Color(0xFF14532D),
+            ],
           ).createShader(Rect.fromCircle(center: Offset.zero, radius: r));
         canvas.drawCircle(Offset.zero, r, rindPaint);
 
@@ -1108,12 +1257,20 @@ class _NinjaArenaPainter extends CustomPainter {
           ..shader = RadialGradient(
             center: const Alignment(-0.3, -0.3),
             radius: 0.9,
-            colors: const [Color(0xFFFDBA74), Color(0xFFF97316), Color(0xFFC2410C)],
+            colors: const [
+              Color(0xFFFDBA74),
+              Color(0xFFF97316),
+              Color(0xFFC2410C),
+            ],
           ).createShader(Rect.fromCircle(center: Offset.zero, radius: r));
         canvas.drawCircle(Offset.zero, r, orangePaint);
 
         // Little green stem on top
-        canvas.drawCircle(Offset(0, -r + 3), 4, Paint()..color = const Color(0xFF15803D));
+        canvas.drawCircle(
+          Offset(0, -r + 3),
+          4,
+          Paint()..color = const Color(0xFF15803D),
+        );
         break;
 
       case 'apple':
@@ -1122,7 +1279,11 @@ class _NinjaArenaPainter extends CustomPainter {
           ..shader = RadialGradient(
             center: const Alignment(-0.3, -0.3),
             radius: 0.9,
-            colors: const [Color(0xFFF87171), Color(0xFFEF4444), Color(0xFF991B1B)],
+            colors: const [
+              Color(0xFFF87171),
+              Color(0xFFEF4444),
+              Color(0xFF991B1B),
+            ],
           ).createShader(Rect.fromCircle(center: Offset.zero, radius: r));
         canvas.drawCircle(Offset.zero, r, applePaint);
 
@@ -1148,9 +1309,20 @@ class _NinjaArenaPainter extends CustomPainter {
           ..shader = RadialGradient(
             center: const Alignment(-0.25, -0.25),
             radius: 0.9,
-            colors: const [Color(0xFFFB7185), Color(0xFFE11D48), Color(0xFF9F1239)],
+            colors: const [
+              Color(0xFFFB7185),
+              Color(0xFFE11D48),
+              Color(0xFF9F1239),
+            ],
           ).createShader(Rect.fromCircle(center: Offset.zero, radius: r));
-        canvas.drawOval(Rect.fromCenter(center: const Offset(0, 3), width: r * 1.9, height: r * 2.1), berryPaint);
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: const Offset(0, 3),
+            width: r * 1.9,
+            height: r * 2.1,
+          ),
+          berryPaint,
+        );
 
         // Yellow seeds
         final seedPaint = Paint()..color = const Color(0xFFFEF08A);
@@ -1167,7 +1339,11 @@ class _NinjaArenaPainter extends CustomPainter {
           ..shader = RadialGradient(
             center: const Alignment(-0.25, -0.25),
             radius: 0.9,
-            colors: const [Color(0xFF92400E), Color(0xFF78350F), Color(0xFF451A03)],
+            colors: const [
+              Color(0xFF92400E),
+              Color(0xFF78350F),
+              Color(0xFF451A03),
+            ],
           ).createShader(Rect.fromCircle(center: Offset.zero, radius: r));
         canvas.drawCircle(Offset.zero, r, kiwiPaint);
         break;
@@ -1178,13 +1354,21 @@ class _NinjaArenaPainter extends CustomPainter {
           ..shader = RadialGradient(
             center: const Alignment(-0.25, -0.25),
             radius: 0.9,
-            colors: const [Color(0xFFA855F7), Color(0xFF9333EA), Color(0xFF581C87)],
+            colors: const [
+              Color(0xFFA855F7),
+              Color(0xFF9333EA),
+              Color(0xFF581C87),
+            ],
           ).createShader(Rect.fromCircle(center: Offset.zero, radius: r));
         canvas.drawCircle(Offset(-r * 0.25, -r * 0.2), r * 0.45, grapePaint);
         canvas.drawCircle(Offset(r * 0.25, -r * 0.2), r * 0.45, grapePaint);
         canvas.drawCircle(Offset(0, r * 0.22), r * 0.48, grapePaint);
         // Little green stem
-        canvas.drawCircle(Offset(0, -r * 0.65), 4, Paint()..color = const Color(0xFF22C55E));
+        canvas.drawCircle(
+          Offset(0, -r * 0.65),
+          4,
+          Paint()..color = const Color(0xFF22C55E),
+        );
         break;
 
       default:
@@ -1193,7 +1377,11 @@ class _NinjaArenaPainter extends CustomPainter {
           ..shader = RadialGradient(
             center: const Alignment(-0.3, -0.3),
             radius: 0.9,
-            colors: const [Color(0xFFFDE047), Color(0xFFEAB308), Color(0xFFCA8A04)],
+            colors: const [
+              Color(0xFFFDE047),
+              Color(0xFFEAB308),
+              Color(0xFFCA8A04),
+            ],
           ).createShader(Rect.fromCircle(center: Offset.zero, radius: r));
         canvas.drawCircle(Offset.zero, r, genericPaint);
     }
@@ -1214,7 +1402,13 @@ class _NinjaArenaPainter extends CustomPainter {
   }
 
   // --- DRAW SLICED FRUIT HALF ---
-  void _drawSlicedFruitHalf(Canvas canvas, String fruitType, double r, bool isLeft, double opacity) {
+  void _drawSlicedFruitHalf(
+    Canvas canvas,
+    String fruitType,
+    double r,
+    bool isLeft,
+    double opacity,
+  ) {
     final startAng = isLeft ? pi * 0.5 : -pi * 0.5;
     const sweepAng = pi;
     final a = opacity.clamp(0.0, 1.0);
@@ -1222,51 +1416,164 @@ class _NinjaArenaPainter extends CustomPainter {
     switch (fruitType) {
       case 'watermelon':
         // Green outer rind
-        canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r), startAng, sweepAng, true, Paint()..color = const Color(0xFF15803D).withValues(alpha: a));
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r),
+          startAng,
+          sweepAng,
+          true,
+          Paint()..color = const Color(0xFF15803D).withValues(alpha: a),
+        );
         // Light inner rind
-        canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r * 0.88), startAng, sweepAng, true, Paint()..color = const Color(0xFFDCFCE7).withValues(alpha: a));
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r * 0.88),
+          startAng,
+          sweepAng,
+          true,
+          Paint()..color = const Color(0xFFDCFCE7).withValues(alpha: a),
+        );
         // Red juicy flesh
-        canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r * 0.80), startAng, sweepAng, true, Paint()..color = const Color(0xFFEF4444).withValues(alpha: a));
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r * 0.80),
+          startAng,
+          sweepAng,
+          true,
+          Paint()..color = const Color(0xFFEF4444).withValues(alpha: a),
+        );
         // Black seeds
         final seedPaint = Paint()..color = Colors.black87.withValues(alpha: a);
         final sx = isLeft ? -r * 0.45 : r * 0.45;
         for (final sy in [-r * 0.35, 0.0, r * 0.35]) {
-          canvas.drawOval(Rect.fromCenter(center: Offset(sx, sy), width: 5, height: 8), seedPaint);
+          canvas.drawOval(
+            Rect.fromCenter(center: Offset(sx, sy), width: 5, height: 8),
+            seedPaint,
+          );
         }
         break;
 
       case 'orange':
-        canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r), startAng, sweepAng, true, Paint()..color = const Color(0xFFEA580C).withValues(alpha: a));
-        canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r * 0.90), startAng, sweepAng, true, Paint()..color = const Color(0xFFFEF9C3).withValues(alpha: a));
-        canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r * 0.82), startAng, sweepAng, true, Paint()..color = const Color(0xFFFB923C).withValues(alpha: a));
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r),
+          startAng,
+          sweepAng,
+          true,
+          Paint()..color = const Color(0xFFEA580C).withValues(alpha: a),
+        );
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r * 0.90),
+          startAng,
+          sweepAng,
+          true,
+          Paint()..color = const Color(0xFFFEF9C3).withValues(alpha: a),
+        );
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r * 0.82),
+          startAng,
+          sweepAng,
+          true,
+          Paint()..color = const Color(0xFFFB923C).withValues(alpha: a),
+        );
         break;
 
       case 'apple':
-        canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r), startAng, sweepAng, true, Paint()..color = const Color(0xFFDC2626).withValues(alpha: a));
-        canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r * 0.90), startAng, sweepAng, true, Paint()..color = const Color(0xFFFEF9C3).withValues(alpha: a));
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r),
+          startAng,
+          sweepAng,
+          true,
+          Paint()..color = const Color(0xFFDC2626).withValues(alpha: a),
+        );
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r * 0.90),
+          startAng,
+          sweepAng,
+          true,
+          Paint()..color = const Color(0xFFFEF9C3).withValues(alpha: a),
+        );
         // Apple core seed
-        canvas.drawOval(Rect.fromCenter(center: Offset(isLeft ? -r * 0.25 : r * 0.25, 0), width: 6, height: 10), Paint()..color = const Color(0xFF451A03).withValues(alpha: a));
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset(isLeft ? -r * 0.25 : r * 0.25, 0),
+            width: 6,
+            height: 10,
+          ),
+          Paint()..color = const Color(0xFF451A03).withValues(alpha: a),
+        );
         break;
 
       case 'strawberry':
-        canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r), startAng, sweepAng, true, Paint()..color = const Color(0xFFE11D48).withValues(alpha: a));
-        canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r * 0.85), startAng, sweepAng, true, Paint()..color = const Color(0xFFFFE4E6).withValues(alpha: a));
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r),
+          startAng,
+          sweepAng,
+          true,
+          Paint()..color = const Color(0xFFE11D48).withValues(alpha: a),
+        );
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r * 0.85),
+          startAng,
+          sweepAng,
+          true,
+          Paint()..color = const Color(0xFFFFE4E6).withValues(alpha: a),
+        );
         break;
 
       case 'kiwi':
-        canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r), startAng, sweepAng, true, Paint()..color = const Color(0xFF78350F).withValues(alpha: a));
-        canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r * 0.88), startAng, sweepAng, true, Paint()..color = const Color(0xFF22C55E).withValues(alpha: a));
-        canvas.drawOval(Rect.fromCenter(center: Offset(isLeft ? -r * 0.2 : r * 0.2, 0), width: r * 0.4, height: r * 0.6), Paint()..color = const Color(0xFFFEF9C3).withValues(alpha: a));
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r),
+          startAng,
+          sweepAng,
+          true,
+          Paint()..color = const Color(0xFF78350F).withValues(alpha: a),
+        );
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r * 0.88),
+          startAng,
+          sweepAng,
+          true,
+          Paint()..color = const Color(0xFF22C55E).withValues(alpha: a),
+        );
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset(isLeft ? -r * 0.2 : r * 0.2, 0),
+            width: r * 0.4,
+            height: r * 0.6,
+          ),
+          Paint()..color = const Color(0xFFFEF9C3).withValues(alpha: a),
+        );
         break;
 
       case 'coconut':
-        canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r), startAng, sweepAng, true, Paint()..color = const Color(0xFF451A03).withValues(alpha: a));
-        canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r * 0.85), startAng, sweepAng, true, Paint()..color = const Color(0xFFF8FAFC).withValues(alpha: a));
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r),
+          startAng,
+          sweepAng,
+          true,
+          Paint()..color = const Color(0xFF451A03).withValues(alpha: a),
+        );
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r * 0.85),
+          startAng,
+          sweepAng,
+          true,
+          Paint()..color = const Color(0xFFF8FAFC).withValues(alpha: a),
+        );
         break;
 
       default:
-        canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r), startAng, sweepAng, true, Paint()..color = const Color(0xFFCA8A04).withValues(alpha: a));
-        canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r * 0.88), startAng, sweepAng, true, Paint()..color = const Color(0xFFFEF08A).withValues(alpha: a));
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r),
+          startAng,
+          sweepAng,
+          true,
+          Paint()..color = const Color(0xFFCA8A04).withValues(alpha: a),
+        );
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r * 0.88),
+          startAng,
+          sweepAng,
+          true,
+          Paint()..color = const Color(0xFFFEF08A).withValues(alpha: a),
+        );
     }
   }
 
@@ -1290,18 +1597,29 @@ class _NinjaArenaPainter extends CustomPainter {
 
     final bannerW = (tp.width + 26).clamp(65.0, 140.0);
     const bannerH = 26.0;
-    final rect = Rect.fromCenter(center: Offset.zero, width: bannerW, height: bannerH);
+    final rect = Rect.fromCenter(
+      center: Offset.zero,
+      width: bannerW,
+      height: bannerH,
+    );
 
     // Dark Oak Plaque
-    final bgPaint = Paint()..color = const Color(0xFF1E140C).withValues(alpha: 0.94);
-    canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(8)), bgPaint);
+    final bgPaint = Paint()
+      ..color = const Color(0xFF1E140C).withValues(alpha: 0.94);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, const Radius.circular(8)),
+      bgPaint,
+    );
 
     // Gold Border
     final borderPaint = Paint()
       ..color = const Color(0xFFF59E0B)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8;
-    canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(8)), borderPaint);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, const Radius.circular(8)),
+      borderPaint,
+    );
 
     // 4 Corner Brass Rivets
     final rivetPaint = Paint()..color = const Color(0xFFFBBF24);
@@ -1316,7 +1634,12 @@ class _NinjaArenaPainter extends CustomPainter {
   }
 
   // --- DRAW SLICED PLAQUE HALF ---
-  void _drawSlicedPlaque(Canvas canvas, String text, bool isLeft, double opacity) {
+  void _drawSlicedPlaque(
+    Canvas canvas,
+    String text,
+    bool isLeft,
+    double opacity,
+  ) {
     const tagW = 34.0;
     const tagH = 22.0;
     final a = opacity.clamp(0.0, 1.0);
@@ -1371,10 +1694,23 @@ class _DojoAtmospherePainter extends CustomPainter {
     canvas.drawCircle(moonCenter, 42, moonPaint);
 
     // Moon craters
-    final craterPaint = Paint()..color = const Color(0xFFFDE68A).withValues(alpha: 0.55);
-    canvas.drawCircle(Offset(moonCenter.dx - 12, moonCenter.dy - 10), 9, craterPaint);
-    canvas.drawCircle(Offset(moonCenter.dx + 10, moonCenter.dy + 8), 6, craterPaint);
-    canvas.drawCircle(Offset(moonCenter.dx + 6, moonCenter.dy - 16), 5, craterPaint);
+    final craterPaint = Paint()
+      ..color = const Color(0xFFFDE68A).withValues(alpha: 0.55);
+    canvas.drawCircle(
+      Offset(moonCenter.dx - 12, moonCenter.dy - 10),
+      9,
+      craterPaint,
+    );
+    canvas.drawCircle(
+      Offset(moonCenter.dx + 10, moonCenter.dy + 8),
+      6,
+      craterPaint,
+    );
+    canvas.drawCircle(
+      Offset(moonCenter.dx + 6, moonCenter.dy - 16),
+      5,
+      craterPaint,
+    );
 
     // 3. Traditional Dojo Wooden Beam Ceiling (Top Arch)
     final beamPaint = Paint()..color = const Color(0xFF1A120B);
@@ -1409,7 +1745,8 @@ class _DojoAtmospherePainter extends CustomPainter {
     canvas.drawLine(Offset(0, floorY), Offset(size.width, floorY), floorBorder);
 
     // Bamboo Silhouettes on Left & Right
-    final bambooPaint = Paint()..color = const Color(0xFF0F172A).withValues(alpha: 0.75);
+    final bambooPaint = Paint()
+      ..color = const Color(0xFF0F172A).withValues(alpha: 0.75);
     _drawBamboo(canvas, 18, floorY, bambooPaint);
     _drawBamboo(canvas, 32, floorY, bambooPaint);
     _drawBamboo(canvas, size.width - 28, floorY, bambooPaint);
@@ -1417,7 +1754,13 @@ class _DojoAtmospherePainter extends CustomPainter {
 
   void _drawLantern(Canvas canvas, Offset center) {
     // String
-    canvas.drawLine(Offset(center.dx, 18), Offset(center.dx, center.dy - 22), Paint()..color = const Color(0xFFD97706)..strokeWidth = 1.5);
+    canvas.drawLine(
+      Offset(center.dx, 18),
+      Offset(center.dx, center.dy - 22),
+      Paint()
+        ..color = const Color(0xFFD97706)
+        ..strokeWidth = 1.5,
+    );
 
     // Lantern Glow
     final glow = Paint()
@@ -1437,12 +1780,25 @@ class _DojoAtmospherePainter extends CustomPainter {
         end: Alignment.bottomCenter,
         colors: [Color(0xFFEF4444), Color(0xFFB91C1C)],
       ).createShader(lanternRect);
-    canvas.drawRRect(RRect.fromRectAndRadius(lanternRect, const Radius.circular(8)), lanternPaint);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(lanternRect, const Radius.circular(8)),
+      lanternPaint,
+    );
 
     // Gold Ribs & Caps
-    final gold = Paint()..color = const Color(0xFFFBBF24)..strokeWidth = 1.5..style = PaintingStyle.stroke;
-    canvas.drawRRect(RRect.fromRectAndRadius(lanternRect, const Radius.circular(8)), gold);
-    canvas.drawLine(Offset(center.dx - 12, center.dy), Offset(center.dx + 12, center.dy), gold);
+    final gold = Paint()
+      ..color = const Color(0xFFFBBF24)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(lanternRect, const Radius.circular(8)),
+      gold,
+    );
+    canvas.drawLine(
+      Offset(center.dx - 12, center.dy),
+      Offset(center.dx + 12, center.dy),
+      gold,
+    );
   }
 
   void _drawBamboo(Canvas canvas, double x, double floorY, Paint paint) {
@@ -1451,9 +1807,21 @@ class _DojoAtmospherePainter extends CustomPainter {
     canvas.drawLine(Offset(x, floorY), Offset(x, floorY - 140), paint);
     // Nodes
     paint.strokeWidth = 8.5;
-    canvas.drawLine(Offset(x - 4, floorY - 35), Offset(x + 4, floorY - 35), paint);
-    canvas.drawLine(Offset(x - 4, floorY - 75), Offset(x + 4, floorY - 75), paint);
-    canvas.drawLine(Offset(x - 4, floorY - 115), Offset(x + 4, floorY - 115), paint);
+    canvas.drawLine(
+      Offset(x - 4, floorY - 35),
+      Offset(x + 4, floorY - 35),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(x - 4, floorY - 75),
+      Offset(x + 4, floorY - 75),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(x - 4, floorY - 115),
+      Offset(x + 4, floorY - 115),
+      paint,
+    );
   }
 
   @override

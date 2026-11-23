@@ -1,17 +1,24 @@
 import 'dart:async';
 import 'dart:math';
+
 import 'package:flutter/material.dart';
+
 import '../../models/game_content.dart';
 import '../../services/progress_service.dart';
 import '../../widgets/bouncy_button.dart';
 import '../../widgets/next_level_button.dart';
+
 import 'package:flutter/services.dart';
 
 class FlappyWordGame extends StatefulWidget {
   final ProgressService progressService;
   final GameContent content;
 
-  const FlappyWordGame({super.key, required this.progressService, required this.content});
+  const FlappyWordGame({
+    super.key,
+    required this.progressService,
+    required this.content,
+  });
 
   @override
   State<FlappyWordGame> createState() => _FlappyWordGameState();
@@ -76,6 +83,10 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
   String _gameState = 'playing'; // 'playing', 'victory', 'gameover'
   bool _soundEnabled = true;
 
+  /// True while the question popup is shown. The game is paused until the
+  /// child reads the question and taps "Let's Fly".
+  bool _showQuestionPopup = true;
+
   // Bird Physics (Smooth, buoyant, kid-friendly)
   final double _birdX = 85.0;
   double _birdY = 230.0;
@@ -111,16 +122,21 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
     final content = widget.content;
     final rng = Random();
     _defaultWaves = [
-      for (final level in content.isLevelMode
-          ? List.filled(GameContent.questionsPerLevel, content.levels.first)
-          : content.levels)
+      for (final level
+          in content.isLevelMode
+              ? List.filled(GameContent.questionsPerLevel, content.levels.first)
+              : content.levels)
         () {
           final correct = level.targets[rng.nextInt(level.targets.length)];
           final wrongPool = content.distractorsFor(level);
-          final wrong = wrongPool.isEmpty ? '?' : wrongPool[rng.nextInt(wrongPool.length)];
+          final wrong = wrongPool.isEmpty
+              ? '?'
+              : wrongPool[rng.nextInt(wrongPool.length)];
           final correctOnTop = rng.nextBool();
           return _CloudGateWave(
-            question: level.prompt.isNotEmpty ? level.prompt : content.game.prompt,
+            question: level.prompt.isNotEmpty
+                ? level.prompt
+                : content.game.prompt,
             topText: correctOnTop ? correct : wrong,
             topCorrect: correctOnTop,
             bottomText: correctOnTop ? wrong : correct,
@@ -142,12 +158,14 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
     final random = Random();
     _bgClouds.clear();
     for (int i = 0; i < 5; i++) {
-      _bgClouds.add(_BgCloud(
-        x: random.nextDouble() * 360,
-        y: 40 + random.nextDouble() * 200,
-        size: 26 + random.nextDouble() * 20,
-        speed: 15 + random.nextDouble() * 20,
-      ));
+      _bgClouds.add(
+        _BgCloud(
+          x: random.nextDouble() * 360,
+          y: 40 + random.nextDouble() * 200,
+          size: 26 + random.nextDouble() * 20,
+          speed: 15 + random.nextDouble() * 20,
+        ),
+      );
     }
   }
 
@@ -169,17 +187,23 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
       _isAdvancingGate = false;
       _feedbackText = null;
       _particles.clear();
+      _showQuestionPopup = true;
     });
 
     // 60 FPS fixed delta loop (16ms)
-    _loopTimer = Timer.periodic(const Duration(milliseconds: 16), (_) => _tick(0.016));
+    _loopTimer = Timer.periodic(
+      const Duration(milliseconds: 16),
+      (_) => _tick(0.016),
+    );
   }
 
   void _triggerVictory() {
     _loopTimer?.cancel();
     _loopTimer = null;
     widget.progressService.completeActiveGameLevel();
-    try { widget.progressService.addStars(widget.content.game.starsReward); } catch (_) {}
+    try {
+      widget.progressService.addStars(widget.content.game.starsReward);
+    } catch (_) {}
     if (mounted) {
       setState(() {
         _gameState = 'victory';
@@ -201,8 +225,15 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
     }
   }
 
+  void _closeQuestionPopup() {
+    setState(() {
+      _showQuestionPopup = false;
+      _birdVy = 0.0;
+    });
+  }
+
   void _flap() {
-    if (_gameState != 'playing') return;
+    if (_gameState != 'playing' || _showQuestionPopup) return;
 
     if (_soundEnabled) {
       try {
@@ -223,16 +254,18 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
   void _addFeathers() {
     final random = Random();
     for (int i = 0; i < 5; i++) {
-      _particles.add(_Particle(
-        x: _birdX - 12,
-        y: _birdY + (random.nextDouble() - 0.5) * 10,
-        vx: -35 - random.nextDouble() * 30,
-        vy: 15 + random.nextDouble() * 35,
-        color: i % 2 == 0 ? const Color(0xFFFEF08A) : Colors.white70,
-        radius: 2.5 + random.nextDouble() * 1.8,
-        life: 0.40,
-        maxLife: 0.40,
-      ));
+      _particles.add(
+        _Particle(
+          x: _birdX - 12,
+          y: _birdY + (random.nextDouble() - 0.5) * 10,
+          vx: -35 - random.nextDouble() * 30,
+          vy: 15 + random.nextDouble() * 35,
+          color: i % 2 == 0 ? const Color(0xFFFEF08A) : Colors.white70,
+          radius: 2.5 + random.nextDouble() * 1.8,
+          life: 0.40,
+          maxLife: 0.40,
+        ),
+      );
     }
   }
 
@@ -241,21 +274,23 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
     for (int i = 0; i < 24; i++) {
       final angle = random.nextDouble() * pi * 2;
       final speed = 35.0 + random.nextDouble() * 140.0;
-      _particles.add(_Particle(
-        x: x,
-        y: y,
-        vx: cos(angle) * speed,
-        vy: sin(angle) * speed,
-        color: color,
-        radius: 2.5 + random.nextDouble() * 3.0,
-        life: 0.50,
-        maxLife: 0.50,
-      ));
+      _particles.add(
+        _Particle(
+          x: x,
+          y: y,
+          vx: cos(angle) * speed,
+          vy: sin(angle) * speed,
+          color: color,
+          radius: 2.5 + random.nextDouble() * 3.0,
+          life: 0.50,
+          maxLife: 0.50,
+        ),
+      );
     }
   }
 
   void _tick(double dt) {
-    if (_gameState != 'playing') return;
+    if (_gameState != 'playing' || _showQuestionPopup) return;
 
     _animTimer += dt;
 
@@ -278,16 +313,18 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
       Color(0xFFA855F7),
     ];
     final colorIdx = (_animTimer * 12).floor() % rainbowColors.length;
-    _particles.add(_Particle(
-      x: _birdX - 16,
-      y: _birdY + sin(_animTimer * 6) * 3,
-      vx: -60 - Random().nextDouble() * 20,
-      vy: (Random().nextDouble() - 0.5) * 15,
-      color: rainbowColors[colorIdx],
-      radius: 2.4 + Random().nextDouble() * 1.5,
-      life: 0.38,
-      maxLife: 0.38,
-    ));
+    _particles.add(
+      _Particle(
+        x: _birdX - 16,
+        y: _birdY + sin(_animTimer * 6) * 3,
+        vx: -60 - Random().nextDouble() * 20,
+        vy: (Random().nextDouble() - 0.5) * 15,
+        color: rainbowColors[colorIdx],
+        radius: 2.4 + Random().nextDouble() * 1.5,
+        life: 0.38,
+        maxLife: 0.38,
+      ),
+    );
 
     // Floor and Ceiling bounds
     // Instead of instant death, bounce gently off grass floor!
@@ -320,7 +357,10 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
     }
 
     // 3. Cloud Gate Movement (Slow, Relaxing Pace)
-    _gateX -= _gateSpeed * widget.content.speedFactor * dt; // faster on medium/hard levels
+    _gateX -=
+        _gateSpeed *
+        widget.content.speedFactor *
+        dt; // faster on medium/hard levels
 
     // Deterministic in-frame gate advancement
     if (_isAdvancingGate) {
@@ -338,19 +378,32 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
     const bottomCloudY = 325.0;
     const cloudRadius = 55.0;
 
-    if (!_gatePassed && !_isAdvancingGate && _gateX <= _birdX + 25 && _gateX >= _birdX - 45) {
+    if (!_gatePassed &&
+        !_isAdvancingGate &&
+        _gateX <= _birdX + 25 &&
+        _gateX >= _birdX - 45) {
       // Check collision with top cloud
-      final distTop = (Offset(_birdX, _birdY) - Offset(_gateX, topCloudY)).distance;
+      final distTop =
+          (Offset(_birdX, _birdY) - Offset(_gateX, topCloudY)).distance;
       if (distTop <= cloudRadius + 22) {
         _gatePassed = true;
-        _resolveChoice(wave.topCorrect, wave.topText, Offset(_gateX, topCloudY));
+        _resolveChoice(
+          wave.topCorrect,
+          wave.topText,
+          Offset(_gateX, topCloudY),
+        );
       }
 
       // Check collision with bottom cloud
-      final distBottom = (Offset(_birdX, _birdY) - Offset(_gateX, bottomCloudY)).distance;
+      final distBottom =
+          (Offset(_birdX, _birdY) - Offset(_gateX, bottomCloudY)).distance;
       if (!_gatePassed && distBottom <= cloudRadius + 22) {
         _gatePassed = true;
-        _resolveChoice(wave.bottomCorrect, wave.bottomText, Offset(_gateX, bottomCloudY));
+        _resolveChoice(
+          wave.bottomCorrect,
+          wave.bottomText,
+          Offset(_gateX, bottomCloudY),
+        );
       }
     }
 
@@ -438,8 +491,16 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
     _gateTimer = 0.0;
 
     if (_currentWaveIndex < _defaultWaves.length - 1) {
+      final previousQuestion = _defaultWaves[_currentWaveIndex].question;
       setState(() {
         _currentWaveIndex++;
+        // A new question → pause and show it in the popup first.
+        if (_defaultWaves[_currentWaveIndex].question != previousQuestion) {
+          _showQuestionPopup = true;
+          _birdY = 220.0;
+          _birdVy = 0.0;
+          _particles.clear();
+        }
         _gateX = 390.0;
         _gatePassed = false;
         _feedbackText = null;
@@ -459,121 +520,246 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
     return Scaffold(
       backgroundColor: const Color(0xFF0284C7),
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // Top HUD
-            _buildTopHud(),
-
-            // Glowing High-Contrast Question Banner
-            _buildQuestionBanner(wave),
-
-            // Flappy Flight Arena (Tap anywhere on screen to flap!)
-            Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapDown: (_) => _flap(),
-                child: Stack(
-                  children: [
-                    // Sky, Clouds, Gates, Bird, Rainbow Canvas
-                    CustomPaint(
-                      painter: _FlappySkyPainter(
-                        bgClouds: _bgClouds,
-                        birdX: _birdX,
-                        birdY: _birdY,
-                        birdAngle: _birdAngle,
-                        wingAngle: _wingAngle,
-                        gateX: _gateX,
-                        wave: wave,
-                        particles: _particles,
-                      ),
-                      child: Container(),
-                    ),
-
-                    // Floating Alert / Feedback
-                    if (_feedbackText != null)
-                      Positioned(
-                        top: 20,
-                        left: 20,
-                        right: 20,
-                        child: Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: (_feedbackColor ?? Colors.amber).withValues(alpha: 0.95),
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              _feedbackText!,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    // Tap / Flap Button at Bottom
-                    Positioned(
-                      bottom: 12,
-                      left: 24,
-                      right: 24,
-                      child: BouncyButton(
-                        onPressed: _flap,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF38BDF8), Color(0xFF0284C7)],
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white, width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF0284C7).withValues(alpha: 0.5),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.flight_takeoff_rounded, color: Colors.white, size: 22),
-                              SizedBox(width: 8),
-                              Text(
-                                'FLAP WINGS 🕊️  (Tap Anywhere To Fly)',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 14,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Overlays
-                    if (_gameState == 'victory') Positioned.fill(child: _buildVictoryOverlay()),
-                    if (_gameState == 'gameover') Positioned.fill(child: _buildGameOverOverlay()),
-                  ],
-                ),
-              ),
-            ),
+            Positioned.fill(child: _buildGameColumn(wave)),
+            if (_showQuestionPopup && _gameState == 'playing')
+              Positioned.fill(child: _buildQuestionPopup(wave)),
           ],
         ),
       ),
+    );
+  }
+
+  /// Full-screen popup that shows the question big before the flight starts.
+  Widget _buildQuestionPopup(_CloudGateWave wave) {
+    final gateNo = _currentWaveIndex.clamp(0, _defaultWaves.length - 1) + 1;
+    return Material(
+      color: Colors.black.withValues(alpha: 0.78),
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxWidth: 520),
+            padding: const EdgeInsets.fromLTRB(22, 22, 22, 24),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)],
+              ),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: const Color(0xFFFDE047), width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF38BDF8).withValues(alpha: 0.45),
+                  blurRadius: 24,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('🕊️', style: TextStyle(fontSize: 54)),
+                const SizedBox(height: 6),
+                Text(
+                  'QUESTION · GATE $gateNo/${_defaultWaves.length}',
+                  style: const TextStyle(
+                    color: Color(0xFF38BDF8),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  wave.question,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFFFDE047),
+                    fontSize: 36,
+                    fontWeight: FontWeight.w900,
+                    height: 1.25,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black,
+                        blurRadius: 6,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'Fly the bird into the correct cloud!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 22),
+                BouncyButton(
+                  onPressed: _closeQuestionPopup,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 36,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF10B981), Color(0xFF059669)],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Text(
+                      "Let's Fly! 🚀",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGameColumn(_CloudGateWave wave) {
+    return Column(
+      children: [
+        // Top HUD
+        _buildTopHud(),
+
+        // Glowing High-Contrast Question Banner
+        _buildQuestionBanner(wave),
+
+        // Flappy Flight Arena (Tap anywhere on screen to flap!)
+        Expanded(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapDown: (_) => _flap(),
+            child: Stack(
+              children: [
+                // Sky, Clouds, Gates, Bird, Rainbow Canvas
+                CustomPaint(
+                  painter: _FlappySkyPainter(
+                    bgClouds: _bgClouds,
+                    birdX: _birdX,
+                    birdY: _birdY,
+                    birdAngle: _birdAngle,
+                    wingAngle: _wingAngle,
+                    gateX: _gateX,
+                    wave: wave,
+                    particles: _particles,
+                  ),
+                  child: Container(),
+                ),
+
+                // Floating Alert / Feedback
+                if (_feedbackText != null)
+                  Positioned(
+                    top: 20,
+                    left: 20,
+                    right: 20,
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: (_feedbackColor ?? Colors.amber).withValues(
+                            alpha: 0.95,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          _feedbackText!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // Tap / Flap Button at Bottom
+                Positioned(
+                  bottom: 12,
+                  left: 24,
+                  right: 24,
+                  child: BouncyButton(
+                    onPressed: _flap,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF38BDF8), Color(0xFF0284C7)],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0284C7)
+                                .withValues(alpha: 0.5),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.flight_takeoff_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'FLAP WINGS 🕊️  (Tap Anywhere To Fly)',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 14,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Overlays
+                if (_gameState == 'victory')
+                  Positioned.fill(child: _buildVictoryOverlay()),
+                if (_gameState == 'gameover')
+                  Positioned.fill(child: _buildGameOverOverlay()),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -593,7 +779,11 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
                 color: Colors.white12,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
           ),
 
@@ -601,11 +791,19 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 22),
+              const Icon(
+                Icons.star_rounded,
+                color: Color(0xFFFBBF24),
+                size: 22,
+              ),
               const SizedBox(width: 4),
               Text(
                 '$_score',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                ),
               ),
             ],
           ),
@@ -630,13 +828,16 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
                 (i) => Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 1),
                   child: Icon(
-                    i < _lives ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                    color: i < _lives ? const Color(0xFFEF4444) : Colors.white24,
+                    i < _lives
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    color: i < _lives
+                        ? const Color(0xFFEF4444)
+                        : Colors.white24,
                     size: 16,
                   ),
                 ),
               ),
-              
             ],
           ),
         ],
@@ -653,16 +854,10 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF0F172A),
-            const Color(0xFF1E293B),
-          ],
+          colors: [const Color(0xFF0F172A), const Color(0xFF1E293B)],
         ),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xFF38BDF8),
-          width: 2.2,
-        ),
+        border: Border.all(color: const Color(0xFF38BDF8), width: 2.2),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF38BDF8).withValues(alpha: 0.35),
@@ -685,7 +880,11 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.flight_rounded, color: Color(0xFF38BDF8), size: 14),
+                const Icon(
+                  Icons.flight_rounded,
+                  color: Color(0xFF38BDF8),
+                  size: 14,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   'TARGET: GATE ${(_currentWaveIndex.clamp(0, _defaultWaves.length - 1)) + 1}/${_defaultWaves.length}',
@@ -707,11 +906,15 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 22,
+              fontSize: 30,
               fontWeight: FontWeight.w900,
               height: 1.25,
               shadows: [
-                Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(0, 1)),
+                Shadow(
+                  color: Colors.black87,
+                  blurRadius: 4,
+                  offset: Offset(0, 1),
+                ),
               ],
             ),
           ),
@@ -731,11 +934,19 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.emoji_events_rounded, color: Color(0xFFFBBF24), size: 72),
+                const Icon(
+                  Icons.emoji_events_rounded,
+                  color: Color(0xFFFBBF24),
+                  size: 72,
+                ),
                 const SizedBox(height: 14),
                 const Text(
                   '🎉 SKYWAYS MASTER!',
-                  style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -745,7 +956,10 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
                 ),
                 const SizedBox(height: 22),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white12,
                     borderRadius: BorderRadius.circular(16),
@@ -753,7 +967,11 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
                   ),
                   child: Text(
                     'Final Score: $_score pts  (+15 ⭐)',
-                    style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Color(0xFFFBBF24),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -764,24 +982,44 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
                     BouncyButton(
                       onPressed: () => Navigator.of(context).pop(),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 14,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white24,
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Text('Back to Games', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Back to Games',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     BouncyButton(
                       onPressed: _startFlappyGame,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 14,
+                        ),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF10B981), Color(0xFF059669)],
+                          ),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Text('Play Again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Play Again',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -805,11 +1043,19 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.heart_broken_rounded, color: Color(0xFFEF4444), size: 72),
+                const Icon(
+                  Icons.heart_broken_rounded,
+                  color: Color(0xFFEF4444),
+                  size: 72,
+                ),
                 const SizedBox(height: 14),
                 const Text(
                   'OUT OF LIVES!',
-                  style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 const Text(
@@ -819,7 +1065,10 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
                 ),
                 const SizedBox(height: 22),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white12,
                     borderRadius: BorderRadius.circular(16),
@@ -827,7 +1076,11 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
                   ),
                   child: Text(
                     'Score: $_score pts',
-                    style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Color(0xFFFBBF24),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -837,24 +1090,44 @@ class _FlappyWordGameState extends State<FlappyWordGame> {
                     BouncyButton(
                       onPressed: () => Navigator.of(context).pop(),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 14,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white24,
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Text('Back to Games', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Back to Games',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     BouncyButton(
                       onPressed: _startFlappyGame,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 14,
+                        ),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [Color(0xFFEF4444), Color(0xFFDC2626)]),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                          ),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Text('Try Again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Try Again',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -905,8 +1178,16 @@ class _FlappySkyPainter extends CustomPainter {
     final cloudPaint = Paint()..color = Colors.white.withValues(alpha: 0.35);
     for (final c in bgClouds) {
       canvas.drawCircle(Offset(c.x, c.y), c.size, cloudPaint);
-      canvas.drawCircle(Offset(c.x + c.size * 0.7, c.y + 4), c.size * 0.75, cloudPaint);
-      canvas.drawCircle(Offset(c.x - c.size * 0.7, c.y + 4), c.size * 0.75, cloudPaint);
+      canvas.drawCircle(
+        Offset(c.x + c.size * 0.7, c.y + 4),
+        c.size * 0.75,
+        cloudPaint,
+      );
+      canvas.drawCircle(
+        Offset(c.x - c.size * 0.7, c.y + 4),
+        c.size * 0.75,
+        cloudPaint,
+      );
     }
 
     // 3. Rainbow Particles & Feathers
@@ -931,12 +1212,19 @@ class _FlappySkyPainter extends CustomPainter {
 
     // 6. Grass Bounce Floor at Bottom
     final grassPaint = Paint()..color = const Color(0xFF16A34A);
-    canvas.drawRect(Rect.fromLTWH(0, size.height - 35, size.width, 35), grassPaint);
+    canvas.drawRect(
+      Rect.fromLTWH(0, size.height - 35, size.width, 35),
+      grassPaint,
+    );
     final grassBorder = Paint()
       ..color = const Color(0xFF4ADE80)
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(0, size.height - 35), Offset(size.width, size.height - 35), grassBorder);
+    canvas.drawLine(
+      Offset(0, size.height - 35),
+      Offset(size.width, size.height - 35),
+      grassBorder,
+    );
   }
 
   void _drawCloudGate(Canvas canvas, double cx, double cy, String text) {
@@ -1000,11 +1288,19 @@ class _FlappySkyPainter extends CustomPainter {
     canvas.drawCircle(Offset.zero, 24, bodyPaint);
 
     // Soft Rosy Cheeks
-    canvas.drawCircle(const Offset(6, 6), 6, Paint()..color = const Color(0xFFFB7185).withValues(alpha: 0.5));
+    canvas.drawCircle(
+      const Offset(6, 6),
+      6,
+      Paint()..color = const Color(0xFFFB7185).withValues(alpha: 0.5),
+    );
 
     // Big Cute Eye
     canvas.drawCircle(const Offset(8, -6), 7, Paint()..color = Colors.white);
-    canvas.drawCircle(const Offset(10, -6), 4.2, Paint()..color = Colors.black87);
+    canvas.drawCircle(
+      const Offset(10, -6),
+      4.2,
+      Paint()..color = Colors.black87,
+    );
     canvas.drawCircle(const Offset(11, -8), 1.8, Paint()..color = Colors.white);
 
     // Orange Beak

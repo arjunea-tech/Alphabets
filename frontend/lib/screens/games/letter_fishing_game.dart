@@ -1,6 +1,8 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+
 import '../../models/game_content.dart';
 import '../../models/letter_model.dart';
 import '../../models/letter_fishing_game_model.dart';
@@ -10,12 +12,12 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/bouncy_button.dart';
 import '../../widgets/next_level_button.dart';
-import '../../widgets/mascot_widget.dart';
+import 'mini_game_kit.dart';
 
 enum HookState {
-  inactive,       // No hook in water. Fish swim freely.
+  inactive, // No hook in water. Fish swim freely.
   hookMovingDown, // Hook casting down to the tapped fish.
-  hookMovingUp,   // Hook reeling the caught fish up to the boat.
+  hookMovingUp, // Hook reeling the caught fish up to the boat.
 }
 
 class LetterFishingGame extends StatefulWidget {
@@ -113,11 +115,17 @@ class _LetterFishingGameState extends State<LetterFishingGame>
     );
     _celebrationScale = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween(begin: 0.0, end: 1.2).chain(CurveTween(curve: Curves.easeOutBack)),
+        tween: Tween(
+          begin: 0.0,
+          end: 1.2,
+        ).chain(CurveTween(curve: Curves.easeOutBack)),
         weight: 60,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 1.2, end: 1.0).chain(CurveTween(curve: Curves.easeInOut)),
+        tween: Tween(
+          begin: 1.2,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeInOut)),
         weight: 40,
       ),
     ]).animate(_celebrationController);
@@ -188,7 +196,8 @@ class _LetterFishingGameState extends State<LetterFishingGame>
     final target = _currentTarget;
 
     // Pick 3 distinct distractors from letterPool
-    final distractorCandidates = _letterPool.where((l) => l.id != target.id).toList()..shuffle(_rng);
+    final distractorCandidates =
+        _letterPool.where((l) => l.id != target.id).toList()..shuffle(_rng);
     final distractors = distractorCandidates.take(3).toList();
 
     final roundLetters = <LetterModel>[target, ...distractors]..shuffle(_rng);
@@ -201,10 +210,16 @@ class _LetterFishingGameState extends State<LetterFishingGame>
       final letter = roundLetters[i];
       final isTarget = letter.id == target.id;
       final direction = _rng.nextBool() ? 1 : -1;
-      final startX = direction == 1 ? (_rng.nextDouble() * 0.20 + 0.02) : (0.75 + _rng.nextDouble() * 0.20);
-      final laneY = verticalLanes[i % verticalLanes.length] + (_rng.nextDouble() * 0.04 - 0.02);
+      final startX = direction == 1
+          ? (_rng.nextDouble() * 0.20 + 0.02)
+          : (0.75 + _rng.nextDouble() * 0.20);
+      final laneY =
+          verticalLanes[i % verticalLanes.length] +
+          (_rng.nextDouble() * 0.04 - 0.02);
 
-      final (bodyGrad, finCol, accentCol) = FishColorPalette.getRandomColors(_rng);
+      final (bodyGrad, finCol, accentCol) = FishColorPalette.getRandomColors(
+        _rng,
+      );
 
       _activeFish.add(
         SwimmingFish(
@@ -213,7 +228,8 @@ class _LetterFishingGameState extends State<LetterFishingGame>
           isTarget: isTarget,
           x: startX,
           y: laneY.clamp(0.22, 0.78),
-          speed: _rng.nextDouble() * 0.06 + 0.09, // Smooth, gentle swimming speed
+          speed:
+              _rng.nextDouble() * 0.06 + 0.09, // Smooth, gentle swimming speed
           direction: direction,
           yWobbleFreq: _rng.nextDouble() * 1.5 + 1.8,
           yWobbleAmp: _rng.nextDouble() * 8 + 6,
@@ -232,7 +248,10 @@ class _LetterFishingGameState extends State<LetterFishingGame>
   // --------------------------------------------------------------------------
   void _onFishTapped(SwimmingFish fish) {
     // Ignore tap if game is not active or hook is already in action
-    if (!_isPlaying || _isGameOver || _isRoundTransitioning || _hookState != HookState.inactive) {
+    if (!_isPlaying ||
+        _isGameOver ||
+        _isRoundTransitioning ||
+        _hookState != HookState.inactive) {
       return;
     }
 
@@ -433,7 +452,10 @@ class _LetterFishingGameState extends State<LetterFishingGame>
         showIndicator: false,
       );
       _audioService.playRetryFeedback(context);
-      _showToast('This is "${fish.letter}" - Target: "${_currentTarget.letter}" 😊', const Color(0xFFFF8A65));
+      _showToast(
+        'This is "${fish.letter}" - Target: "${_currentTarget.letter}" 😊',
+        const Color(0xFFFF8A65),
+      );
 
       // Release fish back to natural swimming at middle water
       fish.isCaught = false;
@@ -604,14 +626,17 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                       ..._activeFish.map((fish) {
                         final fishY = fish.isCaught
                             ? (fish.y * screenSize.height)
-                            : (fish.y * screenSize.height + sin(fish.wobblePhase) * fish.yWobbleAmp);
+                            : (fish.y * screenSize.height +
+                                  sin(fish.wobblePhase) * fish.yWobbleAmp);
                         final fishX = fish.x * screenSize.width;
 
                         return Positioned(
                           left: fishX - (fish.size * 0.50),
                           top: fishY - (fish.size * 0.36),
                           child: IgnorePointer(
-                            ignoring: fish.isCaught || _hookState != HookState.inactive,
+                            ignoring:
+                                fish.isCaught ||
+                                _hookState != HookState.inactive,
                             child: _CartoonFishWidget(
                               fish: fish,
                               onTap: () => _onFishTapped(fish),
@@ -635,16 +660,16 @@ class _LetterFishingGameState extends State<LetterFishingGame>
               // 4. Fisherman Boat at Water Surface — only on the start screen;
               // during play the HUD header sits in this exact spot.
               if (!_isPlaying && !_isGameOver)
-              Positioned(
-                top: MediaQuery.of(context).padding.top + 6,
-                left: 0,
-                right: 0,
-                child: IgnorePointer(
-                  child: Center(
-                    child: _FishermanBoatWidget(isPlaying: _isPlaying),
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + 6,
+                  left: 0,
+                  right: 0,
+                  child: IgnorePointer(
+                    child: Center(
+                      child: _FishermanBoatWidget(isPlaying: _isPlaying),
+                    ),
                   ),
                 ),
-              ),
 
               // 5. In-Game HUD Header (Scores, Round Progress, Speaker, Back)
               if (_isPlaying && !_isGameOver)
@@ -682,7 +707,10 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                         child: Opacity(
                           opacity: _toastOpacity,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 22,
+                              vertical: 10,
+                            ),
                             decoration: BoxDecoration(
                               color: _toastColor,
                               borderRadius: BorderRadius.circular(30),
@@ -711,11 +739,18 @@ class _LetterFishingGameState extends State<LetterFishingGame>
 
               // 8. Start Game Welcome Screen
               if (!_isPlaying && !_isGameOver)
-                _buildStartScreen(context),
+                Positioned.fill(
+                  child: QuestionPopup(
+                    question: _startCardDescription,
+                    label: _startCardTitle.toUpperCase(),
+                    hint: 'Tap the fish with the same letter to catch it!',
+                    emoji: '🎣',
+                    onStart: _startGame,
+                  ),
+                ),
 
               // 9. Level Completed / Victory Screen
-              if (_isGameOver)
-                _buildVictoryScreen(context),
+              if (_isGameOver) _buildVictoryScreen(context),
             ],
           );
         },
@@ -812,7 +847,11 @@ class _LetterFishingGameState extends State<LetterFishingGame>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.star_rounded, color: Color(0xFFFF9F1C), size: 18),
+                const Icon(
+                  Icons.star_rounded,
+                  color: Color(0xFFFF9F1C),
+                  size: 18,
+                ),
                 const SizedBox(width: 2),
                 Text(
                   '$_score',
@@ -863,12 +902,12 @@ class _LetterFishingGameState extends State<LetterFishingGame>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                '🎯 ',
-                style: TextStyle(fontSize: 24),
-              ),
+              const Text('🎯 ', style: TextStyle(fontSize: 24)),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFE082),
                   borderRadius: BorderRadius.circular(16),
@@ -877,7 +916,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                 child: Text(
                   target.letter,
                   style: AppTextStyles.tamilLetterMedium.copyWith(
-                    fontSize: 38,
+                    fontSize: 54,
                     fontWeight: FontWeight.w900,
                     color: const Color(0xFFD84315),
                     height: 1.0,
@@ -888,7 +927,7 @@ class _LetterFishingGameState extends State<LetterFishingGame>
               const Text(
                 'Catch Letter!',
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 30,
                   fontWeight: FontWeight.w900,
                   color: Color(0xFFBF360C),
                   letterSpacing: 0.5,
@@ -920,233 +959,6 @@ class _LetterFishingGameState extends State<LetterFishingGame>
     }
     return 'A letter will be shown at the top. Tap the fish with that same '
         'letter to catch it with your hook!';
-  }
-
-  Widget _buildStartScreen(BuildContext context) {
-    return Container(
-      color: Colors.black.withValues(alpha: 0.40),
-      child: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 420),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFE1F5FE), Colors.white, Color(0xFFB3E5FC)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(36),
-                border: Border.all(color: const Color(0xFF29B6F6), width: 3.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.35),
-                    blurRadius: 24,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Game Mascot / Illustration
-                  const MascotWidget(
-                    pose: MascotPose.game,
-                    size: MascotSize.medium,
-                    customHeight: 100,
-                    showGlow: true,
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Title
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('🎣 ', style: TextStyle(fontSize: 26)),
-                        Text(
-                          'Letter Fishing',
-                          style: AppTextStyles.screenTitle.copyWith(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w900,
-                            color: const Color(0xFF01579B),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Subtitle
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE0F7FA),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: const Color(0xFF80DEEA), width: 1.5),
-                      ),
-                      child: const Text(
-                        'Tap matching fish to catch them with your hook!',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF00695C),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-
-                  // Level Badge
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: const Color(0xFFFFB74D), width: 2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFF9800).withValues(alpha: 0.15),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFF9800),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                '${_roundQueue.length} Rounds',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _startCardTitle,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
-                                  color: Color(0xFFE65100),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _startCardDescription,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF5D4037),
-                            height: 1.3,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        // Preview of the actual letters this game will ask for
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: {..._roundQueue.map((t) => t.letter)}.map((l) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFF3E0),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFFFFB74D)),
-                              ),
-                              child: Text(
-                                l,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFFE65100),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Play Button
-                  BouncyButton(
-                    onPressed: _startGame,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF00E676), Color(0xFF00C853)],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
-                        borderRadius: BorderRadius.circular(26),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF00C853).withValues(alpha: 0.40),
-                            blurRadius: 14,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'Play 🎮',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Back Button
-                  TextButton.icon(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_rounded, size: 18, color: Color(0xFF0277BD)),
-                    label: const Text(
-                      'Back',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0277BD),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _buildVictoryScreen(BuildContext context) {
@@ -1208,7 +1020,9 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                         padding: const EdgeInsets.symmetric(horizontal: 6),
                         child: Icon(
                           Icons.star_rounded,
-                          color: index < _starsEarned ? const Color(0xFFFFC107) : const Color(0xFFE0E0E0),
+                          color: index < _starsEarned
+                              ? const Color(0xFFFFC107)
+                              : const Color(0xFFE0E0E0),
                           size: 42,
                         ),
                       );
@@ -1222,13 +1036,19 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: const Color(0xFFFFE082), width: 2),
+                      border: Border.all(
+                        color: const Color(0xFFFFE082),
+                        width: 2,
+                      ),
                     ),
                     child: Column(
                       children: [
                         _buildStatRow('Total Score', '$_score'),
                         const Divider(height: 16),
-                        _buildStatRow('Caught Letters', '$_caughtCount / ${_roundQueue.length}'),
+                        _buildStatRow(
+                          'Caught Letters',
+                          '$_caughtCount / ${_roundQueue.length}',
+                        ),
                         const Divider(height: 16),
                         _buildStatRow('Stars Earned', '+$_starsEarned'),
                       ],
@@ -1251,7 +1071,8 @@ class _LetterFishingGameState extends State<LetterFishingGame>
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF00C853).withValues(alpha: 0.35),
+                            color: const Color(0xFF00C853)
+                                .withValues(alpha: 0.35),
                             blurRadius: 12,
                             offset: const Offset(0, 5),
                           ),
@@ -1404,10 +1225,7 @@ class _CartoonFishWidget extends StatelessWidget {
   final SwimmingFish fish;
   final VoidCallback onTap;
 
-  const _CartoonFishWidget({
-    required this.fish,
-    required this.onTap,
-  });
+  const _CartoonFishWidget({required this.fish, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1524,8 +1342,18 @@ class _FishVectorPainter extends CustomPainter {
     // 4. Main Fish Body
     final bodyPath = Path();
     bodyPath.moveTo(w * 0.96, centerY); // Snout
-    bodyPath.quadraticBezierTo(w * 0.70, h * 0.05, w * 0.22, centerY); // Top curve
-    bodyPath.quadraticBezierTo(w * 0.70, h * 0.95, w * 0.96, centerY); // Bottom curve
+    bodyPath.quadraticBezierTo(
+      w * 0.70,
+      h * 0.05,
+      w * 0.22,
+      centerY,
+    ); // Top curve
+    bodyPath.quadraticBezierTo(
+      w * 0.70,
+      h * 0.95,
+      w * 0.96,
+      centerY,
+    ); // Bottom curve
     bodyPath.close();
 
     final bodyPaint = Paint()
@@ -1549,7 +1377,11 @@ class _FishVectorPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0;
     canvas.drawArc(
-      Rect.fromCenter(center: Offset(w * 0.44, centerY), width: 34, height: h * 0.72),
+      Rect.fromCenter(
+        center: Offset(w * 0.44, centerY),
+        width: 34,
+        height: h * 0.72,
+      ),
       -pi / 2,
       pi,
       false,
@@ -1563,14 +1395,27 @@ class _FishVectorPainter extends CustomPainter {
     // White Sclera
     canvas.drawCircle(eyeCenter, eyeRadius, Paint()..color = Colors.white);
     // Dark Pupil
-    canvas.drawCircle(eyeCenter + const Offset(1.5, 0), eyeRadius * 0.62, Paint()..color = const Color(0xFF1A237E));
+    canvas.drawCircle(
+      eyeCenter + const Offset(1.5, 0),
+      eyeRadius * 0.62,
+      Paint()..color = const Color(0xFF1A237E),
+    );
     // Catchlight Glint
-    canvas.drawCircle(eyeCenter + const Offset(-1.5, -2), eyeRadius * 0.28, Paint()..color = Colors.white);
+    canvas.drawCircle(
+      eyeCenter + const Offset(-1.5, -2),
+      eyeRadius * 0.28,
+      Paint()..color = Colors.white,
+    );
 
     // 6. Friendly Smile
     final smilePath = Path();
     smilePath.moveTo(w * 0.93, centerY + h * 0.12);
-    smilePath.quadraticBezierTo(w * 0.88, centerY + h * 0.22, w * 0.82, centerY + h * 0.14);
+    smilePath.quadraticBezierTo(
+      w * 0.88,
+      centerY + h * 0.22,
+      w * 0.82,
+      centerY + h * 0.14,
+    );
     canvas.drawPath(
       smilePath,
       Paint()
@@ -1591,11 +1436,7 @@ class _FishVectorPainter extends CustomPainter {
       Paint()..color = Colors.black.withValues(alpha: 0.18),
     );
     // Badge Background
-    canvas.drawCircle(
-      badgeCenter,
-      badgeRadius,
-      Paint()..color = Colors.white,
-    );
+    canvas.drawCircle(badgeCenter, badgeRadius, Paint()..color = Colors.white);
     // Badge Border
     canvas.drawCircle(
       badgeCenter,
@@ -1657,10 +1498,7 @@ class _UnderwaterWorldPainter extends CustomPainter {
   final List<UnderwaterBubble> bubbles;
   final double seaweedPhase;
 
-  _UnderwaterWorldPainter({
-    required this.bubbles,
-    required this.seaweedPhase,
-  });
+  _UnderwaterWorldPainter({required this.bubbles, required this.seaweedPhase});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1722,14 +1560,52 @@ class _UnderwaterWorldPainter extends CustomPainter {
     canvas.drawPath(floorPath, Paint()..shader = sandShader);
 
     // 4. Swaying Seaweed Stalks (Kelp)
-    _drawSwayingSeaweed(canvas, w * 0.08, h * 0.90, h * 0.32, 0.0, const Color(0xFF2E7D32));
-    _drawSwayingSeaweed(canvas, w * 0.14, h * 0.92, h * 0.26, 0.8, const Color(0xFF43A047));
-    _drawSwayingSeaweed(canvas, w * 0.86, h * 0.91, h * 0.35, 1.4, const Color(0xFF1B5E20));
-    _drawSwayingSeaweed(canvas, w * 0.92, h * 0.89, h * 0.28, 2.2, const Color(0xFF388E3C));
+    _drawSwayingSeaweed(
+      canvas,
+      w * 0.08,
+      h * 0.90,
+      h * 0.32,
+      0.0,
+      const Color(0xFF2E7D32),
+    );
+    _drawSwayingSeaweed(
+      canvas,
+      w * 0.14,
+      h * 0.92,
+      h * 0.26,
+      0.8,
+      const Color(0xFF43A047),
+    );
+    _drawSwayingSeaweed(
+      canvas,
+      w * 0.86,
+      h * 0.91,
+      h * 0.35,
+      1.4,
+      const Color(0xFF1B5E20),
+    );
+    _drawSwayingSeaweed(
+      canvas,
+      w * 0.92,
+      h * 0.89,
+      h * 0.28,
+      2.2,
+      const Color(0xFF388E3C),
+    );
 
     // 5. Starfish on Sandy Seabed
-    _drawStarfish(canvas, Offset(w * 0.32, h * 0.92), 16, const Color(0xFFFF5722));
-    _drawStarfish(canvas, Offset(w * 0.68, h * 0.94), 13, const Color(0xFFE91E63));
+    _drawStarfish(
+      canvas,
+      Offset(w * 0.32, h * 0.92),
+      16,
+      const Color(0xFFFF5722),
+    );
+    _drawStarfish(
+      canvas,
+      Offset(w * 0.68, h * 0.94),
+      13,
+      const Color(0xFFE91E63),
+    );
 
     // 6. Translucent Rising Bubbles
     for (final b in bubbles) {
@@ -1756,12 +1632,29 @@ class _UnderwaterWorldPainter extends CustomPainter {
     }
   }
 
-  void _drawSwayingSeaweed(Canvas canvas, double rootX, double rootY, double height, double offset, Color color) {
+  void _drawSwayingSeaweed(
+    Canvas canvas,
+    double rootX,
+    double rootY,
+    double height,
+    double offset,
+    Color color,
+  ) {
     final sway = sin(seaweedPhase + offset) * 16.0;
     final path = Path();
     path.moveTo(rootX - 8, rootY);
-    path.quadraticBezierTo(rootX + sway * 0.4, rootY - height * 0.5, rootX + sway, rootY - height);
-    path.quadraticBezierTo(rootX + sway * 0.5 + 8, rootY - height * 0.5, rootX + 8, rootY);
+    path.quadraticBezierTo(
+      rootX + sway * 0.4,
+      rootY - height * 0.5,
+      rootX + sway,
+      rootY - height,
+    );
+    path.quadraticBezierTo(
+      rootX + sway * 0.5 + 8,
+      rootY - height * 0.5,
+      rootX + 8,
+      rootY,
+    );
     path.close();
 
     canvas.drawPath(path, Paint()..color = color.withValues(alpha: 0.85));

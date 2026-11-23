@@ -1,4 +1,5 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +13,7 @@ import '../../services/audio_service.dart';
 import '../../services/progress_service.dart';
 import '../../widgets/bouncy_button.dart';
 import '../../widgets/next_level_button.dart';
+import 'mini_game_kit.dart';
 
 class FruitCutterGame extends StatefulWidget {
   final ProgressService progressService;
@@ -97,26 +99,54 @@ class _FruitCutterGameState extends State<FruitCutterGame>
   /// Briefly true after a wrong cut, to flash the screen red.
   bool _wrongFlash = false;
 
+  /// True while the question popup is shown; the game waits until the child
+  /// taps "Let's Play".
+  bool _showQ = true;
+
+  String get _popupQuestion {
+    if (!_isLevelMode) return 'Slice the fruits and learn the letters!';
+    final level = widget.content!.levels.first;
+    return level.prompt.trim().isNotEmpty
+        ? level.prompt.trim()
+        : 'Cut only these letters!';
+  }
+
   double get _speedFactor => widget.content?.speedFactor ?? 1.0;
 
+  /// Slow-motion factor for fruit flight (1.0 = original speed). Fruits hang
+  /// in the air about twice as long so kids can read the letter; harder
+  /// levels speed up a little.
+  double get _fruitTimeScale =>
+      (0.5 * _speedFactor).clamp(0.4, 0.75).toDouble();
+
   late final Set<String> _targetKeys = _isLevelMode
-      ? widget.content!.levels.first.targets.map((t) => t.trim().toUpperCase()).toSet()
+      ? widget.content!.levels.first.targets
+            .map((t) => t.trim().toUpperCase())
+            .toSet()
       : const <String>{};
 
-  late final List<LetterModel> _targetPool = _isLevelMode ? widget.content!.targetLetters : const [];
+  late final List<LetterModel> _targetPool = _isLevelMode
+      ? widget.content!.targetLetters
+      : const [];
 
   late final List<LetterModel> _wrongPool = () {
     if (!_isLevelMode) return const <LetterModel>[];
-    bool notTarget(LetterModel l) => !_targetKeys.contains(l.letter.trim().toUpperCase());
+    bool notTarget(LetterModel l) =>
+        !_targetKeys.contains(l.letter.trim().toUpperCase());
     final fromAdmin = widget.content!
-        .lettersFor(widget.content!.distractorsFor(widget.content!.levels.first))
+        .lettersFor(
+          widget.content!.distractorsFor(widget.content!.levels.first),
+        )
         .where(notTarget)
         .toList();
     // No admin distractors and admin letters couldn't load: use A–Z.
-    return fromAdmin.isNotEmpty ? fromAdmin : englishLettersList.where(notTarget).toList();
+    return fromAdmin.isNotEmpty
+        ? fromAdmin
+        : englishLettersList.where(notTarget).toList();
   }();
 
-  bool _isTargetFruit(ActiveFruit fruit) => _targetKeys.contains(fruit.letterModel.letter.trim().toUpperCase());
+  bool _isTargetFruit(ActiveFruit fruit) =>
+      _targetKeys.contains(fruit.letterModel.letter.trim().toUpperCase());
 
   /// Next letter for a new fruit: in question mode about half are correct
   /// answers and half are wrong ones.
@@ -159,6 +189,7 @@ class _FruitCutterGameState extends State<FruitCutterGame>
       _splatDecals.clear();
       _letterPops.clear();
       _bladePoints.clear();
+      _showQ = true;
       _timeUntilNextSpawn = 0.8;
     });
   }
@@ -167,7 +198,7 @@ class _FruitCutterGameState extends State<FruitCutterGame>
   // GAME LOOP (60 FPS)
   // --------------------------------------------------------------------------
   void _onTick(Duration elapsed) {
-    if (!mounted || !_isPlaying || _isGameOver) return;
+    if (!mounted || !_isPlaying || _isGameOver || _showQ) return;
 
     final double dt = _lastElapsed == Duration.zero
         ? 0.016
@@ -185,19 +216,25 @@ class _FruitCutterGameState extends State<FruitCutterGame>
       _timeUntilNextSpawn -= clampedDt;
       if (_timeUntilNextSpawn <= 0) {
         _spawnWave();
-        _timeUntilNextSpawn = (1.3 + _rng.nextDouble() * 1.0) / _speedFactor; // more fruits on medium/hard
+        // Longer gap between waves to match the slower flight.
+        _timeUntilNextSpawn =
+            (2.2 + _rng.nextDouble() * 1.2) /
+            _speedFactor; // more fruits on medium/hard
       }
     }
 
     // 3. Update fruits
+    // Physics constants are tuned per 60fps frame; [step] makes motion frame-
+    // rate independent and applies the slow-motion [_fruitTimeScale].
+    final double step = clampedDt * 60.0 * _fruitTimeScale;
     final List<ActiveFruit> toRemoveFruits = [];
     for (final fruit in _activeFruits) {
       if (!fruit.isSliced) {
         // Whole fruit physics
-        fruit.x += fruit.vx;
-        fruit.y += fruit.vy;
-        fruit.vy += 0.38; // gravity
-        fruit.rotation += fruit.angularVelocity;
+        fruit.x += fruit.vx * step;
+        fruit.y += fruit.vy * step;
+        fruit.vy += 0.38 * step; // gravity
+        fruit.rotation += fruit.angularVelocity * step;
 
         // If fell below screen after rising (MISSED FRUIT)
         if (fruit.y > _canvasSize.height + 60 && fruit.vy > 0) {
@@ -207,19 +244,23 @@ class _FruitCutterGameState extends State<FruitCutterGame>
         }
       } else {
         // Sliced halves physics
-        fruit.sliceProgress = (fruit.sliceProgress + clampedDt * 2.0).clamp(0.0, 1.0);
+        fruit.sliceProgress = (fruit.sliceProgress + clampedDt * 2.0).clamp(
+          0.0,
+          1.0,
+        );
 
-        fruit.half1X += fruit.half1Vx;
-        fruit.half1Y += fruit.half1Vy;
-        fruit.half1Vy += 0.42;
-        fruit.half1Rotation += fruit.half1AngularVelocity;
+        fruit.half1X += fruit.half1Vx * step;
+        fruit.half1Y += fruit.half1Vy * step;
+        fruit.half1Vy += 0.42 * step;
+        fruit.half1Rotation += fruit.half1AngularVelocity * step;
 
-        fruit.half2X += fruit.half2Vx;
-        fruit.half2Y += fruit.half2Vy;
-        fruit.half2Vy += 0.42;
-        fruit.half2Rotation += fruit.half2AngularVelocity;
+        fruit.half2X += fruit.half2Vx * step;
+        fruit.half2Y += fruit.half2Vy * step;
+        fruit.half2Vy += 0.42 * step;
+        fruit.half2Rotation += fruit.half2AngularVelocity * step;
 
-        if (fruit.half1Y > _canvasSize.height + 100 && fruit.half2Y > _canvasSize.height + 100) {
+        if (fruit.half1Y > _canvasSize.height + 100 &&
+            fruit.half2Y > _canvasSize.height + 100) {
           toRemoveFruits.add(fruit);
         }
       }
@@ -262,7 +303,8 @@ class _FruitCutterGameState extends State<FruitCutterGame>
     _letterPops.removeWhere((p) => toRemovePops.contains(p));
 
     // Reset combo if gap > 700ms
-    if (_comboCount > 0 && DateTime.now().difference(_lastSliceTime).inMilliseconds > 700) {
+    if (_comboCount > 0 &&
+        DateTime.now().difference(_lastSliceTime).inMilliseconds > 700) {
       _comboCount = 0;
     }
 
@@ -308,7 +350,9 @@ class _FruitCutterGameState extends State<FruitCutterGame>
       final startY = _canvasSize.height + 40 + (i * 25);
 
       // Arc towards center
-      final targetX = _canvasSize.width * 0.5 + (_rng.nextDouble() - 0.5) * (_canvasSize.width * 0.6);
+      final targetX =
+          _canvasSize.width * 0.5 +
+          (_rng.nextDouble() - 0.5) * (_canvasSize.width * 0.6);
       // Question mode keeps fruits below the question banner at the top.
       final peakHeight = _isLevelMode
           ? _canvasSize.height * (0.42 + _rng.nextDouble() * 0.18)
@@ -380,8 +424,13 @@ class _FruitCutterGameState extends State<FruitCutterGame>
   double _distToSegment(Offset p, Offset v, Offset w) {
     final l2 = (v - w).distanceSquared;
     if (l2 == 0) return (p - v).distance;
-    final t = (((p.dx - v.dx) * (w.dx - v.dx) + (p.dy - v.dy) * (w.dy - v.dy)) / l2).clamp(0.0, 1.0);
-    final projection = Offset(v.dx + t * (w.dx - v.dx), v.dy + t * (w.dy - v.dy));
+    final t =
+        (((p.dx - v.dx) * (w.dx - v.dx) + (p.dy - v.dy) * (w.dy - v.dy)) / l2)
+            .clamp(0.0, 1.0);
+    final projection = Offset(
+      v.dx + t * (w.dx - v.dx),
+      v.dy + t * (w.dy - v.dy),
+    );
     return (p - projection).distance;
   }
 
@@ -519,100 +568,112 @@ class _FruitCutterGameState extends State<FruitCutterGame>
   Widget build(BuildContext context) {
     const isEn = true;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF381A07),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          _canvasSize = Size(constraints.maxWidth, constraints.maxHeight);
+    return QuestionPopupHost(
+      show: _showQ && !_isGameOver,
+      question: _popupQuestion,
+      target: _isLevelMode
+          ? widget.content!.levels.first.targets.join('  ')
+          : null,
+      label: _isLevelMode
+          ? 'LEVEL ${(widget.content?.levelIndex ?? 0) + 1}'
+          : 'FRUIT SLICE',
+      hint: _isLevelMode
+          ? 'Swipe to cut only the fruits with these letters!'
+          : 'Swipe across the fruits to cut them!',
+      emoji: '🍉',
+      onStart: () => setState(() => _showQ = false),
+      child: Scaffold(
+        backgroundColor: const Color(0xFF381A07),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            _canvasSize = Size(constraints.maxWidth, constraints.maxHeight);
 
-          return Stack(
-            children: [
-              // 1. Beautiful Warm Wooden Cutting Board Background
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _WoodBoardBackgroundPainter(),
-                ),
-              ),
-
-              // 2. Interactive Game Area (GestureDetector & CustomPainter)
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onPanStart: _onPanStart,
-                  onPanUpdate: _onPanUpdate,
-                  onPanEnd: _onPanEnd,
-                  child: CustomPaint(
-                    size: _canvasSize,
-                    painter: _FruitNinjaScenePainter(
-                      activeFruits: _activeFruits,
-                      juiceDrops: _juiceDrops,
-                      splatDecals: _splatDecals,
-                      letterPops: _letterPops,
-                      bladePoints: _bladePoints,
-                      showLetters: _isLevelMode,
-                    ),
-                  ),
-                ),
-              ),
-
-              // 3. Top HUD: Back Button, Header, Lives/Missed counter, Stars, Score
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _buildTopHeader(isEn),
-                        const SizedBox(height: 6),
-                        _buildSubHeader(isEn),
-                        if (_isLevelMode) ...[
-                          const SizedBox(height: 8),
-                          _buildQuestionBanner(),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              // 4. Combo Flame Badge
-              if (_comboCount >= 2 && !_isGameOver)
-                Positioned(
-                  top: 125,
-                  right: 20,
-                  child: _buildComboBadge(),
-                ),
-
-              // Red flash after cutting a wrong fruit (question mode)
-              if (_wrongFlash)
+            return Stack(
+              children: [
+                // 1. Beautiful Warm Wooden Cutting Board Background
                 Positioned.fill(
-                  child: IgnorePointer(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.18),
-                        border: Border.all(color: Colors.redAccent, width: 6),
+                  child: CustomPaint(painter: _WoodBoardBackgroundPainter()),
+                ),
+
+                // 2. Interactive Game Area (GestureDetector & CustomPainter)
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onPanStart: _onPanStart,
+                    onPanUpdate: _onPanUpdate,
+                    onPanEnd: _onPanEnd,
+                    child: CustomPaint(
+                      size: _canvasSize,
+                      painter: _FruitNinjaScenePainter(
+                        activeFruits: _activeFruits,
+                        juiceDrops: _juiceDrops,
+                        splatDecals: _splatDecals,
+                        letterPops: _letterPops,
+                        bladePoints: _bladePoints,
+                        showLetters: _isLevelMode,
                       ),
-                      child: const Center(child: Text('❌', style: TextStyle(fontSize: 72))),
                     ),
                   ),
                 ),
 
-              // Level complete (question mode: 5 correct cuts)
-              if (_levelWon && !_isGameOver)
-                Positioned.fill(child: _buildLevelCompleteOverlay()),
-
-              // 5. Game Over Modal Overlay (When 10 fruits missed)
-              if (_isGameOver)
-                Positioned.fill(
-                  child: _buildGameOverOverlay(isEn),
+                // 3. Top HUD: Back Button, Header, Lives/Missed counter, Stars, Score
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildTopHeader(isEn),
+                          const SizedBox(height: 6),
+                          _buildSubHeader(isEn),
+                          if (_isLevelMode) ...[
+                            const SizedBox(height: 8),
+                            _buildQuestionBanner(),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-            ],
-          );
-        },
+
+                // 4. Combo Flame Badge
+                if (_comboCount >= 2 && !_isGameOver)
+                  Positioned(top: 125, right: 20, child: _buildComboBadge()),
+
+                // Red flash after cutting a wrong fruit (question mode)
+                if (_wrongFlash)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.18),
+                          border: Border.all(color: Colors.redAccent, width: 6),
+                        ),
+                        child: const Center(
+                          child: Text('❌', style: TextStyle(fontSize: 72)),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // Level complete (question mode: 5 correct cuts)
+                if (_levelWon && !_isGameOver)
+                  Positioned.fill(child: _buildLevelCompleteOverlay()),
+
+                // 5. Game Over Modal Overlay (When 10 fruits missed)
+                if (_isGameOver)
+                  Positioned.fill(child: _buildGameOverOverlay(isEn)),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -633,9 +694,16 @@ class _FruitCutterGameState extends State<FruitCutterGame>
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.18),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1.2),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.35),
+                width: 1.2,
+              ),
             ),
-            child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 16),
+            child: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+              size: 16,
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -653,7 +721,11 @@ class _FruitCutterGameState extends State<FruitCutterGame>
                 color: Colors.white,
                 letterSpacing: 0.3,
                 shadows: const [
-                  Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(1, 1)),
+                  Shadow(
+                    color: Colors.black54,
+                    blurRadius: 4,
+                    offset: Offset(1, 1),
+                  ),
                 ],
               ),
             ),
@@ -678,7 +750,11 @@ class _FruitCutterGameState extends State<FruitCutterGame>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.flash_on_rounded, color: Colors.amberAccent, size: 14),
+              const Icon(
+                Icons.flash_on_rounded,
+                color: Colors.amberAccent,
+                size: 14,
+              ),
               const SizedBox(width: 2),
               Text(
                 '$_score',
@@ -703,7 +779,11 @@ class _FruitCutterGameState extends State<FruitCutterGame>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.star_rounded, color: Color(0xFFD97706), size: 14),
+              const Icon(
+                Icons.star_rounded,
+                color: Color(0xFFD97706),
+                size: 14,
+              ),
               const SizedBox(width: 2),
               Text(
                 '${widget.progressService.stars}',
@@ -758,7 +838,9 @@ class _FruitCutterGameState extends State<FruitCutterGame>
                 : const Color(0xFF2E1C14).withValues(alpha: 0.75),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: _missedFruits >= 7 ? Colors.redAccent : Colors.white.withValues(alpha: 0.3),
+              color: _missedFruits >= 7
+                  ? Colors.redAccent
+                  : Colors.white.withValues(alpha: 0.3),
               width: 1.2,
             ),
           ),
@@ -767,7 +849,9 @@ class _FruitCutterGameState extends State<FruitCutterGame>
             children: [
               Icon(
                 Icons.close_rounded,
-                color: _missedFruits >= 7 ? Colors.white : const Color(0xFFFF5252),
+                color: _missedFruits >= 7
+                    ? Colors.white
+                    : const Color(0xFFFF5252),
                 size: 14,
               ),
               const SizedBox(width: 3),
@@ -789,7 +873,9 @@ class _FruitCutterGameState extends State<FruitCutterGame>
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerRight,
-            child: _isLevelMode ? _buildLevelGoalPill() : _buildModeSelector(isEn),
+            child: _isLevelMode
+                ? _buildLevelGoalPill()
+                : _buildModeSelector(isEn),
           ),
         ),
       ],
@@ -804,13 +890,22 @@ class _FruitCutterGameState extends State<FruitCutterGame>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: _levelWon ? const Color(0xFF16A34A) : const Color(0xFF2E1C14).withValues(alpha: 0.75),
+        color: _levelWon
+            ? const Color(0xFF16A34A)
+            : const Color(0xFF2E1C14).withValues(alpha: 0.75),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.2),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.3),
+          width: 1.2,
+        ),
       ),
       child: Text(
         _levelWon ? 'Level $levelNo ✓' : 'Level $levelNo · $done/$_levelGoal',
-        style: GoogleFonts.catamaran(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white),
+        style: GoogleFonts.catamaran(
+          fontSize: 14,
+          fontWeight: FontWeight.w900,
+          color: Colors.white,
+        ),
       ),
     );
   }
@@ -837,7 +932,7 @@ class _FruitCutterGameState extends State<FruitCutterGame>
             question,
             textAlign: TextAlign.center,
             style: GoogleFonts.catamaran(
-              fontSize: 21,
+              fontSize: 30,
               fontWeight: FontWeight.w900,
               color: const Color(0xFFFDE047),
               height: 1.15,
@@ -852,15 +947,25 @@ class _FruitCutterGameState extends State<FruitCutterGame>
             children: [
               for (final t in level.targets)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF4ADE80), width: 1.2),
+                    border: Border.all(
+                      color: const Color(0xFF4ADE80),
+                      width: 1.2,
+                    ),
                   ),
                   child: Text(
                     t,
-                    style: GoogleFonts.catamaran(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
+                    style: GoogleFonts.catamaran(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
             ],
@@ -873,8 +978,12 @@ class _FruitCutterGameState extends State<FruitCutterGame>
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 3),
                   child: Icon(
-                    i < _correctCuts ? Icons.check_circle_rounded : Icons.circle_outlined,
-                    color: i < _correctCuts ? const Color(0xFF4ADE80) : Colors.white38,
+                    i < _correctCuts
+                        ? Icons.check_circle_rounded
+                        : Icons.circle_outlined,
+                    color: i < _correctCuts
+                        ? const Color(0xFF4ADE80)
+                        : Colors.white38,
                     size: 20,
                   ),
                 ),
@@ -891,16 +1000,24 @@ class _FruitCutterGameState extends State<FruitCutterGame>
     final levelIndex = widget.content!.levelIndex ?? 0;
     final hasNext = levelIndex + 1 < game.playableLevels.length;
 
-    Widget button(String label, Color color, VoidCallback onTap) => BouncyButton(
+    Widget button(String label, Color color, VoidCallback onTap) =>
+        BouncyButton(
           onPressed: onTap,
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 13),
-            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(18)),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(18),
+            ),
             child: Center(
               child: Text(
                 label,
-                style: GoogleFonts.catamaran(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
+                style: GoogleFonts.catamaran(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
@@ -931,23 +1048,41 @@ class _FruitCutterGameState extends State<FruitCutterGame>
                 Text(
                   'Level ${levelIndex + 1} Complete!',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.catamaran(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white),
+                  style: GoogleFonts.catamaran(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  hasNext ? 'Level ${levelIndex + 2} is unlocked!' : 'You finished every level! 🏆',
+                  hasNext
+                      ? 'Level ${levelIndex + 2} is unlocked!'
+                      : 'You finished every level! 🏆',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.catamaran(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white70),
+                  style: GoogleFonts.catamaran(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white70,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 if (hasNext) ...[
                   // The games screen opens the next level when it gets this result.
-                  button('Next Level ▶', const Color(0xFF16A34A), () => Navigator.pop(context, nextLevelResult)),
+                  button(
+                    'Next Level ▶',
+                    const Color(0xFF16A34A),
+                    () => Navigator.pop(context, nextLevelResult),
+                  ),
                   const SizedBox(height: 10),
                 ],
                 button('Play Again', const Color(0xFFFF9F1C), _restartGame),
                 const SizedBox(height: 10),
-                button('Back', const Color(0xFF64748B), () => Navigator.pop(context)),
+                button(
+                  'Back',
+                  const Color(0xFF64748B),
+                  () => Navigator.pop(context),
+                ),
               ],
             ),
           ),
@@ -1023,7 +1158,11 @@ class _FruitCutterGameState extends State<FruitCutterGame>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 22),
+          const Icon(
+            Icons.local_fire_department_rounded,
+            color: Colors.white,
+            size: 22,
+          ),
           const SizedBox(width: 4),
           Text(
             '$_comboCount COMBO!',
@@ -1100,9 +1239,7 @@ class _FruitCutterGameState extends State<FruitCutterGame>
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  isEn
-                      ? '10 fruits were missed'
-                      : '10 fruits missed!',
+                  isEn ? '10 fruits were missed' : '10 fruits missed!',
                   style: GoogleFonts.catamaran(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -1117,7 +1254,9 @@ class _FruitCutterGameState extends State<FruitCutterGame>
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.35),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.12),
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1152,7 +1291,11 @@ class _FruitCutterGameState extends State<FruitCutterGame>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.refresh_rounded, color: Colors.white, size: 22),
+                        const Icon(
+                          Icons.refresh_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Play Again',
@@ -1179,7 +1322,9 @@ class _FruitCutterGameState extends State<FruitCutterGame>
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.25),
+                      ),
                     ),
                     child: Center(
                       child: Text(
@@ -1238,11 +1383,7 @@ class _WoodBoardBackgroundPainter extends CustomPainter {
     final baseRect = Offset.zero & size;
     final basePaint = Paint()
       ..shader = const LinearGradient(
-        colors: [
-          Color(0xFF5D3012),
-          Color(0xFF45220A),
-          Color(0xFF2E1505),
-        ],
+        colors: [Color(0xFF5D3012), Color(0xFF45220A), Color(0xFF2E1505)],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(baseRect);
@@ -1284,7 +1425,11 @@ class _WoodBoardBackgroundPainter extends CustomPainter {
       // Dark joint seam
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), grooveDark);
       // Subtle golden bevel highlight on the plank edge
-      canvas.drawLine(Offset(x + 1.5, 0), Offset(x + 1.5, size.height), grooveHighlight);
+      canvas.drawLine(
+        Offset(x + 1.5, 0),
+        Offset(x + 1.5, size.height),
+        grooveHighlight,
+      );
 
       // Wood grain lines inside each plank
       final double gx1 = x + plankWidth * 0.3;
@@ -1306,16 +1451,14 @@ class _WoodBoardBackgroundPainter extends CustomPainter {
       ..shader = RadialGradient(
         center: Alignment.center,
         radius: 1.1,
-        colors: [
-          Colors.transparent,
-          Colors.black.withValues(alpha: 0.38),
-        ],
+        colors: [Colors.transparent, Colors.black.withValues(alpha: 0.38)],
       ).createShader(baseRect);
     canvas.drawRect(baseRect, vignettePaint);
   }
 
   @override
-  bool shouldRepaint(covariant _WoodBoardBackgroundPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _WoodBoardBackgroundPainter oldDelegate) =>
+      false;
 }
 
 // --------------------------------------------------------------------------
@@ -1345,7 +1488,9 @@ class _FruitNinjaScenePainter extends CustomPainter {
   void _drawFruitLabel(Canvas canvas, ActiveFruit fruit) {
     final text = fruit.letterModel.letter;
     final r = fruit.radius;
-    final fontSize = text.length <= 1 ? r * 0.95 : (r * 1.6 / text.length).clamp(12.0, r * 0.8);
+    final fontSize = text.length <= 1
+        ? r * 0.95
+        : (r * 1.6 / text.length).clamp(12.0, r * 0.8);
     final tp = TextPainter(
       text: TextSpan(
         text: text,
@@ -1403,7 +1548,8 @@ class _FruitNinjaScenePainter extends CustomPainter {
       canvas.drawCircle(Offset(splat.x, splat.y), splat.radius, paint);
 
       // Smaller satellite splat drops
-      final satPaint = Paint()..color = splat.color.withValues(alpha: splat.opacity * 0.7);
+      final satPaint = Paint()
+        ..color = splat.color.withValues(alpha: splat.opacity * 0.7);
       for (int i = 0; i < 5; i++) {
         final angle = i * (pi * 2 / 5);
         final dist = splat.radius * 1.35;
@@ -1521,11 +1667,16 @@ class _FruitNinjaScenePainter extends CustomPainter {
     canvas.drawCircle(Offset.zero, r, bodyPaint);
 
     // Dimpled citrus texture (tiny subtle pores)
-    final porePaint = Paint()..color = const Color(0xFFBF360C).withValues(alpha: 0.18);
+    final porePaint = Paint()
+      ..color = const Color(0xFFBF360C).withValues(alpha: 0.18);
     for (int i = 0; i < 24; i++) {
       final angle = (i * 0.27) * pi * 2;
       final dist = (r * 0.25) + ((i % 5) * (r * 0.14));
-      canvas.drawCircle(Offset(cos(angle) * dist, sin(angle) * dist), 1.3, porePaint);
+      canvas.drawCircle(
+        Offset(cos(angle) * dist, sin(angle) * dist),
+        1.3,
+        porePaint,
+      );
     }
 
     // Top green star calyx & twig
@@ -1542,7 +1693,11 @@ class _FruitNinjaScenePainter extends CustomPainter {
     // Leaf
     final leafPaint = Paint()..color = const Color(0xFF43A047);
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(r * 0.25, -r * 0.92), width: r * 0.45, height: r * 0.2),
+      Rect.fromCenter(
+        center: Offset(r * 0.25, -r * 0.92),
+        width: r * 0.45,
+        height: r * 0.2,
+      ),
       leafPaint,
     );
 
@@ -1578,7 +1733,11 @@ class _FruitNinjaScenePainter extends CustomPainter {
       ..color = const Color(0xFFFFD54F).withValues(alpha: 0.25)
       ..strokeWidth = 3.0
       ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(r * 0.2, -r * 0.3), Offset(r * 0.4, r * 0.4), blushPaint);
+    canvas.drawLine(
+      Offset(r * 0.2, -r * 0.3),
+      Offset(r * 0.4, r * 0.4),
+      blushPaint,
+    );
 
     // Woody stem
     final stemPaint = Paint()
@@ -1586,12 +1745,20 @@ class _FruitNinjaScenePainter extends CustomPainter {
       ..strokeWidth = 3.8
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(0, -r * 0.75), Offset(r * 0.12, -r * 1.15), stemPaint);
+    canvas.drawLine(
+      Offset(0, -r * 0.75),
+      Offset(r * 0.12, -r * 1.15),
+      stemPaint,
+    );
 
     // Fresh green leaf
     final leafPaint = Paint()..color = const Color(0xFF4CAF50);
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(r * 0.3, -r * 1.0), width: r * 0.45, height: r * 0.22),
+      Rect.fromCenter(
+        center: Offset(r * 0.3, -r * 1.0),
+        width: r * 0.45,
+        height: r * 0.22,
+      ),
       leafPaint,
     );
 
@@ -1637,11 +1804,19 @@ class _FruitNinjaScenePainter extends CustomPainter {
       ..color = const Color(0xFF5D4037)
       ..strokeWidth = 3.5
       ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(0, -r * 0.95), Offset(r * 0.08, -r * 1.15), stemPaint);
+    canvas.drawLine(
+      Offset(0, -r * 0.95),
+      Offset(r * 0.08, -r * 1.15),
+      stemPaint,
+    );
 
     final leafPaint = Paint()..color = const Color(0xFF2E7D32);
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(r * 0.32, -r * 1.0), width: r * 0.6, height: r * 0.2),
+      Rect.fromCenter(
+        center: Offset(r * 0.32, -r * 1.0),
+        width: r * 0.6,
+        height: r * 0.2,
+      ),
       leafPaint,
     );
 
@@ -1696,12 +1871,21 @@ class _FruitNinjaScenePainter extends CustomPainter {
 
   // Realistic Pineapple
   void _drawWholePineapple(Canvas canvas, double r) {
-    final rect = Rect.fromCenter(center: Offset(0, r * 0.1), width: r * 1.6, height: r * 1.9);
+    final rect = Rect.fromCenter(
+      center: Offset(0, r * 0.1),
+      width: r * 1.6,
+      height: r * 1.9,
+    );
     final bodyPaint = Paint()
       ..shader = const RadialGradient(
         center: Alignment(-0.3, -0.2),
         radius: 0.95,
-        colors: [Color(0xFFFFD54F), Color(0xFFFFB300), Color(0xFFE65100), Color(0xFF5D4037)],
+        colors: [
+          Color(0xFFFFD54F),
+          Color(0xFFFFB300),
+          Color(0xFFE65100),
+          Color(0xFF5D4037),
+        ],
       ).createShader(rect);
     canvas.drawOval(rect, bodyPaint);
 
@@ -1711,8 +1895,16 @@ class _FruitNinjaScenePainter extends CustomPainter {
       ..strokeWidth = 2.0;
     for (int i = -3; i <= 3; i++) {
       final o = i * (r * 0.38);
-      canvas.drawLine(Offset(-r * 0.7 + o, -r * 0.6), Offset(r * 0.7 + o, r * 0.8), gridPaint);
-      canvas.drawLine(Offset(r * 0.7 - o, -r * 0.6), Offset(-r * 0.7 - o, r * 0.8), gridPaint);
+      canvas.drawLine(
+        Offset(-r * 0.7 + o, -r * 0.6),
+        Offset(r * 0.7 + o, r * 0.8),
+        gridPaint,
+      );
+      canvas.drawLine(
+        Offset(r * 0.7 - o, -r * 0.6),
+        Offset(-r * 0.7 - o, r * 0.8),
+        gridPaint,
+      );
     }
 
     // Spiky crown of layered green leaves
@@ -1782,14 +1974,23 @@ class _FruitNinjaScenePainter extends CustomPainter {
       ..shader = const RadialGradient(
         center: Alignment(-0.3, -0.3),
         radius: 0.9,
-        colors: [Color(0xFFFFF59D), Color(0xFFFFEE58), Color(0xFFFDD835), Color(0xFFF57F17)],
+        colors: [
+          Color(0xFFFFF59D),
+          Color(0xFFFFEE58),
+          Color(0xFFFDD835),
+          Color(0xFFF57F17),
+        ],
       ).createShader(rect);
     canvas.drawPath(path, bodyPaint);
 
     // Green leaf at top nub
     final leafPaint = Paint()..color = const Color(0xFF43A047);
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(r * 0.9, -r * 0.3), width: r * 0.45, height: r * 0.2),
+      Rect.fromCenter(
+        center: Offset(r * 0.9, -r * 0.3),
+        width: r * 0.45,
+        height: r * 0.2,
+      ),
       leafPaint,
     );
 
@@ -1803,7 +2004,12 @@ class _FruitNinjaScenePainter extends CustomPainter {
       ..shader = const RadialGradient(
         center: Alignment(-0.3, -0.3),
         radius: 0.9,
-        colors: [Color(0xFFFF1744), Color(0xFFC2185B), Color(0xFF880E4F), Color(0xFF4A148C)],
+        colors: [
+          Color(0xFFFF1744),
+          Color(0xFFC2185B),
+          Color(0xFF880E4F),
+          Color(0xFF4A148C),
+        ],
       ).createShader(rect);
     canvas.drawCircle(Offset.zero, r, bodyPaint);
 
@@ -1853,7 +2059,11 @@ class _FruitNinjaScenePainter extends CustomPainter {
     canvas.restore();
   }
 
-  void _drawFruitHalf(Canvas canvas, ActiveFruit fruit, {required bool isLeft}) {
+  void _drawFruitHalf(
+    Canvas canvas,
+    ActiveFruit fruit, {
+    required bool isLeft,
+  }) {
     final r = fruit.radius;
     canvas.save();
 
@@ -1873,18 +2083,34 @@ class _FruitNinjaScenePainter extends CustomPainter {
     switch (fruit.type) {
       case FruitType.watermelon:
         // Dark rind
-        canvas.drawCircle(Offset.zero, r, Paint()..color = const Color(0xFF1B5E20));
+        canvas.drawCircle(
+          Offset.zero,
+          r,
+          Paint()..color = const Color(0xFF1B5E20),
+        );
         // White inner rind
-        canvas.drawCircle(Offset.zero, r * 0.92, Paint()..color = const Color(0xFFF1F8E9));
+        canvas.drawCircle(
+          Offset.zero,
+          r * 0.92,
+          Paint()..color = const Color(0xFFF1F8E9),
+        );
         // Succulent red pulp
-        canvas.drawCircle(Offset.zero, r * 0.82, Paint()..color = const Color(0xFFFF1744));
+        canvas.drawCircle(
+          Offset.zero,
+          r * 0.82,
+          Paint()..color = const Color(0xFFFF1744),
+        );
         // Black watermelon seeds
         final seedPaint = Paint()..color = const Color(0xFF212121);
         for (int i = 0; i < 4; i++) {
           final a = (i * 0.5 - 0.75) * (isLeft ? -1 : 1);
           final d = r * 0.55;
           canvas.drawOval(
-            Rect.fromCenter(center: Offset(cos(a) * d, sin(a) * d), width: 4, height: 6),
+            Rect.fromCenter(
+              center: Offset(cos(a) * d, sin(a) * d),
+              width: 4,
+              height: 6,
+            ),
             seedPaint,
           );
         }
@@ -1892,9 +2118,17 @@ class _FruitNinjaScenePainter extends CustomPainter {
 
       case FruitType.orange:
         // Orange rind
-        canvas.drawCircle(Offset.zero, r, Paint()..color = const Color(0xFFE65100));
+        canvas.drawCircle(
+          Offset.zero,
+          r,
+          Paint()..color = const Color(0xFFE65100),
+        );
         // White pith
-        canvas.drawCircle(Offset.zero, r * 0.92, Paint()..color = const Color(0xFFFFF3E0));
+        canvas.drawCircle(
+          Offset.zero,
+          r * 0.92,
+          Paint()..color = const Color(0xFFFFF3E0),
+        );
         // Segments
         final wedgePaint = Paint()..color = const Color(0xFFFF9800);
         canvas.drawCircle(Offset.zero, r * 0.84, wedgePaint);
@@ -1904,57 +2138,117 @@ class _FruitNinjaScenePainter extends CustomPainter {
           ..strokeWidth = 1.5;
         for (int i = 0; i < 6; i++) {
           final a = i * (pi / 3);
-          canvas.drawLine(Offset.zero, Offset(cos(a) * r * 0.84, sin(a) * r * 0.84), spokePaint);
+          canvas.drawLine(
+            Offset.zero,
+            Offset(cos(a) * r * 0.84, sin(a) * r * 0.84),
+            spokePaint,
+          );
         }
-        canvas.drawCircle(Offset.zero, r * 0.14, Paint()..color = const Color(0xFFFFF3E0));
+        canvas.drawCircle(
+          Offset.zero,
+          r * 0.14,
+          Paint()..color = const Color(0xFFFFF3E0),
+        );
         break;
 
       case FruitType.apple:
         // Red skin
-        canvas.drawCircle(Offset.zero, r, Paint()..color = const Color(0xFFD50000));
+        canvas.drawCircle(
+          Offset.zero,
+          r,
+          Paint()..color = const Color(0xFFD50000),
+        );
         // Crisp ivory flesh
-        canvas.drawCircle(Offset.zero, r * 0.94, Paint()..color = const Color(0xFFFFFDE7));
+        canvas.drawCircle(
+          Offset.zero,
+          r * 0.94,
+          Paint()..color = const Color(0xFFFFFDE7),
+        );
         // Star core with brown seeds
         final seedPaint = Paint()..color = const Color(0xFF3E2723);
         canvas.drawOval(
-          Rect.fromCenter(center: Offset(isLeft ? -r * 0.2 : r * 0.2, 0), width: 3.5, height: 7),
+          Rect.fromCenter(
+            center: Offset(isLeft ? -r * 0.2 : r * 0.2, 0),
+            width: 3.5,
+            height: 7,
+          ),
           seedPaint,
         );
         break;
 
       case FruitType.mango:
         // Mango skin
-        canvas.drawCircle(Offset.zero, r, Paint()..color = const Color(0xFFFF6D00));
+        canvas.drawCircle(
+          Offset.zero,
+          r,
+          Paint()..color = const Color(0xFFFF6D00),
+        );
         // Saffron yellow luscious pulp
-        canvas.drawCircle(Offset.zero, r * 0.93, Paint()..color = const Color(0xFFFFB300));
+        canvas.drawCircle(
+          Offset.zero,
+          r * 0.93,
+          Paint()..color = const Color(0xFFFFB300),
+        );
         // Seed outline
         canvas.drawOval(
-          Rect.fromCenter(center: Offset.zero, width: r * 0.45, height: r * 0.75),
+          Rect.fromCenter(
+            center: Offset.zero,
+            width: r * 0.45,
+            height: r * 0.75,
+          ),
           Paint()..color = const Color(0xFFFFF8E1),
         );
         break;
 
       case FruitType.strawberry:
         // Red exterior
-        canvas.drawCircle(Offset.zero, r, Paint()..color = const Color(0xFFC2185B));
+        canvas.drawCircle(
+          Offset.zero,
+          r,
+          Paint()..color = const Color(0xFFC2185B),
+        );
         // Pink-white interior
-        canvas.drawCircle(Offset.zero, r * 0.90, Paint()..color = const Color(0xFFFFEBEE));
+        canvas.drawCircle(
+          Offset.zero,
+          r * 0.90,
+          Paint()..color = const Color(0xFFFFEBEE),
+        );
         break;
 
       case FruitType.pineapple:
         // Golden skin
-        canvas.drawCircle(Offset.zero, r, Paint()..color = const Color(0xFF6D4C41));
+        canvas.drawCircle(
+          Offset.zero,
+          r,
+          Paint()..color = const Color(0xFF6D4C41),
+        );
         // Sunny yellow flesh
-        canvas.drawCircle(Offset.zero, r * 0.90, Paint()..color = const Color(0xFFFFEE58));
+        canvas.drawCircle(
+          Offset.zero,
+          r * 0.90,
+          Paint()..color = const Color(0xFFFFEE58),
+        );
         // Core circle
-        canvas.drawCircle(Offset.zero, r * 0.28, Paint()..color = const Color(0xFFFFF9C4));
+        canvas.drawCircle(
+          Offset.zero,
+          r * 0.28,
+          Paint()..color = const Color(0xFFFFF9C4),
+        );
         break;
 
       case FruitType.banana:
         // Yellow peel
-        canvas.drawCircle(Offset.zero, r, Paint()..color = const Color(0xFFFBC02D));
+        canvas.drawCircle(
+          Offset.zero,
+          r,
+          Paint()..color = const Color(0xFFFBC02D),
+        );
         // Creamy pulp
-        canvas.drawCircle(Offset.zero, r * 0.90, Paint()..color = const Color(0xFFFFFDE7));
+        canvas.drawCircle(
+          Offset.zero,
+          r * 0.90,
+          Paint()..color = const Color(0xFFFFFDE7),
+        );
         // 3 center seed specks
         final dotPaint = Paint()..color = const Color(0xFF3E2723);
         canvas.drawCircle(Offset(isLeft ? -3 : 3, -3), 1.5, dotPaint);
@@ -1963,18 +2257,38 @@ class _FruitNinjaScenePainter extends CustomPainter {
 
       case FruitType.lemon:
         // Yellow peel
-        canvas.drawCircle(Offset.zero, r, Paint()..color = const Color(0xFFFDD835));
+        canvas.drawCircle(
+          Offset.zero,
+          r,
+          Paint()..color = const Color(0xFFFDD835),
+        );
         // White pith
-        canvas.drawCircle(Offset.zero, r * 0.92, Paint()..color = const Color(0xFFFFFDE7));
+        canvas.drawCircle(
+          Offset.zero,
+          r * 0.92,
+          Paint()..color = const Color(0xFFFFFDE7),
+        );
         // Lemon pulp
-        canvas.drawCircle(Offset.zero, r * 0.84, Paint()..color = const Color(0xFFFFF59D));
+        canvas.drawCircle(
+          Offset.zero,
+          r * 0.84,
+          Paint()..color = const Color(0xFFFFF59D),
+        );
         break;
 
       case FruitType.pomegranate:
         // Red skin
-        canvas.drawCircle(Offset.zero, r, Paint()..color = const Color(0xFF880E4F));
+        canvas.drawCircle(
+          Offset.zero,
+          r,
+          Paint()..color = const Color(0xFF880E4F),
+        );
         // White pith
-        canvas.drawCircle(Offset.zero, r * 0.90, Paint()..color = const Color(0xFFFFF9C4));
+        canvas.drawCircle(
+          Offset.zero,
+          r * 0.90,
+          Paint()..color = const Color(0xFFFFF9C4),
+        );
         // Ruby arils
         final arilPaint = Paint()..color = const Color(0xFFD81B60);
         for (int i = 0; i < 6; i++) {
@@ -2056,10 +2370,7 @@ class _FruitNinjaScenePainter extends CustomPainter {
         textDirection: TextDirection.ltr,
       )..layout();
 
-      letterPainter.paint(
-        canvas,
-        Offset(-letterPainter.width / 2, -30),
-      );
+      letterPainter.paint(canvas, Offset(-letterPainter.width / 2, -30));
 
       // English Word beneath
       if (pop.word.isNotEmpty) {
@@ -2075,10 +2386,7 @@ class _FruitNinjaScenePainter extends CustomPainter {
           textDirection: TextDirection.ltr,
         )..layout();
 
-        wordPainter.paint(
-          canvas,
-          Offset(-wordPainter.width / 2, 10),
-        );
+        wordPainter.paint(canvas, Offset(-wordPainter.width / 2, 10));
       }
 
       canvas.restore();

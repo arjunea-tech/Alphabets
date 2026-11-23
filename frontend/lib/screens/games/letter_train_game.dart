@@ -69,6 +69,7 @@ class _LetterTrainGameState extends State<LetterTrainGame> {
       0; // slide offset: -1.6 (off left) .. 0 (centre) .. 1.6 (off right)
   bool _animateTrain = true;
   String _state = 'playing';
+  bool _showQ = false; // question popup visible (train waits)
   final List<Timer> _timers = [];
 
   _TrainRound get _round => _rounds[_roundIndex.clamp(0, _rounds.length - 1)];
@@ -107,9 +108,10 @@ class _LetterTrainGameState extends State<LetterTrainGame> {
       _filled = false;
       _busy = false;
       _wrongPick = null;
+      _showQ = _rounds.isNotEmpty;
       _state = _rounds.isEmpty ? 'won' : 'playing';
     });
-    _driveIn();
+    if (!_showQ) _driveIn();
   }
 
   /// A level whose targets are words (CAT, DOG…) spells one word per train.
@@ -255,7 +257,7 @@ class _LetterTrainGameState extends State<LetterTrainGame> {
   }
 
   void _onPick(String option) {
-    if (_state != 'playing' || _busy || _filled) return;
+    if (_state != 'playing' || _showQ || _busy || _filled) return;
     if (option == _round.answer) {
       HapticFeedback.lightImpact();
       setState(() {
@@ -294,63 +296,78 @@ class _LetterTrainGameState extends State<LetterTrainGame> {
       _roundIndex++;
       _filled = false;
       _busy = false;
+      if (promptFor(widget.content, _round.level) !=
+          promptFor(widget.content, _rounds[_roundIndex - 1].level)) {
+        _showQ = true;
+      }
     });
-    _driveIn();
+    if (!_showQ) _driveIn();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF38BDF8), Color(0xFFBAE6FD), Color(0xFF86EFAC)],
-            stops: [0.0, 0.55, 1.0],
+    return QuestionPopupHost(
+      show: _showQ && _state == 'playing' && _rounds.isNotEmpty,
+      question: _rounds.isEmpty ? '' : promptFor(widget.content, _round.level),
+      label: 'QUESTION ${_roundIndex + 1}/${_rounds.length}',
+      hint: 'Pick the missing wagon for the train!',
+      emoji: '🚂',
+      onStart: () {
+        setState(() => _showQ = false);
+        _driveIn();
+      },
+      child: Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF38BDF8), Color(0xFFBAE6FD), Color(0xFF86EFAC)],
+              stops: [0.0, 0.55, 1.0],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Stack(
-            children: [
-              Column(
-                children: [
-                  MiniGameHud(
-                    title: widget.content.game.title,
-                    done: _roundIndex.clamp(0, _rounds.length),
-                    total: _rounds.length,
-                    color: _color,
-                  ),
-                  if (_rounds.isNotEmpty)
-                    MiniTargetBanner(
-                      label: _round.word != null
-                          ? 'Fill the word!'
-                          : 'Which wagon is missing?',
-                      target: _round.word != null
-                          ? (_wordEmoji[_round.word!.toUpperCase()] ?? '🔤')
-                          : '?',
-                      prompt: promptFor(widget.content, _round.level),
+          child: SafeArea(
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    MiniGameHud(
+                      title: widget.content.game.title,
+                      done: _roundIndex.clamp(0, _rounds.length),
+                      total: _rounds.length,
                       color: _color,
                     ),
-                  const Spacer(),
-                  if (_rounds.isNotEmpty) _buildTrack(),
-                  const Spacer(),
-                  if (_rounds.isNotEmpty) _buildOptions(),
-                  const SizedBox(height: 24),
-                ],
-              ),
-              if (_state != 'playing')
-                Positioned.fill(
-                  child: MiniGameEndOverlay(
-                    won: true,
-                    message: _mistakes == 0
-                        ? 'Perfect! Every train is full! 🚂'
-                        : 'All trains are full! ($_mistakes oops)',
-                    content: widget.content,
-                    onReplay: _start,
-                  ),
+                    if (_rounds.isNotEmpty)
+                      MiniTargetBanner(
+                        label: _round.word != null
+                            ? 'Fill the word!'
+                            : 'Which wagon is missing?',
+                        target: _round.word != null
+                            ? (_wordEmoji[_round.word!.toUpperCase()] ?? '🔤')
+                            : '?',
+                        prompt: promptFor(widget.content, _round.level),
+                        color: _color,
+                      ),
+                    const Spacer(),
+                    if (_rounds.isNotEmpty) _buildTrack(),
+                    const Spacer(),
+                    if (_rounds.isNotEmpty) _buildOptions(),
+                    const SizedBox(height: 24),
+                  ],
                 ),
-            ],
+                if (_state != 'playing')
+                  Positioned.fill(
+                    child: MiniGameEndOverlay(
+                      won: true,
+                      message: _mistakes == 0
+                          ? 'Perfect! Every train is full! 🚂'
+                          : 'All trains are full! ($_mistakes oops)',
+                      content: widget.content,
+                      onReplay: _start,
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

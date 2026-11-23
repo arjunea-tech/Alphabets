@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../models/game_content.dart';
 import '../../services/progress_service.dart';
 import 'mini_game_kit.dart';
@@ -12,7 +14,11 @@ class LetterWhackGame extends StatefulWidget {
   final ProgressService progressService;
   final GameContent content;
 
-  const LetterWhackGame({super.key, required this.progressService, required this.content});
+  const LetterWhackGame({
+    super.key,
+    required this.progressService,
+    required this.content,
+  });
 
   @override
   State<LetterWhackGame> createState() => _LetterWhackGameState();
@@ -48,6 +54,7 @@ class _LetterWhackGameState extends State<LetterWhackGame> {
   int _spawnsSinceTarget = 0;
   double _spawnTimer = 0.5;
   String _state = 'playing'; // playing | won | lost
+  bool _showQ = false; // question popup visible (game paused)
   String? _feedback;
   bool _feedbackGood = true;
   Timer? _feedbackTimer;
@@ -79,13 +86,17 @@ class _LetterWhackGameState extends State<LetterWhackGame> {
       _hearts = _maxHearts;
       _spawnsSinceTarget = 0;
       _spawnTimer = 0.5;
+      _showQ = _rounds.isNotEmpty;
       _state = _rounds.isEmpty ? 'won' : 'playing';
     });
-    _timer = Timer.periodic(const Duration(milliseconds: 50), (_) => _tick(0.05));
+    _timer = Timer.periodic(
+      const Duration(milliseconds: 50),
+      (_) => _tick(0.05),
+    );
   }
 
   void _tick(double dt) {
-    if (_state != 'playing' || !mounted) return;
+    if (_state != 'playing' || _showQ || !mounted) return;
     for (final h in _holes) {
       if (h.letter == null) continue;
       h.timeLeft -= dt;
@@ -103,14 +114,20 @@ class _LetterWhackGameState extends State<LetterWhackGame> {
   }
 
   void _spawnMole() {
-    final empty = [for (var i = 0; i < _holes.length; i++) if (!_holes[i].isUp) i];
+    final empty = [
+      for (var i = 0; i < _holes.length; i++)
+        if (!_holes[i].isUp) i,
+    ];
     if (empty.isEmpty) return;
     final hole = _holes[empty[_rng.nextInt(empty.length)]];
     final target = _round.target;
-    final targetShowing = _holes.any((h) => h.isUp && !h.hit && h.letter == target);
+    final targetShowing = _holes.any(
+      (h) => h.isUp && !h.hit && h.letter == target,
+    );
 
     String letter;
-    if (!targetShowing && (_spawnsSinceTarget >= 2 || _rng.nextDouble() < 0.5)) {
+    if (!targetShowing &&
+        (_spawnsSinceTarget >= 2 || _rng.nextDouble() < 0.5)) {
       letter = target;
       _spawnsSinceTarget = 0;
     } else {
@@ -142,7 +159,10 @@ class _LetterWhackGameState extends State<LetterWhackGame> {
       HapticFeedback.lightImpact();
       hole.hit = true;
       hole.timeLeft = 0.45;
-      _showFeedback(['Bonk! ⭐', 'Great! 🎉', 'Super! 🌟'][_rng.nextInt(3)], true);
+      _showFeedback(
+        ['Bonk! ⭐', 'Great! 🎉', 'Super! 🌟'][_rng.nextInt(3)],
+        true,
+      );
       _nextRound();
     } else {
       HapticFeedback.heavyImpact();
@@ -169,6 +189,10 @@ class _LetterWhackGameState extends State<LetterWhackGame> {
     }
     setState(() {
       _roundIndex++;
+      if (promptFor(widget.content, _round.level) !=
+          promptFor(widget.content, _rounds[_roundIndex - 1].level)) {
+        _showQ = true;
+      }
       // Moles that are not the one just hit duck down for the new letter.
       for (final h in _holes) {
         if (!h.hit) h.clear();
@@ -180,73 +204,89 @@ class _LetterWhackGameState extends State<LetterWhackGame> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF7DD3FC), Color(0xFFBEF264), Color(0xFF65A30D)],
-            stops: [0.0, 0.35, 1.0],
+    return QuestionPopupHost(
+      show: _showQ && _state == 'playing' && _rounds.isNotEmpty,
+      question: _rounds.isEmpty ? '' : promptFor(widget.content, _round.level),
+      target: _rounds.isEmpty ? null : _round.target,
+      label: 'QUESTION ${_roundIndex + 1}/${_rounds.length}',
+      hint: 'Bonk the mole with the right letter!',
+      emoji: '🔨',
+      onStart: () => setState(() => _showQ = false),
+      child: Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF7DD3FC), Color(0xFFBEF264), Color(0xFF65A30D)],
+              stops: [0.0, 0.35, 1.0],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Stack(
-            children: [
-              Column(
-                children: [
-                  MiniGameHud(
-                    title: widget.content.game.title,
-                    done: _roundIndex.clamp(0, _rounds.length),
-                    total: _rounds.length,
-                    hearts: _hearts,
-                    color: _color,
-                  ),
-                  if (_rounds.isNotEmpty)
-                    MiniTargetBanner(
-                      label: 'Bonk the mole with ${_round.target}!',
-                      target: _round.target,
-                      prompt: promptFor(widget.content, _round.level),
+          child: SafeArea(
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    MiniGameHud(
+                      title: widget.content.game.title,
+                      done: _roundIndex.clamp(0, _rounds.length),
+                      total: _rounds.length,
+                      hearts: _hearts,
                       color: _color,
                     ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 460),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: GridView.count(
-                            crossAxisCount: 3,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            mainAxisSpacing: 10,
-                            crossAxisSpacing: 10,
-                            childAspectRatio: 0.92,
-                            children: [for (final h in _holes) _buildHole(h)],
+                    if (_rounds.isNotEmpty)
+                      MiniTargetBanner(
+                        label: 'Bonk the mole with ${_round.target}!',
+                        target: _round.target,
+                        prompt: promptFor(widget.content, _round.level),
+                        color: _color,
+                      ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 460),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: GridView.count(
+                              crossAxisCount: 3,
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              mainAxisSpacing: 10,
+                              crossAxisSpacing: 10,
+                              childAspectRatio: 0.92,
+                              children: [for (final h in _holes) _buildHole(h)],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              Positioned(
-                top: 150,
-                left: 0,
-                right: 0,
-                child: Center(child: MiniFeedbackBubble(text: _feedback, good: _feedbackGood)),
-              ),
-              if (_state != 'playing')
-                Positioned.fill(
-                  child: MiniGameEndOverlay(
-                    won: _state == 'won',
-                    message: _state == 'won' ? 'You bonked every letter mole!' : 'The moles got away this time.',
-                    content: widget.content,
-                    onReplay: _start,
+                  ],
+                ),
+                Positioned(
+                  top: 150,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: MiniFeedbackBubble(
+                      text: _feedback,
+                      good: _feedbackGood,
+                    ),
                   ),
                 ),
-            ],
+                if (_state != 'playing')
+                  Positioned.fill(
+                    child: MiniGameEndOverlay(
+                      won: _state == 'won',
+                      message: _state == 'won'
+                          ? 'You bonked every letter mole!'
+                          : 'The moles got away this time.',
+                      content: widget.content,
+                      onReplay: _start,
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -277,7 +317,10 @@ class _LetterWhackGameState extends State<LetterWhackGame> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF3F2A14),
                     borderRadius: BorderRadius.all(Radius.elliptical(w, holeH)),
-                    border: Border.all(color: const Color(0xFF854D0E), width: 4),
+                    border: Border.all(
+                      color: const Color(0xFF854D0E),
+                      width: 4,
+                    ),
                   ),
                 ),
               ),
@@ -314,9 +357,11 @@ class _LetterWhackGameState extends State<LetterWhackGame> {
     final signColor = hole.hit
         ? const Color(0xFF22C55E)
         : hole.wrongTap
-            ? const Color(0xFFEF4444)
-            : Colors.white;
-    final textColor = (hole.hit || hole.wrongTap) ? Colors.white : const Color(0xFF1E293B);
+        ? const Color(0xFFEF4444)
+        : Colors.white;
+    final textColor = (hole.hit || hole.wrongTap)
+        ? Colors.white
+        : const Color(0xFF1E293B);
     return Column(
       children: [
         // Letter sign held above the head
@@ -335,7 +380,11 @@ class _LetterWhackGameState extends State<LetterWhackGame> {
               fit: BoxFit.scaleDown,
               child: Text(
                 hole.letter ?? '',
-                style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: textColor),
+                style: TextStyle(
+                  fontSize: 34,
+                  fontWeight: FontWeight.w900,
+                  color: textColor,
+                ),
               ),
             ),
           ),
@@ -347,7 +396,10 @@ class _LetterWhackGameState extends State<LetterWhackGame> {
             width: double.infinity,
             decoration: const BoxDecoration(
               color: Color(0xFFA16207),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(60), bottom: Radius.circular(10)),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(60),
+                bottom: Radius.circular(10),
+              ),
             ),
             alignment: Alignment.center,
             child: FittedBox(

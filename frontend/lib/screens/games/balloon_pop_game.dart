@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../models/game_content.dart';
 import '../../services/progress_service.dart';
 import '../../widgets/bouncy_button.dart';
 import '../../widgets/next_level_button.dart';
+import 'mini_game_kit.dart';
 
 /// Interactive Balloon item floating in the sky
 class _BalloonItem {
@@ -131,13 +134,18 @@ class BalloonPopGame extends StatefulWidget {
   final ProgressService progressService;
   final GameContent content;
 
-  const BalloonPopGame({super.key, required this.progressService, required this.content});
+  const BalloonPopGame({
+    super.key,
+    required this.progressService,
+    required this.content,
+  });
 
   @override
   State<BalloonPopGame> createState() => _BalloonPopGameState();
 }
 
-class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProviderStateMixin {
+class _BalloonPopGameState extends State<BalloonPopGame>
+    with SingleTickerProviderStateMixin {
   final math.Random _random = math.Random();
   Timer? _gameTimer;
 
@@ -146,8 +154,10 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
   int _currentMissionIndex = 0;
   int _missionPops = 0;
   // A picked level asks the same 5 questions as every other game.
-  int get _popsPerMission => widget.content.isLevelMode ? GameContent.questionsPerLevel : 4;
+  int get _popsPerMission =>
+      widget.content.isLevelMode ? GameContent.questionsPerLevel : 4;
   String _gameState = 'playing'; // 'playing', 'victory', 'gameover'
+  bool _showQ = true; // question popup visible (game paused)
   bool _soundEnabled = true;
 
   double _spawnTimer = 0.2;
@@ -182,10 +192,15 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
     _missions = [
       for (var i = 0; i < levels.length; i++)
         _BalloonMission(
-          badge: 'MISSION ${i + 1}/${levels.length}'
+          badge:
+              'MISSION ${i + 1}/${levels.length}'
               '${levels[i].title.isNotEmpty ? ': ${levels[i].title.toUpperCase()}' : ''}',
-          title: levels[i].title.isNotEmpty ? levels[i].title : content.game.title,
-          prompt: levels[i].prompt.isNotEmpty ? levels[i].prompt : content.game.prompt,
+          title: levels[i].title.isNotEmpty
+              ? levels[i].title
+              : content.game.title,
+          prompt: levels[i].prompt.isNotEmpty
+              ? levels[i].prompt
+              : content.game.prompt,
           targets: levels[i].targets,
           distractors: content.distractorsFor(levels[i]),
         ),
@@ -207,6 +222,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
       _lives = 5;
       _currentMissionIndex = 0;
       _missionPops = 0;
+      _showQ = true;
       _gameState = 'playing';
       _balloons.clear();
       _confetti.clear();
@@ -216,7 +232,10 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
       _spawnTimer = 0.2;
     });
 
-    _gameTimer = Timer.periodic(const Duration(milliseconds: 16), (_) => _tick(0.016));
+    _gameTimer = Timer.periodic(
+      const Duration(milliseconds: 16),
+      (_) => _tick(0.016),
+    );
   }
 
   void _triggerVictory() {
@@ -242,7 +261,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
   }
 
   void _tick(double dt) {
-    if (_gameState != 'playing') return;
+    if (_gameState != 'playing' || _showQ) return;
 
     final w = _arenaSize.width > 0 ? _arenaSize.width : 360.0;
     final h = _arenaSize.height > 0 ? _arenaSize.height : 600.0;
@@ -251,7 +270,8 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
     _spawnTimer -= dt;
     if (_spawnTimer <= 0 && _balloons.where((b) => !b.popped).length < 6) {
       // Slower spawn pace: kids have ample time
-      _spawnTimer = (0.85 + _random.nextDouble() * 0.45) / widget.content.speedFactor;
+      _spawnTimer =
+          (0.85 + _random.nextDouble() * 0.45) / widget.content.speedFactor;
       _spawnSingleBalloon(w, h);
     }
 
@@ -273,15 +293,17 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
       if (b.y < -b.radius * 2.2) {
         if (b.isTarget) {
           // Missed a target letter! Gentle warning
-          _floatingTexts.add(_FloatingText(
-            text: 'Missed ${b.text}! 👀',
-            color: const Color(0xFFFBBF24),
-            x: b.x,
-            y: 80,
-            vy: -40,
-            life: 1.1,
-            maxLife: 1.1,
-          ));
+          _floatingTexts.add(
+            _FloatingText(
+              text: 'Missed ${b.text}! 👀',
+              color: const Color(0xFFFBBF24),
+              x: b.x,
+              y: 80,
+              vy: -40,
+              life: 1.1,
+              maxLife: 1.1,
+            ),
+          );
         }
         _balloons.removeAt(i);
       }
@@ -327,7 +349,8 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
 
   void _spawnSingleBalloon(double w, double h, {double? initialY}) {
     final mission = _missions[_currentMissionIndex];
-    final bool isTarget = mission.distractors.isEmpty || _random.nextDouble() < 0.65;
+    final bool isTarget =
+        mission.distractors.isEmpty || _random.nextDouble() < 0.65;
     final String text = isTarget
         ? mission.targets[_random.nextInt(mission.targets.length)]
         : mission.distractors[_random.nextInt(mission.distractors.length)];
@@ -336,22 +359,27 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
     final double radius = 38.0 + _random.nextDouble() * 8.0; // 38..46
 
     // Slower upward speed: 52..82 px/sec (calm, kid-friendly)
-    final double vy = (52.0 + _random.nextDouble() * 30.0) * widget.content.speedFactor; // faster on medium/hard levels
-    final double x = radius + 20.0 + _random.nextDouble() * (w - (radius * 2 + 40.0));
+    final double vy =
+        (52.0 + _random.nextDouble() * 30.0) *
+        widget.content.speedFactor; // faster on medium/hard levels
+    final double x =
+        radius + 20.0 + _random.nextDouble() * (w - (radius * 2 + 40.0));
     final double y = initialY ?? (h + radius + 15.0);
 
-    _balloons.add(_BalloonItem(
-      id: ++_idCounter,
-      text: text,
-      isTarget: isTarget,
-      color: color,
-      radius: radius,
-      x: x,
-      y: y,
-      vy: vy,
-      wobbleAngle: _random.nextDouble() * math.pi * 2,
-      wobbleSpeed: 1.5 + _random.nextDouble() * 1.5,
-    ));
+    _balloons.add(
+      _BalloonItem(
+        id: ++_idCounter,
+        text: text,
+        isTarget: isTarget,
+        color: color,
+        radius: radius,
+        x: x,
+        y: y,
+        vy: vy,
+        wobbleAngle: _random.nextDouble() * math.pi * 2,
+        wobbleSpeed: 1.5 + _random.nextDouble() * 1.5,
+      ),
+    );
   }
 
   void _onPopTouch(Offset touch) {
@@ -377,15 +405,17 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
     HapticFeedback.lightImpact();
 
     // 💥 1. Shockwave Blast Ring
-    _shockwaves.add(_BlastShockwave(
-      x: b.x,
-      y: b.y,
-      currentRadius: 10,
-      maxRadius: b.radius * 2.2,
-      color: b.color,
-      life: 0.35,
-      maxLife: 0.35,
-    ));
+    _shockwaves.add(
+      _BlastShockwave(
+        x: b.x,
+        y: b.y,
+        currentRadius: 10,
+        maxRadius: b.radius * 2.2,
+        color: b.color,
+        life: 0.35,
+        maxLife: 0.35,
+      ),
+    );
 
     // 💥 2. Rich Confetti Explosion Particles (36+ particles)
     _createConfettiBlast(b.x, b.y, b.color, 36);
@@ -398,17 +428,25 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
       widget.progressService.addStars(1);
 
       // Cheerful Floating Text
-      final cheers = ['+100 ⭐', 'POP! 🎉', 'SUPER! ✨', 'GREAT! 🌟', 'AWESOME! 💫'];
-      _floatingTexts.add(_FloatingText(
-        text: cheers[_random.nextInt(cheers.length)],
-        color: const Color(0xFFFFD166),
-        x: b.x,
-        y: b.y - 10,
-        vy: -75,
-        life: 0.95,
-        maxLife: 0.95,
-        scale: 1.25,
-      ));
+      final cheers = [
+        '+100 ⭐',
+        'POP! 🎉',
+        'SUPER! ✨',
+        'GREAT! 🌟',
+        'AWESOME! 💫',
+      ];
+      _floatingTexts.add(
+        _FloatingText(
+          text: cheers[_random.nextInt(cheers.length)],
+          color: const Color(0xFFFFD166),
+          x: b.x,
+          y: b.y - 10,
+          vy: -75,
+          life: 0.95,
+          maxLife: 0.95,
+          scale: 1.25,
+        ),
+      );
 
       if (_missionPops >= _popsPerMission) {
         _advanceToNextMission();
@@ -418,16 +456,18 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
       _lives--;
       HapticFeedback.heavyImpact();
 
-      _floatingTexts.add(_FloatingText(
-        text: 'Oops! -1 ❤️',
-        color: const Color(0xFFEF4444),
-        x: b.x,
-        y: b.y - 10,
-        vy: -60,
-        life: 1.0,
-        maxLife: 1.0,
-        scale: 1.15,
-      ));
+      _floatingTexts.add(
+        _FloatingText(
+          text: 'Oops! -1 ❤️',
+          color: const Color(0xFFEF4444),
+          x: b.x,
+          y: b.y - 10,
+          vy: -60,
+          life: 1.0,
+          maxLife: 1.0,
+          scale: 1.15,
+        ),
+      );
 
       if (_lives <= 0) {
         _triggerGameOver();
@@ -442,22 +482,26 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
       final isSparkle = _random.nextDouble() < 0.35;
       final Color pColor = _random.nextBool()
           ? color
-          : (_random.nextBool() ? const Color(0xFFFFD166) : const Color(0xFF38BDF8));
+          : (_random.nextBool()
+                ? const Color(0xFFFFD166)
+                : const Color(0xFF38BDF8));
 
-      _confetti.add(_ConfettiParticle(
-        x: x,
-        y: y,
-        vx: math.cos(angle) * speed,
-        vy: math.sin(angle) * speed - 65.0, // slight upward explosion lift
-        color: pColor,
-        width: isSparkle ? 4.0 : 6.0 + _random.nextDouble() * 4.0,
-        height: isSparkle ? 4.0 : 8.0 + _random.nextDouble() * 5.0,
-        angle: _random.nextDouble() * math.pi * 2,
-        vRot: (_random.nextDouble() - 0.5) * 14.0,
-        life: 0.55 + _random.nextDouble() * 0.45,
-        maxLife: 1.0,
-        isStar: isSparkle,
-      ));
+      _confetti.add(
+        _ConfettiParticle(
+          x: x,
+          y: y,
+          vx: math.cos(angle) * speed,
+          vy: math.sin(angle) * speed - 65.0, // slight upward explosion lift
+          color: pColor,
+          width: isSparkle ? 4.0 : 6.0 + _random.nextDouble() * 4.0,
+          height: isSparkle ? 4.0 : 8.0 + _random.nextDouble() * 5.0,
+          angle: _random.nextDouble() * math.pi * 2,
+          vRot: (_random.nextDouble() - 0.5) * 14.0,
+          life: 0.55 + _random.nextDouble() * 0.45,
+          maxLife: 1.0,
+          isStar: isSparkle,
+        ),
+      );
     }
   }
 
@@ -465,6 +509,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
     if (_currentMissionIndex < _missions.length - 1) {
       setState(() {
         _currentMissionIndex++;
+        _showQ = true; // new mission → show its question first
         _missionPops = 0;
         _poppedTargetsThisMission.clear();
         _balloons.clear();
@@ -498,89 +543,100 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
     final safeMissionIdx = _currentMissionIndex.clamp(0, _missions.length - 1);
     final currentMission = _missions[safeMissionIdx];
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
-      body: SafeArea(
-        bottom: false,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            _arenaSize = Size(constraints.maxWidth, constraints.maxHeight);
+    return QuestionPopupHost(
+      show: _showQ && _gameState == 'playing',
+      question: currentMission.prompt,
+      target: currentMission.targets.join('  '),
+      label: currentMission.badge,
+      hint: 'Pop only the balloons with these letters!',
+      emoji: '🎈',
+      onStart: () => setState(() => _showQ = false),
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0F172A),
+        body: SafeArea(
+          bottom: false,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              _arenaSize = Size(constraints.maxWidth, constraints.maxHeight);
 
-            return Stack(
-              children: [
-                // 1. Background Cover Art with Atmospheric Vignette
-                Positioned.fill(
-                  child: Image.asset(
-                    'assets/images/games/balloon_pop_cover.png',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color(0xFF1E1B4B), Color(0xFF0F172A)],
+              return Stack(
+                children: [
+                  // 1. Background Cover Art with Atmospheric Vignette
+                  Positioned.fill(
+                    child: Image.asset(
+                      'assets/images/games/balloon_pop_cover.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0xFF1E1B4B), Color(0xFF0F172A)],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
 
-                // Dark atmospheric gradient overlay for readability
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.65),
-                          Colors.black.withValues(alpha: 0.25),
-                          Colors.black.withValues(alpha: 0.70),
-                        ],
+                  // Dark atmospheric gradient overlay for readability
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.65),
+                            Colors.black.withValues(alpha: 0.25),
+                            Colors.black.withValues(alpha: 0.70),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                // 2. Interactive Sky Canvas for Balloons, Blast Rings, Confetti & Scores
-                Positioned.fill(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onPanDown: (details) => _onPopTouch(details.localPosition),
-                    onPanUpdate: (details) => _onPopTouch(details.localPosition),
-                    child: CustomPaint(
-                      painter: _BalloonGamePainter(
-                        balloons: _balloons,
-                        confetti: _confetti,
-                        shockwaves: _shockwaves,
-                        floatingTexts: _floatingTexts,
+                  // 2. Interactive Sky Canvas for Balloons, Blast Rings, Confetti & Scores
+                  Positioned.fill(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onPanDown: (details) =>
+                          _onPopTouch(details.localPosition),
+                      onPanUpdate: (details) =>
+                          _onPopTouch(details.localPosition),
+                      child: CustomPaint(
+                        painter: _BalloonGamePainter(
+                          balloons: _balloons,
+                          confetti: _confetti,
+                          shockwaves: _shockwaves,
+                          floatingTexts: _floatingTexts,
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                // 3. Top Header Bar & HIGH-CONTRAST HIGHLIGHTED MISSION BANNER
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Column(
-                    children: [
-                      // Navigation & HUD Header
-                      _buildTopHeader(),
+                  // 3. Top Header Bar & HIGH-CONTRAST HIGHLIGHTED MISSION BANNER
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Column(
+                      children: [
+                        // Navigation & HUD Header
+                        _buildTopHeader(),
 
-                      // ⭐ HIGH-CONTRAST VIBRANT QUESTION BANNER (Highlight Qs!)
-                      _buildHighlightedQuestionBanner(currentMission),
-                    ],
+                        // ⭐ HIGH-CONTRAST VIBRANT QUESTION BANNER (Highlight Qs!)
+                        _buildHighlightedQuestionBanner(currentMission),
+                      ],
+                    ),
                   ),
-                ),
 
-                // 4. Overlays: Victory / Game Over
-                if (_gameState == 'victory') _buildVictoryOverlay(),
-                if (_gameState == 'gameover') _buildGameOverOverlay(),
-              ],
-            );
-          },
+                  // 4. Overlays: Victory / Game Over
+                  if (_gameState == 'victory') _buildVictoryOverlay(),
+                  if (_gameState == 'gameover') _buildGameOverOverlay(),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -601,7 +657,11 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.white24),
               ),
-              child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 22),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
             ),
           ),
           const SizedBox(width: 6),
@@ -615,9 +675,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
                 letterSpacing: -0.3,
-                shadows: [
-                  Shadow(color: Colors.black, blurRadius: 6),
-                ],
+                shadows: [Shadow(color: Colors.black, blurRadius: 6)],
               ),
             ),
           ),
@@ -632,7 +690,11 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
             ),
             child: Row(
               children: [
-                const Icon(Icons.star_rounded, color: Color(0xFFFFD166), size: 18),
+                const Icon(
+                  Icons.star_rounded,
+                  color: Color(0xFFFFD166),
+                  size: 18,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   '$_score',
@@ -676,11 +738,7 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF1E293B),
-            Color(0xFF0F172A),
-          ],
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0F172A)],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
@@ -709,18 +767,28 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 3,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
                   ),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF7DD3FC), width: 1.2),
+                  border: Border.all(
+                    color: const Color(0xFF7DD3FC),
+                    width: 1.2,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.flash_on_rounded, color: Color(0xFFFFE066), size: 14),
+                    const Icon(
+                      Icons.flash_on_rounded,
+                      color: Color(0xFFFFE066),
+                      size: 14,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       mission.badge,
@@ -743,13 +811,19 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
             mission.prompt,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Color(0xFFFDE047), // Radiant Sun Yellow for instant readability
-              fontSize: 22,
+              color: Color(
+                0xFFFDE047,
+              ), // Radiant Sun Yellow for instant readability
+              fontSize: 30,
               fontWeight: FontWeight.w900,
               letterSpacing: -0.2,
               height: 1.2,
               shadows: [
-                Shadow(color: Colors.black, blurRadius: 4, offset: Offset(1, 1)),
+                Shadow(
+                  color: Colors.black,
+                  blurRadius: 4,
+                  offset: Offset(1, 1),
+                ),
               ],
             ),
           ),
@@ -761,16 +835,23 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
             spacing: 6,
             runSpacing: 4,
             children: mission.targets.map((target) {
-              final isPopped = _poppedTargetsThisMission.contains(target.toUpperCase());
+              final isPopped = _poppedTargetsThisMission.contains(
+                target.toUpperCase(),
+              );
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: isPopped
                       ? const Color(0xFF10B981).withValues(alpha: 0.35)
                       : Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: isPopped ? const Color(0xFF34D399) : const Color(0xFF38BDF8),
+                    color: isPopped
+                        ? const Color(0xFF34D399)
+                        : const Color(0xFF38BDF8),
                     width: 1.2,
                   ),
                 ),
@@ -778,14 +859,20 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (isPopped) ...[
-                      const Icon(Icons.check_rounded, color: Color(0xFF34D399), size: 12),
+                      const Icon(
+                        Icons.check_rounded,
+                        color: Color(0xFF34D399),
+                        size: 12,
+                      ),
                       const SizedBox(width: 2),
                     ],
                     Text(
                       target,
                       style: TextStyle(
-                        color: isPopped ? const Color(0xFF6EE7B7) : Colors.white,
-                        fontSize: 16,
+                        color: isPopped
+                            ? const Color(0xFF6EE7B7)
+                            : Colors.white,
+                        fontSize: 24,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -836,21 +923,36 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.stars_rounded, color: Color(0xFFFFD166), size: 76),
+              const Icon(
+                Icons.stars_rounded,
+                color: Color(0xFFFFD166),
+                size: 76,
+              ),
               const SizedBox(height: 12),
               const Text(
                 '🏆 VICTORY! 🏆',
-                style: TextStyle(color: Color(0xFFFFD166), fontSize: 26, fontWeight: FontWeight.w900),
+                style: TextStyle(
+                  color: Color(0xFFFFD166),
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 6),
               const Text(
                 'All Balloon Missions Cleared!',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(16),
@@ -858,7 +960,11 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
                 ),
                 child: Text(
                   'Final Score: $_score Stars ⭐',
-                  style: const TextStyle(color: Color(0xFFFFD166), fontSize: 18, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    color: Color(0xFFFFD166),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -869,16 +975,29 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
                   BouncyButton(
                     onPressed: _startNewGame,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF3B82F6),
                         borderRadius: BorderRadius.circular(18),
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.replay_rounded, color: Colors.white, size: 18),
+                          Icon(
+                            Icons.replay_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                           SizedBox(width: 6),
-                          Text('Play Again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                          Text(
+                            'Play Again',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -887,12 +1006,21 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
                   BouncyButton(
                     onPressed: () => Navigator.pop(context),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF10B981),
                         borderRadius: BorderRadius.circular(18),
                       ),
-                      child: const Text('Back to Arena', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                      child: const Text(
+                        'Back to Arena',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -913,17 +1041,29 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.heart_broken_rounded, color: Color(0xFFEF4444), size: 72),
+              const Icon(
+                Icons.heart_broken_rounded,
+                color: Color(0xFFEF4444),
+                size: 72,
+              ),
               const SizedBox(height: 12),
               const Text(
                 'Out of Lives! 🎈',
-                style: TextStyle(color: Color(0xFFEF4444), fontSize: 24, fontWeight: FontWeight.w900),
+                style: TextStyle(
+                  color: Color(0xFFEF4444),
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 6),
               const Text(
                 'Watch out for distractor balloons and keep popping target letters!',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 20),
               Row(
@@ -931,22 +1071,41 @@ class _BalloonPopGameState extends State<BalloonPopGame> with SingleTickerProvid
                 children: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Exit', style: TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.w800)),
+                    child: const Text(
+                      'Exit',
+                      style: TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   BouncyButton(
                     onPressed: _startNewGame,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 22,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEF4444),
                         borderRadius: BorderRadius.circular(18),
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.replay_rounded, color: Colors.white, size: 18),
+                          Icon(
+                            Icons.replay_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                           SizedBox(width: 6),
-                          Text('Try Again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                          Text(
+                            'Try Again',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1027,12 +1186,20 @@ class _BalloonGamePainter extends CustomPainter {
         ..color = Colors.black.withValues(alpha: 0.35)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
       canvas.drawOval(
-        Rect.fromCenter(center: const Offset(0, 5), width: b.radius * 2.15, height: b.radius * 2.55),
+        Rect.fromCenter(
+          center: const Offset(0, 5),
+          width: b.radius * 2.15,
+          height: b.radius * 2.55,
+        ),
         shadowPaint,
       );
 
       // Balloon Body (Radial Gradient Shading for 3D Volume)
-      final bodyRect = Rect.fromCenter(center: Offset.zero, width: b.radius * 2.15, height: b.radius * 2.55);
+      final bodyRect = Rect.fromCenter(
+        center: Offset.zero,
+        width: b.radius * 2.15,
+        height: b.radius * 2.55,
+      );
       final bodyPaint = Paint()
         ..shader = RadialGradient(
           center: const Alignment(-0.35, -0.40),
@@ -1068,7 +1235,11 @@ class _BalloonGamePainter extends CustomPainter {
           fontWeight: FontWeight.w900,
           letterSpacing: -0.3,
           shadows: const [
-            Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(1, 1.5)),
+            Shadow(
+              color: Colors.black87,
+              blurRadius: 4,
+              offset: Offset(1, 1.5),
+            ),
           ],
         ),
       );
@@ -1100,7 +1271,11 @@ class _BalloonGamePainter extends CustomPainter {
       } else {
         // Confetti Ribbon / Rectangle
         canvas.drawRect(
-          Rect.fromCenter(center: Offset.zero, width: c.width, height: c.height),
+          Rect.fromCenter(
+            center: Offset.zero,
+            width: c.width,
+            height: c.height,
+          ),
           cPaint,
         );
       }
@@ -1118,7 +1293,10 @@ class _BalloonGamePainter extends CustomPainter {
           fontSize: 16 * t.scale,
           fontWeight: FontWeight.w900,
           shadows: [
-            Shadow(color: Colors.black.withValues(alpha: alpha * 0.8), blurRadius: 6),
+            Shadow(
+              color: Colors.black.withValues(alpha: alpha * 0.8),
+              blurRadius: 6,
+            ),
           ],
         ),
       );

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -9,6 +10,7 @@ import '../../models/word_puzzle_game_model.dart';
 import '../../services/audio_service.dart';
 import '../../services/progress_service.dart';
 import '../../widgets/next_level_button.dart';
+import 'mini_game_kit.dart';
 
 class WordPuzzleGame extends StatefulWidget {
   final ProgressService? progressService;
@@ -69,17 +71,18 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
     _allPuzzles = _buildPuzzlesFromAdmin();
     _currentLevel = widget.initialLevel.clamp(1, _maxLevel);
 
-    _shakeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          setState(() {
-            _shakingTileId = null;
-          });
-          _shakeController.reset();
-        }
-      });
+    _shakeController =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 400),
+        )..addStatusListener((status) {
+          if (status == AnimationStatus.completed) {
+            setState(() {
+              _shakingTileId = null;
+            });
+            _shakeController.reset();
+          }
+        });
 
     _celebrationController = AnimationController(
       vsync: this,
@@ -112,7 +115,10 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
       final level = content.levels[i];
       for (final rawWord in level.targets) {
         final word = rawWord.trim().toUpperCase();
-        final components = word.split('').where((c) => c.trim().isNotEmpty).toList();
+        final components = word
+            .split('')
+            .where((c) => c.trim().isNotEmpty)
+            .toList();
         if (components.isEmpty) continue;
         final decoys = content
             .distractorsFor(level)
@@ -121,21 +127,41 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
             .toSet()
             .toList();
         final admin = content.letterFor(word);
-        puzzles.add(WordPuzzleModel(
-          id: '${content.game.id}_${i}_$word',
-          word: word,
-          components: components,
-          distractorPool: decoys.isNotEmpty ? decoys : components,
-          difficultyLevel: i + 1,
-          meaning: admin.meaning.isNotEmpty ? admin.meaning : (level.prompt.isNotEmpty ? level.prompt : null),
-          audioPath: admin.audioPath,
-        ));
+        puzzles.add(
+          WordPuzzleModel(
+            id: '${content.game.id}_${i}_$word',
+            word: word,
+            components: components,
+            distractorPool: decoys.isNotEmpty ? decoys : components,
+            difficultyLevel: i + 1,
+            meaning: admin.meaning.isNotEmpty
+                ? admin.meaning
+                : (level.prompt.isNotEmpty ? level.prompt : null),
+            audioPath: admin.audioPath,
+          ),
+        );
       }
     }
     return puzzles;
   }
 
+  /// True while the question popup is shown (taps are blocked by it).
+  bool _showQ = true;
+
+  String get _levelQuestion {
+    final levels = widget.content.levels;
+    final i = _currentLevel - 1;
+    final p = (i >= 0 && i < levels.length) ? levels[i].prompt.trim() : '';
+    return p.isNotEmpty
+        ? p
+        : popupQuestionFor(
+            widget.content,
+            fallback: 'Tap the letters in order to build the word!',
+          );
+  }
+
   void _loadLevel(int level) {
+    _showQ = true; // new level → show its question first
     _currentLevel = level;
     _levelPuzzles = _allPuzzles
         .where((p) => p.difficultyLevel == level)
@@ -180,11 +206,13 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
     final components = puzzle.components;
 
     // Pick random unique slot indexes for the correct components
-    final allCellIndices = List.generate(totalCells, (i) => i)..shuffle(_random);
+    final allCellIndices = List.generate(totalCells, (i) => i)
+      ..shuffle(_random);
     final componentIndices = allCellIndices.take(components.length).toList();
 
     // Fill distractors
-    final distractorPool = List<String>.from(puzzle.distractorPool)..shuffle(_random);
+    final distractorPool = List<String>.from(puzzle.distractorPool)
+      ..shuffle(_random);
     int distractorIdx = 0;
 
     _boardTiles = List.generate(totalCells, (index) {
@@ -363,83 +391,90 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF13072E),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Stack(
-              children: [
-                // Background Ambient Glowing Gradients
-                Positioned(
-                  top: -80,
-                  right: -60,
-                  width: 240,
-                  height: 240,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          const Color(0xFFFF4081).withOpacity(0.25),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: -60,
-                  left: -60,
-                  width: 240,
-                  height: 240,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          const Color(0xFF00E5FF).withOpacity(0.2),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Main Game Content Column
-                Center(
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 500),
-                    child: Column(
-                      children: [
-                        _buildTopAppBar(),
-                        _buildTargetWordCard(),
-                        _buildWordBuildingArea(),
-                        const SizedBox(height: 6),
-                        Expanded(
-                          child: _buildCandyGridBoard(constraints),
+    return QuestionPopupHost(
+      show: _showQ && _gameState == 'playing',
+      question: _levelQuestion,
+      target: _levelPuzzles.isEmpty ? null : _currentPuzzle.word,
+      label: 'LEVEL $_currentLevel',
+      hint: 'Tap the letters in the right order to build the word!',
+      emoji: '🧩',
+      onStart: () => setState(() => _showQ = false),
+      child: Scaffold(
+        backgroundColor: const Color(0xFF13072E),
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Stack(
+                children: [
+                  // Background Ambient Glowing Gradients
+                  Positioned(
+                    top: -80,
+                    right: -60,
+                    width: 240,
+                    height: 240,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            const Color(0xFFFF4081).withOpacity(0.25),
+                            Colors.transparent,
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-
-                // Celebration Overlay Particles
-                if (_gameState == 'word_complete')
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: CustomPaint(
-                        painter: _SparklePainter(sparkles: _sparkles),
+                  Positioned(
+                    bottom: -60,
+                    left: -60,
+                    width: 240,
+                    height: 240,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            const Color(0xFF00E5FF).withOpacity(0.2),
+                            Colors.transparent,
+                          ],
+                        ),
                       ),
                     ),
                   ),
 
-                // Level Complete Modal
-                if (_gameState == 'level_complete')
-                  _buildLevelCompleteDialog(),
-              ],
-            );
-          },
+                  // Main Game Content Column
+                  Center(
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 500),
+                      child: Column(
+                        children: [
+                          _buildTopAppBar(),
+                          _buildTargetWordCard(),
+                          _buildWordBuildingArea(),
+                          const SizedBox(height: 6),
+                          Expanded(child: _buildCandyGridBoard(constraints)),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Celebration Overlay Particles
+                  if (_gameState == 'word_complete')
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: CustomPaint(
+                          painter: _SparklePainter(sparkles: _sparkles),
+                        ),
+                      ),
+                    ),
+
+                  // Level Complete Modal
+                  if (_gameState == 'level_complete')
+                    _buildLevelCompleteDialog(),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -459,78 +494,100 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
           children: [
             // Back button
             IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22),
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
               onPressed: () => Navigator.of(context).pop(),
             ),
             const SizedBox(width: 8),
 
             // Title & Level selector
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF7B1FA2), Color(0xFF4A148C)],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.amberAccent.withOpacity(0.6), width: 1.5),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF7B1FA2), Color(0xFF4A148C)],
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.stars_rounded, color: Colors.amberAccent, size: 18),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Level $_currentLevel (${_puzzleIndex + 1}/${_levelPuzzles.length})',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.amberAccent.withOpacity(0.6),
+                  width: 1.5,
                 ),
               ),
-
-              // Right controls: Hint & Sound
-              Row(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Hint Button
-                  GestureDetector(
-                    onTap: _useHint,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: _hintsRemaining > 0 ? Colors.amber.withOpacity(0.2) : Colors.white10,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: _hintsRemaining > 0 ? Colors.amberAccent : Colors.white24,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.lightbulb_rounded, color: Colors.amberAccent, size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            '$_hintsRemaining',
-                            style: const TextStyle(
-                              color: Colors.amberAccent,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  const Icon(
+                    Icons.stars_rounded,
+                    color: Colors.amberAccent,
+                    size: 18,
                   ),
                   const SizedBox(width: 6),
-
-                  const SizedBox.shrink(),
+                  Text(
+                    'Level $_currentLevel (${_puzzleIndex + 1}/${_levelPuzzles.length})',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13,
+                    ),
+                  ),
                 ],
               ),
-            ],
-          ),
+            ),
+
+            // Right controls: Hint & Sound
+            Row(
+              children: [
+                // Hint Button
+                GestureDetector(
+                  onTap: _useHint,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _hintsRemaining > 0
+                          ? Colors.amber.withOpacity(0.2)
+                          : Colors.white10,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: _hintsRemaining > 0
+                            ? Colors.amberAccent
+                            : Colors.white24,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.lightbulb_rounded,
+                          color: Colors.amberAccent,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$_hintsRemaining',
+                          style: const TextStyle(
+                            color: Colors.amberAccent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+
+                const SizedBox.shrink(),
+              ],
+            ),
+          ],
         ),
-      );
+      ),
+    );
   }
 
   // -------------------------------------------------------------
@@ -553,12 +610,15 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
         ),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: isDone ? Colors.greenAccent : const Color(0xFFFF80AB).withOpacity(0.5),
+          color: isDone
+              ? Colors.greenAccent
+              : const Color(0xFFFF80AB).withOpacity(0.5),
           width: 2.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: (isDone ? Colors.greenAccent : const Color(0xFFFF4081)).withOpacity(0.3),
+            color: (isDone ? Colors.greenAccent : const Color(0xFFFF4081))
+                .withOpacity(0.3),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -576,7 +636,10 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(8),
@@ -585,7 +648,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                         'Build the Word!',
                         style: TextStyle(
                           color: Color(0xFFFFD54F),
-                          fontSize: 15,
+                          fontSize: 19,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -605,7 +668,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                 Text(
                   puzzle.word,
                   style: GoogleFonts.catamaran(
-                    fontSize: 34,
+                    fontSize: 44,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
                     letterSpacing: 1.5,
@@ -677,7 +740,8 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(components.length, (idx) {
                 final isFilled = idx < _currentStep;
-                final isCurrent = idx == _currentStep && _gameState == 'playing';
+                final isCurrent =
+                    idx == _currentStep && _gameState == 'playing';
                 final componentLetter = isFilled ? components[idx] : '';
                 final style = isFilled
                     ? CandyColorPalette.getStyleForLetter(componentLetter)
@@ -689,10 +753,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                     final pulseScale = isCurrent
                         ? 1.0 + (_pulseController.value * 0.08)
                         : 1.0;
-                    return Transform.scale(
-                      scale: pulseScale,
-                      child: child,
-                    );
+                    return Transform.scale(scale: pulseScale, child: child);
                   },
                   child: Container(
                     width: 48,
@@ -711,9 +772,7 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                       border: Border.all(
                         color: isFilled
                             ? style!.borderColor
-                            : (isCurrent
-                                ? Colors.amberAccent
-                                : Colors.white24),
+                            : (isCurrent ? Colors.amberAccent : Colors.white24),
                         width: isCurrent ? 2.5 : 1.5,
                       ),
                       boxShadow: isFilled
@@ -725,14 +784,16 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                               ),
                             ]
                           : (isCurrent
-                              ? [
-                                  BoxShadow(
-                                    color: Colors.amberAccent.withOpacity(0.4),
-                                    blurRadius: 8,
-                                    spreadRadius: 1,
-                                  ),
-                                ]
-                              : null),
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.amberAccent.withOpacity(
+                                        0.4,
+                                      ),
+                                      blurRadius: 8,
+                                      spreadRadius: 1,
+                                    ),
+                                  ]
+                                : null),
                     ),
                     child: Center(
                       child: isFilled
@@ -752,19 +813,19 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
                               ),
                             )
                           : (isCurrent
-                              ? const Icon(
-                                  Icons.arrow_downward_rounded,
-                                  color: Colors.amberAccent,
-                                  size: 18,
-                                )
-                              : Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white24,
-                                    shape: BoxShape.circle,
-                                  ),
-                                )),
+                                ? const Icon(
+                                    Icons.arrow_downward_rounded,
+                                    color: Colors.amberAccent,
+                                    size: 18,
+                                  )
+                                : Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white24,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  )),
                     ),
                   ),
                 );
@@ -786,7 +847,10 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
       decoration: BoxDecoration(
         color: const Color(0xFF0F0624),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFF9C27B0).withOpacity(0.5), width: 2.5),
+        border: Border.all(
+          color: const Color(0xFF9C27B0).withOpacity(0.5),
+          width: 2.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF9C27B0).withOpacity(0.25),
@@ -801,7 +865,8 @@ class _WordPuzzleGameState extends State<WordPuzzleGame>
           final availableHeight = boardConstraints.maxHeight;
 
           final tileWidth = (availableWidth - (_gridCols - 1) * 6) / _gridCols;
-          final tileHeight = (availableHeight - (_gridRows - 1) * 6) / _gridRows;
+          final tileHeight =
+              (availableHeight - (_gridRows - 1) * 6) / _gridRows;
           final tileSize = min(tileWidth, tileHeight).clamp(38.0, 68.0);
 
           return Center(

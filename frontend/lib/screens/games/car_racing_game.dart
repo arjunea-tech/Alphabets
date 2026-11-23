@@ -1,6 +1,8 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+
 import '../../models/car_racing_game_model.dart';
 import '../../models/game_content.dart';
 import '../../models/letter_model.dart';
@@ -11,6 +13,7 @@ import '../../theme/app_text_styles.dart';
 import '../../widgets/bouncy_button.dart';
 import '../../widgets/next_level_button.dart';
 import '../../widgets/mascot_widget.dart';
+import 'mini_game_kit.dart';
 
 class CarRacingGame extends StatefulWidget {
   final ProgressService progressService;
@@ -48,6 +51,7 @@ class CarRacingGameState extends State<CarRacingGame>
   bool _isGameCompleted = false;
   bool _isMuted = false;
   bool _isRoundTransitioning = false;
+  bool _showQ = true; // question popup visible (game paused)
 
   // Car Physics & Lane Management
   int _currentLane = 1; // 0: Left, 1: Center, 2: Right
@@ -154,20 +158,25 @@ class CarRacingGameState extends State<CarRacingGame>
   }
 
   void _setupGameData() {
+    _showQ = true;
     // Targets and wrong-lane options come from the admin's levels for this game
     RacingTarget toTarget(LetterModel u) => RacingTarget(
-          id: u.id,
-          text: u.letter,
-          clue: u.word,
-          audioPath: u.audioPath,
-          isWord: u.letter.length > 1,
-        );
+      id: u.id,
+      text: u.letter,
+      clue: u.word,
+      audioPath: u.audioPath,
+      isWord: u.letter.length > 1,
+    );
     _targetPool = widget.content.targetLetters.map(toTarget).toList();
     _distractorPool = widget.content.distractorLetters.map(toTarget).toList();
     if (_distractorPool.length < 2) {
       _distractorPool = [
         ..._distractorPool,
-        ...widget.content.lettersFor(widget.content.distractorsFor(widget.content.levels.first)).map(toTarget),
+        ...widget.content
+            .lettersFor(
+              widget.content.distractorsFor(widget.content.levels.first),
+            )
+            .map(toTarget),
       ];
     }
 
@@ -214,10 +223,10 @@ class CarRacingGameState extends State<CarRacingGame>
 
     // Pick 2 distinct distractors from remaining pool (excluding target)
     final seen = <String>{target.text};
-    final otherTargets = [..._distractorPool, ..._targetPool]
-        .where((t) => seen.add(t.text))
-        .toList()
-      ..shuffle(_rng);
+    final otherTargets = [
+      ..._distractorPool,
+      ..._targetPool,
+    ].where((t) => seen.add(t.text)).toList()..shuffle(_rng);
     final distractors = otherTargets.take(2).toList();
 
     // Exactly 3 unique items for the 3 lanes (1 target + 2 distractors)
@@ -231,8 +240,12 @@ class CarRacingGameState extends State<CarRacingGame>
       final colorIdx = _rng.nextInt(_bubbleColors.length);
 
       // Add a slight obstacle (cone) or bonus star rarely in higher rounds
-      final bool spawnCone = _currentRoundIndex >= 3 && _rng.nextDouble() < 0.18 && itemData.text != target.text;
-      final bool spawnStar = _rng.nextDouble() < 0.12 && itemData.text != target.text;
+      final bool spawnCone =
+          _currentRoundIndex >= 3 &&
+          _rng.nextDouble() < 0.18 &&
+          itemData.text != target.text;
+      final bool spawnStar =
+          _rng.nextDouble() < 0.12 && itemData.text != target.text;
 
       _roadItems.add(
         RacingRoadItem(
@@ -248,7 +261,9 @@ class CarRacingGameState extends State<CarRacingGame>
               : (spawnStar ? const Color(0xFFFFF59D) : _bubbleColors[colorIdx]),
           borderColor: spawnCone
               ? const Color(0xFFE65100)
-              : (spawnStar ? const Color(0xFFFBC02D) : _bubbleBorders[colorIdx]),
+              : (spawnStar
+                    ? const Color(0xFFFBC02D)
+                    : _bubbleBorders[colorIdx]),
         ),
       );
     }
@@ -272,6 +287,7 @@ class CarRacingGameState extends State<CarRacingGame>
       return;
     }
 
+    if (_showQ) return;
     _updateGame(dt);
     setState(() {});
   }
@@ -321,7 +337,8 @@ class CarRacingGameState extends State<CarRacingGame>
       item.y += normalizedSpeed * dt;
 
       // Collision Check: item intersects with car's Y zone & lane
-      final overlapsY = (item.y >= carYFractionStart && item.y <= carYFractionEnd);
+      final overlapsY =
+          (item.y >= carYFractionStart && item.y <= carYFractionEnd);
       final carCurrentLaneRounded = _carAnimatedLane.round();
 
       if (overlapsY && item.lane == carCurrentLaneRounded) {
@@ -361,7 +378,10 @@ class CarRacingGameState extends State<CarRacingGame>
     }
 
     // If target item passed without being collected, automatically respawn wave!
-    if (!hasTargetOnRoad && !_isRoundTransitioning && !_isGameOver && !_isGameCompleted) {
+    if (!hasTargetOnRoad &&
+        !_isRoundTransitioning &&
+        !_isGameOver &&
+        !_isGameCompleted) {
       _spawnWaveForCurrentRound();
     }
 
@@ -532,144 +552,169 @@ class CarRacingGameState extends State<CarRacingGame>
     final laneWidth = roadWidth / 3;
 
     // Car X coordinate derived from animated lane
-    final carCenterX = roadLeft + (_carAnimatedLane * laneWidth) + (laneWidth / 2);
+    final carCenterX =
+        roadLeft + (_carAnimatedLane * laneWidth) + (laneWidth / 2);
     final carCenterY = screenHeight * 0.74;
 
-    return Scaffold(
-      body: Container(
-        color: const Color(0xFF81C784), // Cheerful roadside grass green
-        child: SafeArea(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            // Horizontal swipe controls
-            onHorizontalDragEnd: (details) {
-              if (details.primaryVelocity != null) {
-                if (details.primaryVelocity! < -180) {
-                  moveCarLeft();
-                } else if (details.primaryVelocity! > 180) {
-                  moveCarRight();
+    return QuestionPopupHost(
+      show: _showQ && !_isGameOver && !_isGameCompleted,
+      question: popupQuestionFor(
+        widget.content,
+        fallback: 'Listen to the sound and drive to the matching letter!',
+      ),
+      label: 'CAR RACING',
+      hint: 'Listen 🎧 then steer your car to the right letter!',
+      emoji: '🚗',
+      buttonText: "Let's Drive! 🏁",
+      onStart: () {
+        setState(() => _showQ = false);
+        _playTargetSound();
+      },
+      child: Scaffold(
+        body: Container(
+          color: const Color(0xFF81C784), // Cheerful roadside grass green
+          child: SafeArea(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              // Horizontal swipe controls
+              onHorizontalDragEnd: (details) {
+                if (details.primaryVelocity != null) {
+                  if (details.primaryVelocity! < -180) {
+                    moveCarLeft();
+                  } else if (details.primaryVelocity! > 180) {
+                    moveCarRight();
+                  }
                 }
-              }
-            },
-            // Direct lane tapping
-            onTapDown: (details) {
-              final tapX = details.localPosition.dx;
-              if (tapX >= roadLeft && tapX <= roadLeft + roadWidth) {
-                final selectedLane = ((tapX - roadLeft) / laneWidth).floor().clamp(0, 2);
-                _steerToLane(selectedLane);
-              }
-            },
-            child: Stack(
-              children: [
-                // 1. Roadside Animated Scenery (Trees, Flowers, Clouds)
-                _buildRoadsideScenery(screenWidth, screenHeight),
+              },
+              // Direct lane tapping
+              onTapDown: (details) {
+                final tapX = details.localPosition.dx;
+                if (tapX >= roadLeft && tapX <= roadLeft + roadWidth) {
+                  final selectedLane = ((tapX - roadLeft) / laneWidth)
+                      .floor()
+                      .clamp(0, 2);
+                  _steerToLane(selectedLane);
+                }
+              },
+              child: Stack(
+                children: [
+                  // 1. Roadside Animated Scenery (Trees, Flowers, Clouds)
+                  _buildRoadsideScenery(screenWidth, screenHeight),
 
-                // 2. Asphalt Cartoon Highway & Scrolling Dashed Markings
-                Positioned(
-                  left: roadLeft,
-                  top: 0,
-                  bottom: 0,
-                  width: roadWidth,
-                  child: _buildHighwayTrack(roadWidth, laneWidth),
-                ),
-
-                // 3. Falling/Approaching Tamil Road Items
-                ..._roadItems.map((item) {
-                  final itemCenterX = roadLeft + (item.lane * laneWidth) + (laneWidth / 2);
-                  final itemPixelY = item.y * screenHeight;
-
-                  return Positioned(
-                    left: itemCenterX - 45,
-                    top: itemPixelY - 35,
-                    child: _buildRoadItemWidget(item),
-                  );
-                }),
-
-                // 4. Cute Cartoon Racing Car
-                Positioned(
-                  left: carCenterX - 40,
-                  top: carCenterY - 45,
-                  child: AnimatedBuilder(
-                    animation: _carShakeAnim,
-                    builder: (context, child) {
-                      return Transform.translate(
-                        offset: Offset(_carShakeAnim.value, sin(_timeElapsed * 14) * 2.2),
-                        child: Transform.rotate(
-                          angle: _carSteerTilt,
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: _buildCartoonCar(),
-                  ),
-                ),
-
-                // 5. Confetti & Star Particle Canvas
-                CustomPaint(
-                  painter: _RacingParticlePainter(_particles),
-                  size: Size.infinite,
-                ),
-
-                // 6. Floating Praise Toast
-                if (_feedbackText != null && _feedbackOpacity > 0.0)
+                  // 2. Asphalt Cartoon Highway & Scrolling Dashed Markings
                   Positioned(
-                    top: screenHeight * 0.40,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: Opacity(
-                        opacity: _feedbackOpacity,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: _feedbackColor,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.2),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                    left: roadLeft,
+                    top: 0,
+                    bottom: 0,
+                    width: roadWidth,
+                    child: _buildHighwayTrack(roadWidth, laneWidth),
+                  ),
+
+                  // 3. Falling/Approaching Tamil Road Items
+                  ..._roadItems.map((item) {
+                    final itemCenterX =
+                        roadLeft + (item.lane * laneWidth) + (laneWidth / 2);
+                    final itemPixelY = item.y * screenHeight;
+
+                    return Positioned(
+                      left: itemCenterX - 45,
+                      top: itemPixelY - 35,
+                      child: _buildRoadItemWidget(item),
+                    );
+                  }),
+
+                  // 4. Cute Cartoon Racing Car
+                  Positioned(
+                    left: carCenterX - 40,
+                    top: carCenterY - 45,
+                    child: AnimatedBuilder(
+                      animation: _carShakeAnim,
+                      builder: (context, child) {
+                        return Transform.translate(
+                          offset: Offset(
+                            _carShakeAnim.value,
+                            sin(_timeElapsed * 14) * 2.2,
                           ),
-                          child: Text(
-                            _feedbackText!,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
+                          child: Transform.rotate(
+                            angle: _carSteerTilt,
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: _buildCartoonCar(),
+                    ),
+                  ),
+
+                  // 5. Confetti & Star Particle Canvas
+                  CustomPaint(
+                    painter: _RacingParticlePainter(_particles),
+                    size: Size.infinite,
+                  ),
+
+                  // 6. Floating Praise Toast
+                  if (_feedbackText != null && _feedbackOpacity > 0.0)
+                    Positioned(
+                      top: screenHeight * 0.40,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Opacity(
+                          opacity: _feedbackOpacity,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _feedbackColor,
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              _feedbackText!,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
+
+                  // 7. Top HUD Bar & Instruction Banner
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Column(
+                      children: [
+                        _buildTopBar(),
+                        const SizedBox(height: 6),
+                        _buildTargetBanner(),
+                      ],
+                    ),
                   ),
 
-                // 7. Top HUD Bar & Instruction Banner
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Column(
-                    children: [
-                      _buildTopBar(),
-                      const SizedBox(height: 6),
-                      _buildTargetBanner(),
-                    ],
+                  // 8. Bottom Steer Touch Buttons
+                  Positioned(
+                    bottom: 16,
+                    left: 20,
+                    right: 20,
+                    child: _buildBottomControls(),
                   ),
-                ),
 
-                // 8. Bottom Steer Touch Buttons
-                Positioned(
-                  bottom: 16,
-                  left: 20,
-                  right: 20,
-                  child: _buildBottomControls(),
-                ),
-
-                // 9. Celebration Result Modal
-                if (_isGameCompleted) _buildCompletionOverlay(),
-              ],
+                  // 9. Celebration Result Modal
+                  if (_isGameCompleted) _buildCompletionOverlay(),
+                ],
+              ),
             ),
           ),
         ),
@@ -703,7 +748,11 @@ class CarRacingGameState extends State<CarRacingGame>
                     ),
                   ],
                 ),
-                child: const Icon(Icons.arrow_back_rounded, color: Color(0xFFE65100), size: 24),
+                child: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: Color(0xFFE65100),
+                  size: 24,
+                ),
               ),
             ),
 
@@ -749,7 +798,10 @@ class CarRacingGameState extends State<CarRacingGame>
                 decoration: BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFFFD54F), width: 1.5),
+                  border: Border.all(
+                    color: const Color(0xFFFFD54F),
+                    width: 1.5,
+                  ),
                 ),
                 child: const SizedBox.shrink(),
               ),
@@ -781,7 +833,10 @@ class CarRacingGameState extends State<CarRacingGame>
             ScaleTransition(
               scale: _scoreBumpAnim,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
@@ -799,7 +854,11 @@ class CarRacingGameState extends State<CarRacingGame>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.star_rounded, color: Colors.white, size: 18),
+                    const Icon(
+                      Icons.star_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '$_score',
@@ -873,7 +932,7 @@ class CarRacingGameState extends State<CarRacingGame>
                 const Text(
                   'Listen to phonics and steer your car! 🚗',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 22,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFFD84315),
                   ),
@@ -881,7 +940,7 @@ class CarRacingGameState extends State<CarRacingGame>
                 Text(
                   'Collect matching alphabet letters! 🎵',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: Colors.brown.shade600,
                   ),
@@ -912,9 +971,7 @@ class CarRacingGameState extends State<CarRacingGame>
             top: 0,
             bottom: 0,
             width: 4,
-            child: CustomPaint(
-              painter: _DashedLinePainter(_roadScrollOffset),
-            ),
+            child: CustomPaint(painter: _DashedLinePainter(_roadScrollOffset)),
           ),
           // Dashed Divider between Lane 1 & Lane 2
           Positioned(
@@ -922,9 +979,7 @@ class CarRacingGameState extends State<CarRacingGame>
             top: 0,
             bottom: 0,
             width: 4,
-            child: CustomPaint(
-              painter: _DashedLinePainter(_roadScrollOffset),
-            ),
+            child: CustomPaint(painter: _DashedLinePainter(_roadScrollOffset)),
           ),
         ],
       ),
@@ -977,7 +1032,11 @@ class CarRacingGameState extends State<CarRacingGame>
         width: 60,
         height: 60,
         alignment: Alignment.center,
-        child: const Icon(Icons.star_rounded, size: 44, color: Color(0xFFFFD166)),
+        child: const Icon(
+          Icons.star_rounded,
+          size: 44,
+          color: Color(0xFFFFD166),
+        ),
       );
     }
 
@@ -1240,7 +1299,11 @@ class CarRacingGameState extends State<CarRacingGame>
                   ),
                 ),
                 SizedBox(width: 4),
-                Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 28),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ],
             ),
           ),
@@ -1310,16 +1373,22 @@ class CarRacingGameState extends State<CarRacingGame>
                   margin: const EdgeInsets.symmetric(horizontal: 6),
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: earned ? const Color(0xFFFFF8E1) : const Color(0xFFECEFF1),
+                    color: earned
+                        ? const Color(0xFFFFF8E1)
+                        : const Color(0xFFECEFF1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: earned ? const Color(0xFFFFD54F) : Colors.grey.shade300,
+                      color: earned
+                          ? const Color(0xFFFFD54F)
+                          : Colors.grey.shade300,
                       width: 2,
                     ),
                   ),
                   child: Icon(
                     Icons.star_rounded,
-                    color: earned ? const Color(0xFFFFB300) : Colors.grey.shade400,
+                    color: earned
+                        ? const Color(0xFFFFB300)
+                        : Colors.grey.shade400,
                     size: 34,
                   ),
                 );
@@ -1341,26 +1410,73 @@ class CarRacingGameState extends State<CarRacingGame>
                   Expanded(
                     child: Column(
                       children: [
-                        const Text('Score', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
-                        Text('$_score', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFFE65100))),
+                        const Text(
+                          'Score',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF795548),
+                          ),
+                        ),
+                        Text(
+                          '$_score',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFFE65100),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  Container(width: 1, height: 26, color: Colors.orange.shade200),
+                  Container(
+                    width: 1,
+                    height: 26,
+                    color: Colors.orange.shade200,
+                  ),
                   Expanded(
                     child: Column(
                       children: [
-                        const Text('Collected', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
-                        Text('$_correctCatches', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF2E7D32))),
+                        const Text(
+                          'Collected',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF795548),
+                          ),
+                        ),
+                        Text(
+                          '$_correctCatches',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF2E7D32),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  Container(width: 1, height: 26, color: Colors.orange.shade200),
+                  Container(
+                    width: 1,
+                    height: 26,
+                    color: Colors.orange.shade200,
+                  ),
                   Expanded(
                     child: Column(
                       children: [
-                        const Text('Stars', style: TextStyle(fontSize: 12, color: Color(0xFF795548))),
-                        Text('+$starsEarned', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFFF57F17))),
+                        const Text(
+                          'Stars',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF795548),
+                          ),
+                        ),
+                        Text(
+                          '+$starsEarned',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFFF57F17),
+                          ),
+                        ),
                       ],
                     ),
                   ),
