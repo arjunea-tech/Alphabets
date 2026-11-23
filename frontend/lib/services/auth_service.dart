@@ -15,8 +15,18 @@ class AuthService extends ChangeNotifier {
   AuthUserModel? _currentUser;
   String? _token;
   bool _isLoading = false;
+  /// OAuth "Web application" client ID from Google Cloud Console.
+  /// Pass it at run/build time:
+  ///   flutter run --dart-define=GOOGLE_WEB_CLIENT_ID=xxxx.apps.googleusercontent.com
+  /// Web uses it as `clientId`; Android uses it as `serverClientId` so an idToken is returned.
+  static const String googleWebClientId =
+      String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
+    clientId: kIsWeb && googleWebClientId.isNotEmpty ? googleWebClientId : null,
+    serverClientId:
+        !kIsWeb && googleWebClientId.isNotEmpty ? googleWebClientId : null,
   );
 
   AuthUserModel? get currentUser => _currentUser;
@@ -200,6 +210,13 @@ class AuthService extends ChangeNotifier {
 
   /// Google Sign-In (Opens native Google account selector popup)
   Future<AuthResult> signInWithGoogle() async {
+    if (kIsWeb && googleWebClientId.isEmpty) {
+      return AuthResult.failure(
+        'Google Sign-In is not configured. Run the app with '
+        '--dart-define=GOOGLE_WEB_CLIENT_ID=<your client id>.',
+      );
+    }
+
     _isLoading = true;
     notifyListeners();
 
@@ -219,9 +236,12 @@ class AuthService extends ChangeNotifier {
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final String? idToken = googleAuth.idToken;
+      final String? accessToken = googleAuth.accessToken;
 
+      // Backend verifies these tokens with Google; profile fields below are informational only.
       final Map<String, dynamic> payload = {
         if (idToken != null && idToken.isNotEmpty) 'idToken': idToken,
+        if (accessToken != null && accessToken.isNotEmpty) 'accessToken': accessToken,
         'email': googleUser.email,
         'name': googleUser.displayName ?? '',
         'photoUrl': googleUser.photoUrl ?? 'assets/images/welcome.png',

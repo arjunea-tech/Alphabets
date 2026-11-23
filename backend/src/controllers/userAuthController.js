@@ -13,7 +13,53 @@ const UserModel = require('../models/userModel');
 const config = require('../config/env');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 
-const googleClient = OAuth2Client ? new OAuth2Client(process.env.GOOGLE_CLIENT_ID || '') : null;
+// Accepts GOOGLE_CLIENT_IDS (comma-separated: web, android, ios) or a single GOOGLE_CLIENT_ID.
+const googleClientIds = (process.env.GOOGLE_CLIENT_IDS || process.env.GOOGLE_CLIENT_ID || '')
+  .split(',')
+  .map((id) => id.trim())
+  .filter(Boolean);
+const googleClient = OAuth2Client ? new OAuth2Client() : null;
+
+/** Verifies a Google ID token (Android/iOS) and returns the profile. Throws if invalid. */
+async function verifyGoogleIdToken(idToken) {
+  const ticket = await googleClient.verifyIdToken({ idToken, audience: googleClientIds });
+  const p = ticket.getPayload() || {};
+  return {
+    email: p.email,
+    emailVerified: p.email_verified === true,
+    name: p.name,
+    picture: p.picture,
+  };
+}
+
+/**
+ * Verifies a Google OAuth access token (Web sign-in returns no ID token).
+ * Checks the token was issued to one of OUR client IDs, then reads the profile.
+ */
+async function verifyGoogleAccessToken(accessToken) {
+  const infoRes = await fetch(
+    `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`
+  );
+  if (!infoRes.ok) throw new Error(`tokeninfo HTTP ${infoRes.status}`);
+  const info = await infoRes.json();
+  const audience = info.aud || info.azp;
+  if (!googleClientIds.includes(audience)) {
+    throw new Error('access token was issued to a different client');
+  }
+
+  const userRes = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!userRes.ok) throw new Error(`userinfo HTTP ${userRes.status}`);
+  const u = await userRes.json();
+  if (u.sub !== info.sub) throw new Error('token subject mismatch');
+  return {
+    email: u.email,
+    emailVerified: u.email_verified === true,
+    name: u.name,
+    picture: u.picture,
+  };
+}
 
 class UserAuthController {
   /**
@@ -158,34 +204,33 @@ class UserAuthController {
    */
   static async googleLogin(req, res, next) {
     try {
-      const { idToken, email, name, photoUrl, googleId } = req.body;
-      let userEmail = (email || '').trim().toLowerCase();
-      let userName = (name || '').trim();
-      let userAvatar = photoUrl || 'assets/images/welcome.png';
+      const { idToken, accessToken } = req.body;
 
-      // 1. Verify idToken with Google if provided and client is available
-      if (idToken) {
-        try {
-          if (googleClient) {
-            const ticket = await googleClient.verifyIdToken({
-              idToken,
-              audience: process.env.GOOGLE_CLIENT_ID ? [process.env.GOOGLE_CLIENT_ID] : undefined,
-            });
-            const payload = ticket.getPayload();
-            if (payload) {
-              userEmail = (payload.email || userEmail).toLowerCase();
-              userName = payload.name || userName;
-              userAvatar = payload.picture || userAvatar;
-            }
-          }
-        } catch (tokenErr) {
-          console.warn('Google idToken verification warning (proceeding with profile):', tokenErr.message);
-        }
+      if (!googleClient || googleClientIds.length === 0) {
+        return errorResponse(res, 'Google Sign-In is not configured on the server', null, 503);
+      }
+      if (!idToken && !accessToken) {
+        return errorResponse(res, 'Google token is required', null, 400);
       }
 
-      if (!userEmail) {
-        return errorResponse(res, 'Google email not received', null, 400);
+      // 1. Identity comes ONLY from a token verified by Google — never from the request body.
+      let profile;
+      try {
+        profile = idToken
+          ? await verifyGoogleIdToken(idToken)
+          : await verifyGoogleAccessToken(accessToken);
+      } catch (tokenErr) {
+        console.warn('Google token verification failed:', tokenErr.message);
+        return errorResponse(res, 'Google sign-in could not be verified', null, 401);
       }
+
+      if (!profile.email || !profile.emailVerified) {
+        return errorResponse(res, 'Google account email is not verified', null, 401);
+      }
+
+      const userEmail = profile.email.toLowerCase();
+      const userName = (profile.name || '').trim();
+      const userAvatar = profile.picture || 'assets/images/welcome.png';
 
       // 2. Check if user already exists
       let user = await UserModel.findByEmail(userEmail);
