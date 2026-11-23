@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/auth_user_model.dart';
@@ -14,6 +15,9 @@ class AuthService extends ChangeNotifier {
   AuthUserModel? _currentUser;
   String? _token;
   bool _isLoading = false;
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+  );
 
   AuthUserModel? get currentUser => _currentUser;
   String? get token => _token;
@@ -191,6 +195,94 @@ class AuthService extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return AuthResult.failure('Temporary service error. Please try again.');
+    }
+  }
+
+  /// Google Sign-In (Opens native Google account selector popup)
+  Future<AuthResult> signInWithGoogle() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Force Google account chooser so user can select or switch account
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
+
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        // User cancelled popup
+        _isLoading = false;
+        notifyListeners();
+        return AuthResult.failure('Google Sign-In was cancelled.');
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+
+      final Map<String, dynamic> payload = {
+        if (idToken != null && idToken.isNotEmpty) 'idToken': idToken,
+        'email': googleUser.email,
+        'name': googleUser.displayName ?? '',
+        'photoUrl': googleUser.photoUrl ?? 'assets/images/welcome.png',
+        'googleId': googleUser.id,
+      };
+
+      final candidates = ApiConfig.candidateBaseUrls;
+      http.Response? response;
+
+      for (final base in candidates) {
+        try {
+          final url = Uri.parse('$base/users/google-login');
+          final res = await http.post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(payload),
+          ).timeout(const Duration(seconds: 12));
+
+          ApiConfig.setWorkingBaseUrl(base);
+          response = res;
+          break;
+        } on SocketException catch (_) {
+          continue;
+        } on TimeoutException catch (_) {
+          continue;
+        } catch (_) {
+          continue;
+        }
+      }
+
+      if (response == null) {
+        _isLoading = false;
+        notifyListeners();
+        return AuthResult.failure(
+          'Could not connect to server. Please check your internet connection.',
+        );
+      }
+
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = responseData['data'] as Map<String, dynamic>;
+        final token = data['token']?.toString() ?? '';
+        final userMap = data['user'] as Map<String, dynamic>;
+        final user = AuthUserModel.fromJson(userMap, token: token);
+
+        await _persistSession(token, user);
+        _isLoading = false;
+        notifyListeners();
+
+        return AuthResult.success(user, 'Google Sign-In successful!');
+      } else {
+        _isLoading = false;
+        notifyListeners();
+        final msg = responseData['message']?.toString() ?? 'Google Sign-In failed';
+        return AuthResult.failure(_translateError(msg));
+      }
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return AuthResult.failure('An error occurred during Google Sign-In: $e');
     }
   }
 

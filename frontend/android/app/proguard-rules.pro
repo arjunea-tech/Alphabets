@@ -8,3 +8,5 @@
 
 -dontwarn io.flutter.**
 -dontwarn com.google.android.**
+-keep class com.google.android.gms.** { *; }
+-keep class com.google.android.gms.auth.api.signin.** { *; }

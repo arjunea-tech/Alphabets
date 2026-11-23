@@ -31,6 +31,9 @@ router.post(
   UserAuthController.login
 );
 
+// Google Sign-In & Registration
+router.post('/google-login', UserAuthController.googleLogin);
+
 // Get Currently Authenticated User
 router.get('/me', verifyToken, UserAuthController.me);
 
