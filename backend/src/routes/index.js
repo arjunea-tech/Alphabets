@@ -15,6 +15,7 @@ const dashboardRoutes = require('./dashboardRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const audioRoutes = require('./audioRoutes');
 const languageRoutes = require('./languageRoutes');
+const integrationRoutes = require('./integrationRoutes');
 const { cachePublicGet, invalidateOnWrite } = require('../middleware/responseCache');
 
 const router = express.Router();
@@ -75,5 +76,8 @@ router.use('/admin/upload', uploadRoutes);
 // Centralized Tamil Audio Synthesis & Manifest (/api/v1/audio & /api/v1/admin/audio)
 router.use('/audio', audioRoutes);
 router.use('/admin/audio', audioRoutes);
+
+// Server-to-server: App Builders reads learners for the company admin (/api/v1/integration)
+router.use('/integration', integrationRoutes);
 
 module.exports = router;
