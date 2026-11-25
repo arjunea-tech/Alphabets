@@ -16,6 +16,8 @@ const uploadRoutes = require('./uploadRoutes');
 const audioRoutes = require('./audioRoutes');
 const languageRoutes = require('./languageRoutes');
 const integrationRoutes = require('./integrationRoutes');
+const settingsRoutes = require('./settingsRoutes');
+const accessRoutes = require('./accessRoutes');
 const { cachePublicGet, invalidateOnWrite } = require('../middleware/responseCache');
 
 const router = express.Router();
@@ -36,6 +38,9 @@ router.use('/admin', (req, res, next) => {
   }
   next();
 });
+
+// Content unlocked via scratch code / payment, kept on the account (/api/v1/users/access)
+router.use('/users/access', accessRoutes);
 
 // Child User Authentication & Profile (/api/v1/users)
 router.use('/users', userAuthRoutes);
@@ -76,6 +81,10 @@ router.use('/admin/upload', uploadRoutes);
 // Centralized Tamil Audio Synthesis & Manifest (/api/v1/audio & /api/v1/admin/audio)
 router.use('/audio', audioRoutes);
 router.use('/admin/audio', audioRoutes);
+
+// App settings, e.g. content price (/api/v1/settings and /api/v1/admin/settings)
+router.use('/settings', settingsRoutes.publicRouter);
+router.use('/admin/settings', settingsRoutes.adminRouter);
 
 // Server-to-server: App Builders reads learners for the company admin (/api/v1/integration)
 router.use('/integration', integrationRoutes);

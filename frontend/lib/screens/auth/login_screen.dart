@@ -447,10 +447,28 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                 );
-                                if (registered == true) {
-                                  // Optionally auto-fill registered email
-                                  if (widget.authService.currentUser?.email != null) {
-                                    _emailController.text = widget.authService.currentUser!.email;
+                                if (registered == true && context.mounted) {
+                                  final user = widget.authService.currentUser;
+                                  if (widget.authService.isAuthenticated && user != null) {
+                                    // Registration already signed the user in → go straight
+                                    // into the app, where the unlock popup (scratch code /
+                                    // payment) is shown.
+                                    if (user.name.isNotEmpty) {
+                                      widget.progressService.updateProfile(
+                                        name: user.name,
+                                        avatarIndex: widget.progressService.avatarIndex,
+                                      );
+                                    }
+                                    Navigator.of(context).pushReplacement(
+                                      MaterialPageRoute(
+                                        builder: (_) => MainNavigationScreen(
+                                          progressService: widget.progressService,
+                                          initialIndex: 2,
+                                        ),
+                                      ),
+                                    );
+                                  } else if (user != null) {
+                                    _emailController.text = user.email;
                                   }
                                 }
                               },

@@ -12,9 +12,9 @@ class ApiConfig {
   static String? _discoveredBaseUrl;
 
   /// To test against a backend running on your PC instead of the live server:
-  ///   Phone on the same Wi-Fi: flutter run --dart-define=API_BASE_URL=http://192.168.1.46:5000/api/v1
-  ///   Android emulator:        flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000/api/v1
-   /// Web / desktop:           flutter run --dart-define=API_BASE_URL=http://localhost:5000/api/v1
+  ///   Phone on the same Wi-Fi: flutter run --dart-define=API_BASE_URL=http://192.168.1.46:5001/api/v1
+  ///   Android emulator:        flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5001/api/v1
+   /// Web / desktop:           flutter run --dart-define=API_BASE_URL=http://localhost:5102/api/v1
   static const String _envBaseUrl = String.fromEnvironment('API_BASE_URL');
 
   /// Backend URLs to try, in order.
@@ -36,9 +36,9 @@ class ApiConfig {
   /// Local backend address as seen from the device running the app.
   static String get localBaseUrl {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:5000/api/v1'; // Android emulator -> PC localhost
+      return 'http://10.0.2.2:5001/api/v1'; // Android emulator -> PC localhost
     }
-    return 'http://localhost:5000/api/v1'; // Chrome / Windows desktop
+    return 'http://localhost:5102/api/v1'; // Chrome / Windows desktop
   }
 
   static void setWorkingBaseUrl(String url) {

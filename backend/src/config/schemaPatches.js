@@ -20,10 +20,16 @@ const MULTI_LANGUAGE_TABLES = [
   'users',
 ];
 
-const COLUMN_PATCHES = MULTI_LANGUAGE_TABLES.flatMap((table) => [
-  { table, column: 'language_code', definition: "VARCHAR(10) NOT NULL DEFAULT 'en'" },
-  { table, column: 'tenant_id', definition: "VARCHAR(64) NULL DEFAULT 'default'" },
-]);
+const COLUMN_PATCHES = [
+  ...MULTI_LANGUAGE_TABLES.flatMap((table) => [
+    { table, column: 'language_code', definition: "VARCHAR(10) NOT NULL DEFAULT 'en'" },
+    { table, column: 'tenant_id', definition: "VARCHAR(64) NULL DEFAULT 'default'" },
+  ]),
+  // Content unlocked (scratch code / payment) — kept on the account so it is asked only once.
+  { table: 'users', column: 'has_content_access', definition: 'BOOLEAN NOT NULL DEFAULT FALSE' },
+  { table: 'users', column: 'access_method', definition: 'VARCHAR(20) NULL' },
+  { table: 'users', column: 'access_granted_at', definition: 'TIMESTAMP NULL' },
+];
 
 async function addColumn({ table, column, definition }) {
   const sql = isPostgres
@@ -38,10 +44,26 @@ async function addColumn({ table, column, definition }) {
   }
 }
 
+// Key/value settings the admin can edit (e.g. content price). Same SQL works on MySQL and PostgreSQL.
+async function ensureAppSettingsTable() {
+  try {
+    await pool.query(
+      `CREATE TABLE IF NOT EXISTS app_settings (
+        setting_key VARCHAR(64) NOT NULL PRIMARY KEY,
+        setting_value TEXT NOT NULL,
+        updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP
+      )`
+    );
+  } catch (err) {
+    logger.warn(`⚠️ Could not ensure app_settings table: ${err.message}`);
+  }
+}
+
 async function applySchemaPatches() {
   for (const patch of COLUMN_PATCHES) {
     await addColumn(patch);
   }
+  await ensureAppSettingsTable();
 }
 
 module.exports = { applySchemaPatches };

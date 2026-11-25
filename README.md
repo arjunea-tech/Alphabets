@@ -87,7 +87,7 @@ Alphabets/
 
 2. Copy `.env.example` to `.env` and fill in your values:
    ```env
-   PORT=5000
+   PORT=5001
    DB_HOST=localhost
    DB_PORT=3306
    DB_USER=root
@@ -108,7 +108,7 @@ Alphabets/
    ```bash
    npm run dev
    ```
-   *API:* `http://localhost:5000`
+   *API:* `http://localhost:5001`
 
 ---
 
@@ -143,7 +143,7 @@ flutter run
 flutter run -d chrome --web-port 8080 --dart-define=GOOGLE_WEB_CLIENT_ID=xxxx.apps.googleusercontent.com
 ```
 
-- For web, add `http://localhost:8080` (or your chosen port; not 5000, which the backend uses) to the client's **Authorized JavaScript origins**.
+- For web, add `http://localhost:8080` (or your chosen port; not 5001, which the backend uses) to the client's **Authorized JavaScript origins**.
 - For Android, also create an **Android** OAuth client (package name + SHA-1) and pass the same Web client ID via `--dart-define`.
 
 ---

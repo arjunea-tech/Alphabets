@@ -21,21 +21,21 @@ if %errorlevel% neq 0 (
 echo.
 
 :: 2. Launch Backend
-echo [2/3] Launching Backend API (Port 5000)...
+echo [2/3] Launching Backend API (Port 5102)...
 start "ALPHABETS - Backend API" cmd /k "cd /d "%~dp0backend" && npm run dev"
 
 :: Wait 3 seconds for backend to initialize
 timeout /t 3 /nobreak >nul
 
 :: 3. Launch Admin Panel
-echo [3/3] Launching Admin Panel (Port 5173)...
+echo [3/3] Launching Admin Panel (Port 5174)...
 start "ALPHABETS - Admin Panel" cmd /k "cd /d "%~dp0admin-panel" && npm run dev"
 
 echo.
 echo ========================================================
 echo All Web & API services started!
-echo - Backend API:  http://localhost:5000
-echo - Admin Panel:  http://localhost:5173
+echo - Backend API:  http://localhost:5102
+echo - Admin Panel:  http://localhost:5174
 echo.
 echo To run the Flutter App (Mobile / Web):
 echo Open a terminal and run:

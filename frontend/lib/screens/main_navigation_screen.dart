@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../services/access_service.dart';
 import '../services/progress_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/bouncy_button.dart';
+import '../widgets/unlock_access_dialog.dart';
 import 'games/games_screen.dart';
 import 'home/home_screen.dart';
 import 'learning/learning_screen.dart';
@@ -29,6 +31,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAccess());
+  }
+
+  /// User has not bought the book / content yet → ask for scratch code or payment.
+  Future<void> _checkAccess() async {
+    if (await AccessService.instance.hasAccess()) return;
+    if (!mounted) return;
+    await UnlockAccessDialog.show(context);
   }
 
   void _onTabSelected(int index) {

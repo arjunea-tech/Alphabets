@@ -6,7 +6,7 @@ require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 const config = {
   env: process.env.NODE_ENV || 'development',
-  port: parseInt(process.env.PORT, 10) || 5000,
+  port: parseInt(process.env.PORT, 10) || 5001,
   apiPrefix: process.env.API_PREFIX || '/api/v1',
   db: {
     client: (process.env.DB_CLIENT || (parseInt(process.env.DB_PORT, 10) === 5432 ? 'postgres' : 'mysql')).toLowerCase(),

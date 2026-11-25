@@ -1,9 +1,105 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../api/auth';
+import { settingsApi } from '../api/settings';
 import { useLanguage } from '../context/LanguageContext';
-import { ShieldCheck, Lock, KeyRound, X, CheckCircle2, AlertCircle, Server } from 'lucide-react';
+import { ShieldCheck, Lock, KeyRound, X, CheckCircle2, AlertCircle, Server, IndianRupee } from 'lucide-react';
 import { API_BASE_URL } from '../api/client';
+
+/** Edit the price the app shows on its "Buy Online" unlock option. */
+const PricingCard: React.FC = () => {
+  const [price, setPrice] = useState('');
+  const [savedPrice, setSavedPrice] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  useEffect(() => {
+    settingsApi
+      .getPricing()
+      .then((res) => {
+        if (res.data) {
+          setPrice(String(res.data.price_inr));
+          setSavedPrice(res.data.price_inr);
+        }
+      })
+      .catch((err: any) => {
+        setStatus({ type: 'error', message: err.response?.data?.message || 'Could not load price' });
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const value = Number(price);
+    if (!Number.isInteger(value) || value < 0) {
+      setStatus({ type: 'error', message: 'Enter a whole number (₹)' });
+      return;
+    }
+    setSaving(true);
+    setStatus(null);
+    try {
+      const res = await settingsApi.updatePricing(value);
+      if (res.data) setSavedPrice(res.data.price_inr);
+      setStatus({ type: 'success', message: 'Price updated. The app shows it the next time the unlock popup opens.' });
+    } catch (err: any) {
+      setStatus({ type: 'error', message: err.response?.data?.message || err.message || 'Price update failed' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="card" style={{ marginBottom: '24px' }}>
+      <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <IndianRupee size={18} color="var(--primary)" />
+        <span>Content Price</span>
+      </h3>
+      <div style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '14px' }}>
+        Price for users without the book, shown on the app's "Buy Online" option.
+        {savedPrice !== null && <> Current price: <strong>₹{savedPrice}</strong></>}
+      </div>
+
+      <form onSubmit={handleSave} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+        <div className="form-group" style={{ marginBottom: 0, flex: '1 1 180px', maxWidth: '240px' }}>
+          <label className="form-label">Price (₹)</label>
+          <input
+            type="number"
+            min={0}
+            step={1}
+            className="form-control"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            disabled={loading || saving}
+            required
+          />
+        </div>
+        <button type="submit" className="btn btn-primary" disabled={loading || saving}>
+          {saving ? 'Saving...' : 'Save Price'}
+        </button>
+      </form>
+
+      {status && (
+        <div
+          style={{
+            padding: '12px 16px',
+            borderRadius: 'var(--radius-md)',
+            background: status.type === 'success' ? 'var(--success-light)' : 'var(--danger-light)',
+            color: status.type === 'success' ? 'var(--success)' : 'var(--danger)',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginTop: '16px',
+          }}
+        >
+          {status.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+          <span>{status.message}</span>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const SettingsPage: React.FC = () => {
   const { admin } = useAuth();
@@ -200,6 +296,8 @@ export const SettingsPage: React.FC = () => {
           </form>
         )}
       </div>
+
+      <PricingCard />
 
       {/* Backend Connection Info */}
       <div className="card">

@@ -195,7 +195,7 @@ class CandyColorPalette {
     'W': Color(0xFF2962FF),
     'X': Color(0xFFBA68C8),
     'Y': Color(0xFF2979FF),
-    'Z': Color(0xFFD50000),
+    'Z': Color(0xFFD50010),
   };
 
   /// Detailed styling tokens for each letter (Gradient, Border, Shadow, Text)
@@ -346,13 +346,13 @@ class CandyColorPalette {
     ),
     'Y': CandyLetterStyle(
       primaryColor: Color(0xFF2979FF),
-      gradientColors: [Color(0xFF2979FF), Color(0xFFD50000)],
+      gradientColors: [Color(0xFF2979FF), Color(0xFFD50010)],
       borderColor: Colors.white,
       shadowColor: Color(0x33000000),
     ),
     'Z': CandyLetterStyle(
-      primaryColor: Color(0xFFD50000),
-      gradientColors: [Color(0xFFD50000), Color(0xFFFF1744)],
+      primaryColor: Color(0xFFD50010),
+      gradientColors: [Color(0xFFD50010), Color(0xFFFF1744)],
       borderColor: Colors.white,
       shadowColor: Color(0x33000000),
     ),
@@ -362,7 +362,7 @@ class CandyColorPalette {
   static const List<CandyLetterStyle> dynamicPalette = [
     CandyLetterStyle(
       primaryColor: Color(0xFFFF1744),
-      gradientColors: [Color(0xFFFF5252), Color(0xFFFF1744), Color(0xFFD50000)],
+      gradientColors: [Color(0xFFFF5252), Color(0xFFFF1744), Color(0xFFD50010)],
       borderColor: Color(0xFFFF8A80),
       shadowColor: Color(0xFF8A0000),
     ),
@@ -451,8 +451,8 @@ class CandyColorPalette {
       shadowColor: Color(0xFF002171),
     ),
     CandyLetterStyle(
-      primaryColor: Color(0xFFD50000),
-      gradientColors: [Color(0xFFFF5252), Color(0xFFD50000), Color(0xFF8A0000)],
+      primaryColor: Color(0xFFD50010),
+      gradientColors: [Color(0xFFFF5252), Color(0xFFD50010), Color(0xFF8A0000)],
       borderColor: Color(0xFFFF8A80),
       shadowColor: Color(0xFF560000),
     ),

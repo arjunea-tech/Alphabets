@@ -1836,7 +1836,7 @@ class _FruitNinjaScenePainter extends CustomPainter {
       ..shader = const RadialGradient(
         center: Alignment(-0.3, -0.3),
         radius: 0.9,
-        colors: [Color(0xFFFF1744), Color(0xFFD50000), Color(0xFF880E4F)],
+        colors: [Color(0xFFFF1744), Color(0xFFD50010), Color(0xFF880E4F)],
       ).createShader(rect);
     canvas.drawPath(path, bodyPaint);
 
@@ -2156,7 +2156,7 @@ class _FruitNinjaScenePainter extends CustomPainter {
         canvas.drawCircle(
           Offset.zero,
           r,
-          Paint()..color = const Color(0xFFD50000),
+          Paint()..color = const Color(0xFFD50010),
         );
         // Crisp ivory flesh
         canvas.drawCircle(
