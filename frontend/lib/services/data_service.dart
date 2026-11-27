@@ -218,18 +218,36 @@ class ApiDataRepository implements IDataRepository {
   @override
   Future<List<GameQuestion>> getGameQuestions() => _fallback.getGameQuestions();
 
-  void clearVideoCache() => _forget('videos');
+  /// Letter videos live on the letters themselves, so refresh both.
+  void clearVideoCache() {
+    _forget('videos');
+    _forget('letters');
+  }
 
+  /// One video per letter (A–Z), uploaded from the Admin Panel's Videos page
+  /// or the Edit Letter dialog. Letters without a video are skipped.
   @override
   Future<List<VideoItem>> getVideoLessons() async {
-    try {
-      return await _cached('videos', () async {
-        final data = await _getData('/videos?all=true') as List;
-        return data.map((item) => VideoItem.fromJson(item as Map<String, dynamic>)).toList();
-      });
-    } catch (_) {
-      return const []; // Videos are admin-managed only
+    final letters = await getAllAlphabets();
+    const vowels = {'A', 'E', 'I', 'O', 'U'};
+    final videos = <VideoItem>[];
+    for (var i = 0; i < letters.length; i++) {
+      final l = letters[i];
+      final url = l.videoUrl?.trim() ?? '';
+      if (url.isEmpty) continue;
+      final letter = l.letter.trim().toUpperCase();
+      videos.add(VideoItem(
+        id: 'letter_video_${l.id}',
+        title: l.word.trim().isEmpty ? letter : '$letter - ${l.word.trim()}',
+        category: vowels.contains(letter) ? 'Vowels' : 'Consonants',
+        duration: '',
+        thumbnailEmoji: l.iconEmoji,
+        videoUrl: url,
+        description: 'Video lesson for letter $letter',
+        displayOrder: i + 1,
+      ));
     }
+    return videos;
   }
 
   void clearGamesCache() => _forget('games');

@@ -11,13 +11,11 @@ import '../../widgets/kid_scaffold_background.dart';
 import '../../widgets/mascot_widget.dart';
 import 'video_player_screen.dart';
 
-const List<String> kUyirLetters = [
-  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'
-];
+const List<String> kUyirLetters = ['A', 'E', 'I', 'O', 'U'];
 
 const List<String> kMeiLetters = [
-  'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
-  'W', 'X', 'Y', 'Z'
+  'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N',
+  'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z'
 ];
 
 class VideosScreen extends StatefulWidget {
@@ -146,7 +144,7 @@ class _VideosScreenState extends State<VideosScreen> {
                             _buildSectionHeader(
                               icon: Icons.auto_awesome_rounded,
                               title: 'Alphabet Vowels & Phonics Videos',
-                              countText: '${uyirList.length}/12',
+                              countText: '${uyirList.length}/5',
                               subtitle: 'Fun phonics and song lessons for vowels',
                               badgeColor: AppColors.uyirColor,
                             ),
@@ -163,7 +161,7 @@ class _VideosScreenState extends State<VideosScreen> {
                             _buildSectionHeader(
                               icon: Icons.edit_note_rounded,
                               title: 'Alphabet Consonants & Word Videos',
-                              countText: '${meiList.length}/18',
+                              countText: '${meiList.length}/21',
                               subtitle: 'Fun lessons for English consonants B to Z',
                               badgeColor: AppColors.meiColor,
                             ),
@@ -554,16 +552,17 @@ class _VideosScreenState extends State<VideosScreen> {
                           ),
                         ),
                         const Spacer(),
-                        Row(
-                          children: [
-                            const Icon(Icons.timer_outlined, size: 13, color: AppColors.textMuted),
-                            const SizedBox(width: 3),
-                            Text(
-                              video.duration.isNotEmpty ? video.duration : '00:15',
-                              style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
+                        if (video.duration.isNotEmpty)
+                          Row(
+                            children: [
+                              const Icon(Icons.timer_outlined, size: 13, color: AppColors.textMuted),
+                              const SizedBox(width: 3),
+                              Text(
+                                video.duration,
+                                style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
                     const SizedBox(height: 8),
