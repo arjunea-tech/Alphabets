@@ -63,6 +63,15 @@ async function applySchemaPatches() {
   for (const patch of COLUMN_PATCHES) {
     await addColumn(patch);
   }
+  // Widen users.avatar_asset to TEXT so external profile URLs (Google/FB) don't exceed VARCHAR(255)
+  try {
+    const widenSql = isPostgres
+      ? `ALTER TABLE users ALTER COLUMN avatar_asset TYPE TEXT`
+      : `ALTER TABLE users MODIFY avatar_asset TEXT`;
+    await pool.query(widenSql);
+  } catch (err) {
+    logger.warn(`⚠️ Could not widen users.avatar_asset: ${err.message}`);
+  }
   await ensureAppSettingsTable();
 }
 

@@ -33,10 +33,11 @@ class UserModel {
   }
 
   static async create({ id, name, email, passwordHash, age = 5, avatarAsset = 'assets/images/welcome.png' }) {
+    const safeAvatar = (avatarAsset && avatarAsset.length <= 250) ? avatarAsset : 'assets/images/welcome.png';
     await pool.query(
       `INSERT INTO users (id, child_name, email, password_hash, age, avatar_asset, total_stars, is_active)
        VALUES (?, ?, ?, ?, ?, ?, 0, TRUE)`,
-      [id, name, email ? email.trim().toLowerCase() : null, passwordHash, age, avatarAsset]
+      [id, name, email ? email.trim().toLowerCase() : null, passwordHash, age, safeAvatar]
     );
 
     // Ensure stars row exists

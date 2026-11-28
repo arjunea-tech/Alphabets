@@ -209,6 +209,7 @@ class UserAuthController {
       let userEmail = (email || '').trim().toLowerCase();
       let userName = (name || '').trim();
       let userAvatar = photoUrl || 'assets/images/welcome.png';
+      const safeAvatar = (userAvatar && userAvatar.length <= 250) ? userAvatar : 'assets/images/welcome.png';
 
       // 1. If Google client IDs are configured, verify the token
       if (googleClient && googleClientIds.length > 0 && (idToken || accessToken)) {
@@ -219,7 +220,7 @@ class UserAuthController {
           if (profile && profile.email) {
             userEmail = profile.email.toLowerCase();
             userName = (profile.name || userName).trim();
-            userAvatar = profile.picture || userAvatar;
+            userAvatar = profile.picture || safeAvatar;
           }
         } catch (tokenErr) {
           console.warn('Google token verification failed (fallback to profile):', tokenErr.message);
@@ -240,7 +241,7 @@ class UserAuthController {
           email: userEmail,
           passwordHash: null,
           age: 5,
-          avatarAsset: userAvatar,
+          avatarAsset: safeAvatar,
         });
       }
 
