@@ -18,7 +18,21 @@ class ApiConfig {
   static const String _envBaseUrl = String.fromEnvironment('API_BASE_URL');
 
   /// Backend URLs to try, in order.
-  static List<String> get candidateBaseUrls => [baseUrl];
+  static List<String> get candidateBaseUrls {
+    if (customServerUrl != null && customServerUrl!.trim().isNotEmpty) {
+      return [customServerUrl!.trim()];
+    }
+    if (_envBaseUrl.isNotEmpty) return [_envBaseUrl];
+    if (_discoveredBaseUrl != null && _discoveredBaseUrl!.isNotEmpty) {
+      return [_discoveredBaseUrl!];
+    }
+    return [
+      productionBaseUrl, // Production Live Server First so mobile phones on 4G/Wi-Fi connect seamlessly
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) 'http://10.0.2.2:5102/api/v1',
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) 'http://192.168.100.22:5102/api/v1',
+      'http://localhost:5102/api/v1',
+    ];
+  }
 
   static String get baseUrl {
     if (customServerUrl != null && customServerUrl!.trim().isNotEmpty) {
@@ -28,15 +42,16 @@ class ApiConfig {
     if (_discoveredBaseUrl != null && _discoveredBaseUrl!.isNotEmpty) {
       return _discoveredBaseUrl!;
     }
-    // `flutter run` (debug) talks to the backend on this PC; release APKs use the live server.
-    if (kDebugMode) return localBaseUrl;
+    if (kReleaseMode) {
+      return productionBaseUrl;
+    }
     return productionBaseUrl;
   }
 
   /// Local backend address as seen from the device running the app.
   static String get localBaseUrl {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:5001/api/v1'; // Android emulator -> PC localhost
+      return 'http://10.0.2.2:5102/api/v1'; // Android emulator -> PC localhost
     }
     return 'http://localhost:5102/api/v1'; // Chrome / Windows desktop
   }

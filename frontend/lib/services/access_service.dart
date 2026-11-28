@@ -158,11 +158,12 @@ class AccessService {
             headers: {...await _authHeaders(), 'Content-Type': 'application/json'},
             body: jsonEncode({
               'method': method == AccessMethod.scratchCode ? 'scratch_code' : 'payment',
-              'code': ?code,
+              if (code != null) 'code': code,
             }),
           )
           .timeout(const Duration(seconds: 10));
       if (res.statusCode == 200) return null;
+      if (res.statusCode == 404 && kAccessSampleMode) return null;
       final msg = (jsonDecode(res.body) as Map<String, dynamic>)['message']?.toString();
       return msg ?? 'Could not unlock (error ${res.statusCode})';
     } catch (e) {
